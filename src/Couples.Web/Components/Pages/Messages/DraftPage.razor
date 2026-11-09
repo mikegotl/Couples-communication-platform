@@ -1,0 +1,366 @@
+@page "/messages/new"
+@page "/messages/draft/{DraftId:guid}"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Coaching
+@using Couples.Application.Messaging
+@using Couples.Domain.Common
+@using Couples.Domain.Messaging
+@inject IMessagingService Messages
+@inject IDraftAssistant Assistant
+@inject CurrentUser CurrentUser
+@inject NavigationManager Navigation
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<InteractiveProviders />
+<PageTitle>@(stage == Stage.Preview ? "Preview message" : "Write a message") · BridgeTogether</PageTitle>
+
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else if (notFound)
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Draft not found</MudText>
+        <MudText>It may have been sent or discarded.</MudText>
+        <div><MudButton Variant="Variant.Outlined" Href="messages">Back to messages</MudButton></div>
+    </MudStack>
+}
+else if (stage == Stage.Sent)
+{
+    <MudStack Spacing="3">
+        <h1 class="mud-typography mud-typography-h4" tabindex="-1" @ref="heading">Sent</h1>
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined">
+            Your partner can now read this message. You can withdraw it from your messages page, but they may already have read it.
+        </MudAlert>
+        <MessageCard Heading="Sent to your partner" Body="@sentMessage?.Body" Timestamp="sentMessage?.SharedAt" />
+        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="messages">Back to messages</MudButton></div>
+    </MudStack>
+}
+else if (stage == Stage.Preview && preview is not null)
+{
+    <MudStack Spacing="3">
+        <h1 class="mud-typography mud-typography-h4" tabindex="-1" @ref="heading">Check before you send</h1>
+        <MudText>This is exactly what your partner will see in <strong>@preview.WorkspaceName</strong>. Nothing has been sent yet.</MudText>
+
+        <MessageCard Heading="From your partner" Body="@preview.Body" />
+
+        <MudCheckBox T="bool" @bind-Value="confirmed" Color="Color.Primary"
+                     Label="I've read this and I want to share it with my partner." />
+        <MudText Typo="Typo.body2">
+            After you send it you can withdraw it, which hides it and erases the text, but your partner may already have read it.
+        </MudText>
+
+        @if (error is not null)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" role="alert">@error</MudAlert>
+        }
+
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SendAsync" Disabled="@(!confirmed || busy)">Send to my partner</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="BackToEditing" Disabled="busy">Back to editing</MudButton>
+        </MudStack>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <h1 class="mud-typography mud-typography-h4" tabindex="-1" @ref="heading">Write to your partner</h1>
+        <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock">
+            Private draft. Only you can see this until you preview it and choose to send it.
+        </MudAlert>
+
+        <MudTextField @bind-Value="body" Label="Your message" Lines="6" Sizing="InputSizing.Auto" MaxLines="20"
+                      MaxLength="DraftMessage.MaxBodyLength" Counter="DraftMessage.MaxBodyLength" Variant="Variant.Outlined" Immediate="true" />
+
+        @if (previousBody is not null)
+        {
+            <div><MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Undo">Undo: go back to my wording</MudButton></div>
+        }
+
+        @if (error is not null)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" role="alert">@error</MudAlert>
+        }
+
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="PreviewAsync" Disabled="busy">Preview</MudButton>
+            @if (Assistant.IsAvailable)
+            {
+                <MudButton Variant="Variant.Outlined" OnClick="SuggestAsync" Disabled="busy">Suggest kinder wording</MudButton>
+            }
+            <MudButton Variant="Variant.Text" OnClick="SaveAndExitAsync" Disabled="busy">Save draft</MudButton>
+            @if (draftId is not null)
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="DiscardAsync" Disabled="busy">Discard</MudButton>
+            }
+        </MudStack>
+        <p class="mud-typography mud-typography-caption" aria-live="polite">@status</p>
+
+        @if (coach is not null)
+        {
+            <section aria-labelledby="suggestions-heading" aria-live="polite">
+                <MudText Typo="Typo.h6" HtmlTag="h2" id="suggestions-heading">Suggestions</MudText>
+                <MudAlert Severity="@(coach.Outcome == CoachOutcome.SupportSuggested ? Severity.Warning : Severity.Info)" Variant="Variant.Outlined" Class="mb-2">
+                    @coach.Message
+                </MudAlert>
+                <MudStack Spacing="2">
+                    @foreach (var (suggestion, i) in coach.Suggestions.Select((s, i) => (s, i)))
+                    {
+                        <MudPaper Class="pa-3" Outlined="true" @key="i">
+                            <MudText Style="white-space: pre-wrap; overflow-wrap: anywhere">@suggestion.Text</MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary my-1">@suggestion.Explanation</MudText>
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => Use(suggestion)">Use this wording</MudButton>
+                        </MudPaper>
+                    }
+                </MudStack>
+                <MudText Typo="Typo.caption" Class="mt-2">
+                    Suggestions come from an automated writing assistant, not a therapist. They aren't saved, and you can edit them before you send anything.
+                </MudText>
+            </section>
+        }
+    </MudStack>
+}
+
+@code {
+    [Parameter]
+    public Guid? DraftId { get; set; }
+
+    private enum Stage
+    {
+        Write,
+        Preview,
+        Sent,
+    }
+
+    private Stage stage = Stage.Write;
+    private bool loading = true;
+    private bool notFound;
+    private bool busy;
+    private bool confirmed;
+    private bool focusHeading;
+    private Guid userId;
+    private Guid? draftId;
+    private string? body;
+    private string? savedBody;
+    private string? previousBody;
+    private string? error;
+    private string? status;
+    private CoachResult? coach;
+    private SharePreview? preview;
+    private SharedMessageView? sentMessage;
+    private ElementReference heading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        if (DraftId is { } id)
+        {
+            var draft = await Messages.GetDraftAsync(userId, id);
+            if (!draft.Succeeded || draft.Value.Status != nameof(DraftStatus.Draft))
+            {
+                notFound = true;
+            }
+            else
+            {
+                draftId = id;
+                body = savedBody = draft.Value.Body;
+            }
+        }
+
+        loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusHeading)
+        {
+            focusHeading = false;
+            await heading.FocusAsync();
+        }
+    }
+
+    /// <summary>Creates or updates the private draft so the server holds exactly what's on screen.</summary>
+    private async Task<bool> SaveAsync()
+    {
+        error = null;
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            error = "Write something first.";
+            return false;
+        }
+
+        if (draftId is not null && body == savedBody)
+        {
+            return true;
+        }
+
+        var result = draftId is { } id ? await Messages.EditDraftAsync(userId, id, body) : await Messages.CreateDraftAsync(userId, body);
+        if (!result.Succeeded)
+        {
+            error = result.Error switch
+            {
+                DomainError.Validation => $"Messages can be up to {DraftMessage.MaxBodyLength} characters.",
+                DomainError.NotFound when draftId is null => "You need to be in a workspace to write to your partner.",
+                DomainError.Conflict => "This draft was changed or sent somewhere else. Go back to your messages to see the latest.",
+                _ => "We couldn't save your draft. Please try again.",
+            };
+            return false;
+        }
+
+        if (draftId is null)
+        {
+            draftId = result.Value.Id;
+
+            // Update the address bar only. A Blazor navigation here would re-create this page
+            // while the current operation is still using the circuit's database context.
+            await JS.InvokeVoidAsync("history.replaceState", null, "", Navigation.ToAbsoluteUri($"messages/draft/{result.Value.Id}").ToString());
+        }
+
+        savedBody = result.Value.Body;
+        body = result.Value.Body;
+        status = $"Draft saved at {DateTimeOffset.Now:HH:mm}.";
+        return true;
+    }
+
+    private async Task SuggestAsync()
+    {
+        busy = true;
+        try
+        {
+            if (!await SaveAsync())
+            {
+                return;
+            }
+
+            status = "Getting suggestions…";
+            StateHasChanged();
+            var result = await Assistant.SuggestRewriteAsync(userId, draftId!.Value);
+            coach = result.Succeeded ? result.Value : null;
+            status = null;
+            if (!result.Succeeded)
+            {
+                error = "We couldn't get suggestions for this draft.";
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void Use(CoachSuggestion suggestion)
+    {
+        previousBody ??= body;
+        body = suggestion.Text;
+        status = "Suggestion copied into your draft. Edit it as you like; it isn't saved until you save or preview.";
+    }
+
+    private void Undo()
+    {
+        body = previousBody;
+        previousBody = null;
+    }
+
+    private async Task PreviewAsync()
+    {
+        busy = true;
+        try
+        {
+            if (!await SaveAsync())
+            {
+                return;
+            }
+
+            var result = await Messages.PreviewShareAsync(userId, draftId!.Value);
+            if (!result.Succeeded)
+            {
+                error = result.Error == DomainError.NoPartner
+                    ? "Your partner hasn't joined your workspace yet. Your draft is saved; you can send it once they join."
+                    : "We couldn't prepare a preview. Please try again.";
+                return;
+            }
+
+            preview = result.Value;
+            confirmed = false;
+            stage = Stage.Preview;
+            focusHeading = true;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void BackToEditing()
+    {
+        stage = Stage.Write;
+        error = null;
+        preview = null;
+        focusHeading = true;
+    }
+
+    private async Task SendAsync()
+    {
+        if (!confirmed || preview is null || busy)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var result = await Messages.ShareAsync(userId, preview.DraftId, preview.Fingerprint);
+            if (result.Succeeded)
+            {
+                sentMessage = result.Value;
+                stage = Stage.Sent;
+                focusHeading = true;
+                return;
+            }
+
+            error = result.Error switch
+            {
+                DomainError.ConsentMismatch => "Your draft changed after this preview, so nothing was sent. Go back and preview it again.",
+                DomainError.NoPartner => "Your partner is no longer in this workspace, so nothing was sent. Your draft is kept.",
+                _ => "Nothing was sent. Please go back to your messages and try again.",
+            };
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task SaveAndExitAsync()
+    {
+        busy = true;
+        try
+        {
+            if (await SaveAsync())
+            {
+                Navigation.NavigateTo("messages");
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task DiscardAsync()
+    {
+        var yes = await Dialogs.ShowMessageBoxAsync("Discard this draft?", "It will be deleted. Nothing has been sent.", yesText: "Discard", cancelText: "Keep");
+        if (yes != true)
+        {
+            return;
+        }
+
+        await Messages.DiscardDraftAsync(userId, draftId!.Value);
+        Snackbar.Add("Draft discarded.", Severity.Success);
+        Navigation.NavigateTo("messages");
+    }
+}

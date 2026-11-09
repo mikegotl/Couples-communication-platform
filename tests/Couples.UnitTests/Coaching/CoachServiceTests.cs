@@ -191,6 +191,28 @@ public sealed class CoachServiceTests
     }
 
     [Fact]
+    public async Task UsageStoreFailureFailsClosedWithoutCallingTheProvider()
+    {
+        var model = new ScriptedModel(ScriptedModel.Returns(Coach.Json()));
+        var usage = new MemoryUsageStore { FailReserve = new InvalidOperationException("db down") };
+
+        var result = await Coach.Create(model, usage).SuggestAsync(Rephrase());
+
+        Assert.Equal(CoachOutcome.Unavailable, result.Outcome);
+        Assert.Equal(0, model.Calls);
+    }
+
+    [Fact]
+    public async Task FailingToRecordTokensStillReturnsTheSuggestions()
+    {
+        var usage = new MemoryUsageStore { FailRecord = new InvalidOperationException("db down") };
+
+        var result = await Coach.Create(new ScriptedModel(ScriptedModel.Returns(Coach.Json())), usage).SuggestAsync(Rephrase());
+
+        Assert.Equal(CoachOutcome.Suggested, result.Outcome);
+    }
+
+    [Fact]
     public async Task DisabledProviderSendsNothing()
     {
         var usage = new MemoryUsageStore();

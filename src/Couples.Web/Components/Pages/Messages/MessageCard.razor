@@ -1,0 +1,30 @@
+@* Renders a shared message the same way for the recipient, the sender and the sender's preview,
+   so the preview shows exactly what the partner will see. *@
+<MudPaper Class="pa-3 message-card" Outlined="true">
+    <MudStack Spacing="1">
+        <MudText Typo="Typo.subtitle2" HtmlTag="h3">@Heading</MudText>
+        @if (Timestamp is { } at)
+        {
+            <MudText Typo="Typo.caption">@at.ToLocalTime().ToString("d MMMM yyyy, HH:mm", System.Globalization.CultureInfo.CurrentCulture)</MudText>
+        }
+        @if (Body is not null)
+        {
+            <MudText Style="white-space: pre-wrap; overflow-wrap: anywhere">@Body</MudText>
+        }
+        @ChildContent
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Heading { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Body { get; set; }
+
+    [Parameter]
+    public DateTimeOffset? Timestamp { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

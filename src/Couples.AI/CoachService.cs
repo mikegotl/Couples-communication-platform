@@ -28,6 +28,8 @@ internal sealed partial class CoachService(
     private static readonly System.Text.CompositeFormat InvalidInputFormat = System.Text.CompositeFormat.Parse(InvalidInputMessage);
     internal const string SuggestedMessage = "Here are some ideas. Use, edit or ignore them; nothing is sent unless you choose to send it.";
 
+    public bool IsAvailable => model is not null;
+
     public async Task<CoachResult> SuggestAsync(CoachRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -64,7 +66,19 @@ internal sealed partial class CoachService(
         }
 
         var day = DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime);
-        if (!await usage.TryReserveAsync(request.UserId, day, o.PerUserDailyRequests, o.GlobalDailyRequests, o.GlobalDailyTokens, cancellationToken))
+        bool reserved;
+        try
+        {
+            reserved = await usage.TryReserveAsync(request.UserId, day, o.PerUserDailyRequests, o.GlobalDailyRequests, o.GlobalDailyTokens, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // If usage can't be checked, don't spend: fail closed without calling the provider.
+            LogAttemptFailed(logger, requestId, 0, "usage-store:" + ex.GetType().Name);
+            return Finish(CoachOutcome.Unavailable);
+        }
+
+        if (!reserved)
         {
             return Finish(CoachOutcome.LimitReached);
         }
@@ -148,7 +162,14 @@ internal sealed partial class CoachService(
             telemetry.RecordTokens(provider, inputTokens, outputTokens);
             if (inputTokens + outputTokens > 0)
             {
-                await usage.RecordTokensAsync(request.UserId, day, inputTokens, outputTokens, CancellationToken.None);
+                try
+                {
+                    await usage.RecordTokensAsync(request.UserId, day, inputTokens, outputTokens, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    LogAttemptFailed(logger, requestId, attempts, "usage-record:" + ex.GetType().Name);
+                }
             }
         }
     }

@@ -124,3 +124,4 @@ fieldset.choice-group {
     outline: 2px solid var(--mud-palette-primary);
     outline-offset: 4px;
 }
+.mud-main-content .message-card h3 { margin: 0; }

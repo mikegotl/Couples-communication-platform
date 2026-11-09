@@ -103,7 +103,9 @@ public sealed class PrivacyBoundaryTests(PostgresFixture db)
         var results = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ =>
             Run<IMessagingService, Result<SharedMessageView>>(s => s.ShareAsync(a, draft.Value.Id, draft.Value.Fingerprint))));
 
-        Assert.Equal(1, results.Count(r => r.Succeeded));
+        // Racing confirmations are idempotent (milestone 07): every caller gets the one delivery.
+        Assert.All(results, r => Assert.True(r.Succeeded));
+        Assert.Single(results.Select(r => r.Value.Id).Distinct());
         Assert.Single(await Run<IMessagingService, IReadOnlyList<SharedMessageView>>(s => s.InboxAsync(b)));
     }
 
