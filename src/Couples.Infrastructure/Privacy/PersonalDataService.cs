@@ -85,11 +85,17 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
                 x.Attempt.Responses.ToDictionary(r => r.StepKey, r => r.Value, StringComparer.Ordinal)))
             .ToList();
 
+        var coaching = await db.CoachingUsage.AsNoTracking()
+            .Where(u => u.UserId == userId)
+            .OrderBy(u => u.Day)
+            .Select(u => new ExportedCoachingUsage(u.Day, u.Requests, u.InputTokens, u.OutputTokens))
+            .ToListAsync(cancellationToken);
+
         var now = clock.UtcNow;
         db.AuditEvents.Add(AuditEvent.Record(userId, AuditActions.DataExported, null, null, now));
         await db.SaveChangesAsync(cancellationToken);
 
-        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts);
+        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts, coaching);
     }
 
     public async Task<Guid> RequestDeletionAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -151,6 +157,7 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
         await db.IntakeProfiles.Where(p => p.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.ExerciseResponses.Where(r => r.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.ExerciseAttempts.Where(a => a.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.CoachingUsage.Where(u => u.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.SharedMessages.Where(m => m.SenderUserId == userId || m.RecipientUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.DraftMessages.Where(d => d.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.ConsentRecords.Where(c => c.UserId == userId).ExecuteDeleteAsync(cancellationToken);

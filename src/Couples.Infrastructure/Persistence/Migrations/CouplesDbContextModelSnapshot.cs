@@ -60,6 +60,30 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_events", "couples");
                 });
 
+            modelBuilder.Entity("Couples.Domain.Coaching.CoachingUsage", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
+
+                    b.Property<long>("InputTokens")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("OutputTokens")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Requests")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "Day");
+
+                    b.HasIndex("Day");
+
+                    b.ToTable("coaching_usage", "couples");
+                });
+
             modelBuilder.Entity("Couples.Domain.Consent.ConsentRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -935,6 +959,15 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", "couples");
+                });
+
+            modelBuilder.Entity("Couples.Domain.Coaching.CoachingUsage", b =>
+                {
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Couples.Domain.Consent.ConsentRecord", b =>

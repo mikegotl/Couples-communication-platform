@@ -77,6 +77,14 @@ Never commit real credentials.
 | `/health` | Liveness (process up; no dependency checks) |
 | `/health/ready` | Readiness (includes PostgreSQL connectivity) |
 
+### AI coach
+
+The coach is off by default (`Coaching:Provider=Disabled`). Development uses the in-process fake
+provider, which sends nothing anywhere. A live model is used only through an owner-run gateway
+(`Coaching:Gateway:Endpoint`, `Model`, and `ApiKey` from user secrets or environment variables,
+never committed) and only once `Coaching:ApprovedForUserContent=true` is set after a provider and
+data processing agreement are chosen. Daily caps are under `Coaching:` (see ADR-0010).
+
 ### Admin access
 
 There is no self-service admin. List confirmed accounts under `Administration:AdminEmails`

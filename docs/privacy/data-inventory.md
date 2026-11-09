@@ -36,7 +36,15 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `SharedMessage` | `shared_messages` | SharedSensitive | Sender always; recipient only while both are active members and it is not revoked | Text erased on revoke; deleted when either party deletes their account or the workspace is purged. |
 | `ConsentRecord` | `consent_records` | Personal | The user who gave consent | Life of the account, as evidence; deleted with the account. Stores a SHA-256 fingerprint of approved text, never the text. |
 | `AuditEvent` | `audit_events` | Internal | Operators (no UI yet) | 400 days. Ids only; ids of deleted users remain as unlinkable random values. |
+| `CoachingUsage` | `coaching_usage` | Personal | The user (in their export); operators see totals only | Daily request and token counts, no text. Purged after 90 days; deleted with the account. |
 | `DataDeletionRequest` | `data_deletion_requests` | Internal | Operators (no UI yet) | 400 days after completion. |
+
+## AI coach
+
+Drafts and partner messages sent to the coach are processed in memory and never stored by the
+coach, logged or put in telemetry; only daily counts (`CoachingUsage`) are kept. Nothing is sent
+to a live provider unless `Coaching:Provider` is `Gateway` and the owner has set
+`Coaching:ApprovedForUserContent` after agreeing data processing terms (ADR-0010).
 
 ## Access rules (enforced in services, not the UI)
 

@@ -1,4 +1,5 @@
 using Couples.Domain.Auditing;
+using Couples.Domain.Coaching;
 using Couples.Domain.Common;
 using Couples.Domain.Consent;
 using Couples.Domain.Exercises;
@@ -52,6 +53,8 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
     public DbSet<ExerciseAttempt> ExerciseAttempts => Set<ExerciseAttempt>();
 
     public DbSet<ExerciseResponse> ExerciseResponses => Set<ExerciseResponse>();
+
+    public DbSet<CoachingUsage> CoachingUsage => Set<CoachingUsage>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
