@@ -92,6 +92,11 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
             return DomainError.Conflict;
         }
 
+        if (await BlocksJointFlowsAsync(userId, cancellationToken))
+        {
+            return DomainError.SafetyHold;
+        }
+
         var (isMember, recipient) = await RecipientAsync(userId, draft.WorkspaceId, cancellationToken);
         if (!isMember)
         {
@@ -125,6 +130,12 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         if (draft.Status == DraftStatus.Shared)
         {
             return await ExistingDeliveryAsync(userId, draft.Id, approvedFingerprint, draft.Fingerprint, cancellationToken);
+        }
+
+        // Sharing stops while the author's own safety check or safety mode says so.
+        if (await BlocksJointFlowsAsync(userId, cancellationToken))
+        {
+            return DomainError.SafetyHold;
         }
 
         // The author must still be an active member of the draft's workspace, and a partner must be there to receive it.
@@ -161,7 +172,10 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
 
         // Metadata-only notice for the recipient, unless they muted notifications; held until
         // their quiet hours end. The message itself arrives either way.
-        if (recipientPrefs is not { Muted: true })
+        // A recipient in safety mode (or whose check suggests they may be unsafe) gets no notice,
+        // so nothing appears on a device someone else may see. The message still arrives so the
+        // sender's experience doesn't change and reveals nothing.
+        if (recipientPrefs is not { Muted: true } && !await BlocksJointFlowsAsync(recipient.Value, cancellationToken))
         {
             var kind = draft.InReplyToMessageId is null ? NotificationKind.NewMessage : NotificationKind.Reply;
             var visibleAt = recipientPrefs?.NotificationVisibleAt(now) ?? now;
@@ -256,6 +270,9 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
 
         return saved;
     }
+
+    private Task<bool> BlocksJointFlowsAsync(Guid userId, CancellationToken cancellationToken) =>
+        db.PersonalSafety.AnyAsync(s => s.UserId == userId && (s.SafetyMode || s.Level == Couples.Domain.Safety.SafetyLevel.Unsafe), cancellationToken);
 
     private Task<PacePreferences?> RecipientPrefsAsync(Guid recipientId, CancellationToken cancellationToken) =>
         db.PacePreferences.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == recipientId, cancellationToken);

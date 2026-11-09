@@ -39,6 +39,7 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `CoachingUsage` | `coaching_usage` | Personal | The user (in their export); operators see totals only | Daily request and token counts, no text. Purged after 90 days; deleted with the account. |
 | `PacePreferences` | `pace_preferences` | Personal | The user; the partner sees only whether a pause is active and when it ends | Until changed; deleted with the account. |
 | `Notification` | `notifications` | Personal | The recipient | Kind and message id only, never text. Removed when the message is withdrawn or deleted; purged after 90 days; deleted with the account. |
+| `PersonalSafety` | `personal_safety` | PrivateSensitive | Owner only (the partner can't tell whether it exists) | Until the owner deletes their answers or account. Never logged, audited, sent to the coach or used in analytics. |
 | `DataDeletionRequest` | `data_deletion_requests` | Internal | Operators (no UI yet) | 400 days after completion. |
 
 ## AI coach
@@ -88,4 +89,3 @@ configurable under `Retention` in configuration.
 ## Not yet covered
 
 - Field-level encryption and backup retention (milestone 10).
-- Notifications (milestone 08) must follow the "no content" rule above.

@@ -1,0 +1,204 @@
+@page "/safety"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Safety
+@using Couples.Domain.Safety
+@inject ISafetyService Safety
+@inject CurrentUser CurrentUser
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<InteractiveProviders />
+<PageTitle>Your safety · BridgeTogether</PageTitle>
+
+@if (status is null)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <h1 class="mud-typography mud-typography-h4" tabindex="-1" @ref="heading">Your safety</h1>
+        <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" role="note">@SafetyCopy.ImmediateDanger</MudAlert>
+        <MudText>
+            Everything on this page is private to you. Your partner can't see your answers, whether you've
+            answered, or whether safety mode is on. @SafetyCopy.NoPressure
+        </MudText>
+
+        @if (editing)
+        {
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">A private check-in</MudText>
+                    <MudText Typo="Typo.body2">Four questions. There are no right answers, and you can delete them afterwards.</MudText>
+                    @foreach (var question in SafetyContent.Questions)
+                    {
+                        <fieldset class="choice-group" @key="question.Key">
+                            <legend class="mud-typography mud-typography-subtitle1">@question.Text</legend>
+                            <MudRadioGroup T="string" Value="@answers.GetValueOrDefault(question.Key)" ValueChanged="v => answers[question.Key] = v">
+                                @foreach (var option in question.Options)
+                                {
+                                    <div><MudRadio T="string" Value="option.Key" Color="Color.Primary">@option.Label</MudRadio></div>
+                                }
+                            </MudRadioGroup>
+                        </fieldset>
+                    }
+                    @if (error is not null)
+                    {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" role="alert">@error</MudAlert>
+                    }
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="busy">See what's available</MudButton>
+                        <MudButton Variant="Variant.Text" OnClick="() => editing = false" Disabled="busy">Not now</MudButton>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">These questions are a placeholder awaiting review by a licensed clinician. They aren't an assessment or a diagnosis.</MudText>
+                </MudStack>
+            </MudPaper>
+        }
+        else
+        {
+            @if (status.Level is { } level)
+            {
+                <MudPaper Class="pa-4" Outlined="true">
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">Your check-in</MudText>
+                        <MudText>@(level switch { SafetyLevel.Unsafe => SafetyCopy.UnsafeResult, SafetyLevel.Concern => SafetyCopy.ConcernResult, _ => SafetyCopy.NoConcernsResult })</MudText>
+                        @if (status.SelfHarmSupport)
+                        {
+                            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">@SafetyCopy.SelfHarm</MudAlert>
+                        }
+                        @if (level != SafetyLevel.NoConcerns || status.SelfHarmSupport)
+                        {
+                            <MudText Typo="Typo.body2">Some options, whenever you're ready:</MudText>
+                            <ul class="mud-typography mud-typography-body2">
+                                <li>Talk to a support service, on the <MudLink Href="support">Support page</MudLink>.</li>
+                                <li>Keep using the private parts of this app (your topics, exercises and notes) on your own, or not at all.</li>
+                                <li>Use <strong>Leave quickly</strong>, at the top of every page, if you need to close this fast.</li>
+                            </ul>
+                        }
+                        <MudText Typo="Typo.caption">Answered @status.CheckedAt?.ToLocalTime().ToString("d MMMM yyyy", System.Globalization.CultureInfo.CurrentCulture).</MudText>
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                            <MudButton Variant="Variant.Outlined" OnClick="StartCheck" Disabled="busy">Answer again</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="DeleteAsync" Disabled="busy">Delete my answers</MudButton>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            }
+            else
+            {
+                <MudPaper Class="pa-4" Outlined="true">
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" HtmlTag="h2">A private check-in</MudText>
+                        <MudText Typo="Typo.body2">
+                            Four short questions about how safe you feel. Based on your answers we'll point you to support and,
+                            if you may not be safe, turn off shared features for you. Nobody else is told.
+                        </MudText>
+                        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartCheck">Start</MudButton></div>
+                    </MudStack>
+                </MudPaper>
+            }
+
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Safety mode</MudText>
+                    <MudText Typo="Typo.body2">@SafetyCopy.SafetyModeExplained</MudText>
+                    <MudSwitch T="bool" Value="status.SafetyMode" ValueChanged="SetSafetyModeAsync" Color="Color.Primary"
+                               Label="@(status.SafetyMode ? "Safety mode is on" : "Turn on safety mode")" Disabled="busy" />
+                    @if (status.SharingBlocked && !status.SafetyMode)
+                    {
+                        <MudText Typo="Typo.body2">Sharing is also off because of your check-in answers. Deleting or changing your answers turns it back on.</MudText>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+}
+
+@code {
+    private SafetyStatus? status;
+    private Guid userId;
+    private bool busy;
+    private bool editing;
+    private bool focusHeading;
+    private string? error;
+    private Dictionary<string, string> answers = new(StringComparer.Ordinal);
+    private ElementReference heading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        status = await Safety.GetAsync(userId);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusHeading)
+        {
+            focusHeading = false;
+            await heading.FocusAsync();
+        }
+    }
+
+    private void StartCheck()
+    {
+        answers = new Dictionary<string, string>(status?.Answers ?? new Dictionary<string, string>(), StringComparer.Ordinal);
+        error = null;
+        editing = true;
+    }
+
+    private async Task SubmitAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = await Safety.RecordCheckAsync(userId, answers);
+            if (!result.Succeeded)
+            {
+                error = "Please choose an answer for each question. \"I'd rather not say\" is fine where it's offered.";
+                return;
+            }
+
+            status = result.Value;
+            editing = false;
+            focusHeading = true;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync("Delete your answers?", "Your check-in answers will be erased. Safety mode stays as it is.", yesText: "Delete", cancelText: "Keep");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            status = await Safety.DeleteAnswersAsync(userId);
+            Snackbar.Add("Your answers were deleted.", Severity.Success);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task SetSafetyModeAsync(bool on)
+    {
+        busy = true;
+        try
+        {
+            status = await Safety.SetSafetyModeAsync(userId, on);
+            Snackbar.Add(on ? "Safety mode is on." : "Safety mode is off.", Severity.Success);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

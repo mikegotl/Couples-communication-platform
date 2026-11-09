@@ -112,6 +112,10 @@ else
                 <MudText Typo="Typo.h6" HtmlTag="h2" id="suggestions-heading">Suggestions</MudText>
                 <MudAlert Severity="@(coach.Outcome == CoachOutcome.SupportSuggested ? Severity.Warning : Severity.Info)" Variant="Variant.Outlined" Class="mb-2">
                     @coach.Message
+                    @if (coach.Outcome == CoachOutcome.SupportSuggested)
+                    {
+                        <span> <MudLink Href="support">See support services</MudLink>.</span>
+                    }
                 </MudAlert>
                 <MudStack Spacing="2">
                     @foreach (var (suggestion, i) in coach.Suggestions.Select((s, i) => (s, i)))
@@ -328,6 +332,7 @@ else
                 {
                     DomainError.NoPartner => "Your partner hasn't joined your workspace yet. Your draft is saved; you can send it once they join.",
                     DomainError.PartnerPaused => "Your partner has paused new messages for now. Your draft is saved; you can send it after the pause ends.",
+                    DomainError.SafetyHold => Couples.Application.Safety.SafetyCopy.SharingHeld,
                     _ => "We couldn't prepare a preview. Please try again.",
                 };
                 return;
@@ -376,6 +381,7 @@ else
                 DomainError.ConsentMismatch => "Your draft changed after this preview, so nothing was sent. Go back and preview it again.",
                 DomainError.NoPartner => "Your partner is no longer in this workspace, so nothing was sent. Your draft is kept.",
                 DomainError.PartnerPaused => "Your partner has just paused new messages, so nothing was sent. Your draft is kept for later.",
+                DomainError.SafetyHold => "Nothing was sent. " + Couples.Application.Safety.SafetyCopy.SharingHeld,
                 _ => "Nothing was sent. Please go back to your messages and try again.",
             };
         }

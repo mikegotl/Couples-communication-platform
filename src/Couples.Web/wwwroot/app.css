@@ -125,3 +125,9 @@ fieldset.choice-group {
     outline-offset: 4px;
 }
 .mud-main-content .message-card h3 { margin: 0; }
+
+.quick-exit {
+    background: #fff; color: #b00020 !important; font-weight: 600; border-radius: 4px; padding: .25rem .75rem;
+    margin: 0 .5rem; text-decoration: none; white-space: nowrap;
+}
+.quick-exit:focus-visible { outline: 3px solid #ffd54f; outline-offset: 2px; }

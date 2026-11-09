@@ -101,11 +101,21 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
             .Select(n => new ExportedNotification(n.Kind.ToString(), n.SubjectId, n.VisibleAt, n.ReadAt))
             .ToListAsync(cancellationToken);
 
+        var safetyRow = await db.PersonalSafety.AsNoTracking().FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
+        var safety = safetyRow is null
+            ? null
+            : new ExportedSafety(
+                safetyRow.AnswersJson is null ? null : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(safetyRow.AnswersJson),
+                safetyRow.Level?.ToString(),
+                safetyRow.ContentVersion,
+                safetyRow.CheckedAt,
+                safetyRow.SafetyMode);
+
         var now = clock.UtcNow;
         db.AuditEvents.Add(AuditEvent.Record(userId, AuditActions.DataExported, null, null, now));
         await db.SaveChangesAsync(cancellationToken);
 
-        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts, coaching, pace, notifications);
+        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts, coaching, pace, notifications, safety);
     }
 
     public async Task<Guid> RequestDeletionAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -169,6 +179,7 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
         await db.ExerciseAttempts.Where(a => a.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.CoachingUsage.Where(u => u.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.PacePreferences.Where(p => p.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.PersonalSafety.Where(s => s.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.Notifications.Where(n => n.RecipientUserId == userId
                 || db.SharedMessages.Any(m => m.Id == n.SubjectId && (m.SenderUserId == userId || m.RecipientUserId == userId)))
             .ExecuteDeleteAsync(cancellationToken);

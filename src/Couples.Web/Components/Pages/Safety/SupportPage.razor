@@ -1,0 +1,49 @@
+@page "/support"
+@using Couples.Application.Safety
+@using Couples.Web.Safety
+@using Microsoft.Extensions.Options
+@inject IOptions<SafetyOptions> Safety
+
+<PageTitle>Support · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Support</MudText>
+
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" role="note">
+        @SafetyCopy.ImmediateDanger
+    </MudAlert>
+
+    <MudText>@SafetyCopy.NotACrisisService @SafetyCopy.NoPressure</MudText>
+
+    <section aria-labelledby="services-heading">
+        <MudText Typo="Typo.h6" HtmlTag="h2" id="services-heading">Services that can help</MudText>
+        <MudStack Spacing="2">
+            @foreach (var resource in SafetyOptions.BuiltIn.Concat(Safety.Value.Resources))
+            {
+                <MudPaper Class="pa-3" Outlined="true">
+                    <MudText Typo="Typo.subtitle1" HtmlTag="h3">@resource.Name</MudText>
+                    <MudText Typo="Typo.body2">@resource.Description</MudText>
+                    @if (resource.Contact is { } contact)
+                    {
+                        <MudText Typo="Typo.body2"><strong>@contact</strong></MudText>
+                    }
+                    @if (resource.Url is { } url)
+                    {
+                        <MudLink Href="@url.ToString()" Target="_blank" rel="noreferrer noopener">@url.Host</MudLink>
+                    }
+                </MudPaper>
+            }
+        </MudStack>
+    </section>
+
+    <section aria-labelledby="private-heading">
+        <MudText Typo="Typo.h6" HtmlTag="h2" id="private-heading">Staying private</MudText>
+        <MudText Typo="Typo.body2" Class="mb-1">@SafetyCopy.QuickExit</MudText>
+        <MudText Typo="Typo.body2">
+            Signed in, you can take a private safety check and turn on safety mode on the
+            <MudLink Href="safety">Your safety</MudLink> page. Your partner is never told.
+        </MudText>
+    </section>
+
+    <MudText Typo="Typo.caption">This page's wording and services are awaiting review by a licensed clinician.</MudText>
+</MudStack>

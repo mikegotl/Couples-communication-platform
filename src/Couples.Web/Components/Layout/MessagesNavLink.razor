@@ -2,6 +2,7 @@
    quiet hours; no message text. *@
 @using Couples.Application.Notifications
 @inject INotificationService Notifications
+@inject Couples.Application.Safety.ISafetyGate SafetyGate
 @inject CurrentUser CurrentUser
 
 <MudLink Href="messages" Color="Color.Inherit" Class="mx-1 mx-sm-2">
@@ -17,7 +18,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (await CurrentUser.GetIdAsync() is { } id)
+        // No count at all while the user's safety settings are on: nothing for anyone else to notice.
+        if (await CurrentUser.GetIdAsync() is { } id && !await SafetyGate.UserBlocksJointFlowsAsync(id))
         {
             unread = await Notifications.UnreadCountAsync(id);
         }

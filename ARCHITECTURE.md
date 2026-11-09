@@ -105,6 +105,15 @@ recipient's `PacePreferences` (pause blocks delivery) and, unless they muted not
 `Notification` (kind + message id, visible after their quiet hours) in the same transaction.
 `MessagesNavLink` in the static layout shows the unread count. See ADR-0011.
 
+## Safety
+
+`SafetyService` (as `ISafetyService` and `ISafetyGate`) stores the user's private check and
+safety mode in `PersonalSafety`. `MessagingService` asks it before preview and share (a held
+sender gets `SafetyHold`) and skips notices for a held recipient while still delivering, so the
+partner can't tell. Future joint features must call `ISafetyGate.WorkspaceAllowsJointFlowsAsync`.
+The service has no logger and writes no audit events. `QuickExit` is in the static layout and
+works without the interactive circuit. See ADR-0012.
+
 ## Exercises
 
 Exercise wording is code (`Couples.Domain.Exercises.ExerciseCatalog`); each version is published

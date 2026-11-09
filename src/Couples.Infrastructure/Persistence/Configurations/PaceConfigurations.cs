@@ -1,5 +1,6 @@
 using Couples.Domain.Notifications;
 using Couples.Domain.Pace;
+using Couples.Domain.Safety;
 using Couples.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -28,5 +29,19 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
         builder.HasIndex(n => new { n.RecipientUserId, n.VisibleAt });
         builder.HasIndex(n => n.SubjectId);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(n => n.RecipientUserId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class PersonalSafetyConfiguration : IEntityTypeConfiguration<PersonalSafety>
+{
+    public void Configure(EntityTypeBuilder<PersonalSafety> builder)
+    {
+        builder.ToTable("personal_safety");
+        builder.HasKey(s => s.UserId);
+        builder.Property(s => s.AnswersJson).HasMaxLength(2_000);
+        builder.Property(s => s.Level).HasConversion<string>().HasMaxLength(20);
+        builder.Ignore(s => s.BlocksJointFlows);
+        builder.Property<uint>("xmin").IsRowVersion();
+        builder.HasOne<ApplicationUser>().WithOne().HasForeignKey<PersonalSafety>(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 }

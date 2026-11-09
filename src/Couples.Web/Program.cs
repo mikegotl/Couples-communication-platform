@@ -32,6 +32,11 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddScoped<CurrentUser>();
+builder.Services.AddOptions<Couples.Web.Safety.SafetyOptions>()
+    .BindConfiguration(Couples.Web.Safety.SafetyOptions.SectionName)
+    .Validate(o => o.ExitUrl.Scheme == Uri.UriSchemeHttps, "Safety:ExitUrl must be https.")
+    .Validate(o => o.Resources.All(r => !string.IsNullOrWhiteSpace(r.Name) && (r.Url is null || r.Url.Scheme == Uri.UriSchemeHttps)), "Safety:Resources need a name, and links must be https.")
+    .ValidateOnStart();
 
 builder.Services.AddAuthentication(options =>
     {

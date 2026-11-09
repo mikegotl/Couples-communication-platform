@@ -21,7 +21,7 @@ public interface IMessagingService
 
     /// <summary>
     /// What the partner would see if the draft were shared now, plus the fingerprint the author
-    /// must send back to approve exactly this text. Fails with NoPartner when nobody can receive it, or PartnerPaused while the partner has paused messages.
+    /// must send back to approve exactly this text. Fails with NoPartner when nobody can receive it, or PartnerPaused while the partner has paused messages, or SafetyHold while the author's own safety settings stop sharing.
     /// </summary>
     Task<Result<SharePreview>> PreviewShareAsync(Guid userId, Guid draftId, CancellationToken cancellationToken = default);
 

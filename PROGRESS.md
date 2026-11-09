@@ -11,8 +11,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | 05 | Guided private reflection exercises | Done (PR #5) |
 | 06 | AI coaching abstraction and safeguards | Done (PR #6) |
 | 07 | Draft, preview, approve and deliver | Done (PR #7) |
-| 08 | Asynchronous partner responses | In review |
-| 09 | Safety and support pathways | Not started |
+| 08 | Asynchronous partner responses | Done (PR #8) |
+| 09 | Safety and support pathways | In review (clinical review pending) |
 | 10 | Accessibility, security and data lifecycle | Not started |
 | 11 | Private pilot readiness and observability | Not started |
 | 12 | Phase 2 joint chat, flag OFF | Not started |
@@ -351,3 +351,34 @@ pause limits.
 
 **Not yet**: email or push notifications (they need the email provider decision and would carry
 the same fixed, content-free wording).
+
+## Milestone 09: Safety and support pathways
+
+**Delivered**
+
+- Private safety check (`/safety`): four short questions, versioned and hashed placeholder
+  content marked "Pending licensed clinician review". Results: no concerns, concern (support
+  options only) or may be unsafe. A separate question shows self-harm support.
+- Silent hold: "may be unsafe" or safety mode holds the user's own sharing (`SafetyHold`, nothing
+  written) and stops their notices. Their partner's messages still arrive and nothing the partner
+  can see changes. `ISafetyGate` gives future joint features the same rule. The user can answer
+  again, delete their answers or turn safety mode off at any time.
+- "Leave quickly" on every page (replaces the history entry with a neutral site) and a public
+  `/support` page with configurable resources and honest limits ("this app can't contact anyone").
+- Non-coercive copy: no pressure to talk, reconcile, stay or leave; safety-focused alternatives
+  for threatening situations; no automated emergency claims (unit-tested).
+- Messages, the inbox count and the coach's safety response link to support. Safety data is in
+  the owner's export and erased with the account; never logged, audited or sent to the coach.
+- Migration `PersonalSafety`; ADR-0012; [clinical review checklist](docs/safety/clinical-review.md).
+
+**Verification**: see the PR description for the commands run on a fresh clone and their results.
+
+Gate tests (database-backed): unsafe answers hold preview and send without writing anything,
+and deleting the answers lifts the hold; concern answers never block; safety mode is invisible to
+the partner (their send succeeds, their pace, workspace and export are unchanged) while the held
+user gets no notice but still has the message; the workspace gate closes when either partner is
+held; no answers or levels in logs and no audit events; validation, owner-only reads, export and
+erasure. Unit tests cover scoring, completeness, the pinned content hash and copy rules.
+
+**Not yet**: the manual clinical review part of the gate (needs the owner's clinician), and
+jurisdiction-specific resources (needs the launch market decision).
