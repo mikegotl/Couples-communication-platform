@@ -15,7 +15,7 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | 09 | Safety and support pathways | Done (PR #9; clinical review pending) |
 | 10 | Accessibility, security and data lifecycle | Done (PR #10) |
 | 11 | Private pilot readiness and observability | Done (PR #17; legal and clinical review, email provider and apply approval pending) |
-| 12 | Phase 2 joint chat, flag OFF | In review (built, flag off; clinical and security sign-off pending) |
+| 12 | Phase 2 joint chat, flag OFF | Done (PR #18; built, flag off; clinical and security sign-off pending) |
 
 ## Milestone 01: Repository and architecture
 
@@ -486,4 +486,12 @@ rollback drills. See `docs/operations/pilot-readiness.md`.
 
 **Not yet (owner)**: independent clinical and security sign-off; until then the flag stays off
 and no workspace can be made eligible.
+
+## After milestone 12: Warm look (2026-11-09)
+
+The owner chose the "Warm" direction from three mockups: cream background, terracotta buttons,
+sage information panels, Fraunces headings and Nunito text (both self-hosted under the SIL Open
+Font License, in `wwwroot/fonts`). Buttons are no longer all capitals and the header is no longer
+a solid colour bar. The signed-in home page now offers "Go to your workspace" in place of "Create an
+account". Accessibility was re-checked (see `docs/accessibility/audit-2026-11.md`).
 

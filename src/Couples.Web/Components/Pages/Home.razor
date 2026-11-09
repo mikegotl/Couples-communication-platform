@@ -25,7 +25,14 @@
     </MudAlert>
 
     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="Account/Register">Create an account</MudButton>
+        <AuthorizeView>
+            <Authorized>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="workspace">Go to your workspace</MudButton>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="Account/Register">Create an account</MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
         <MudButton Variant="Variant.Text" Href="privacy">How your privacy works</MudButton>
     </MudStack>
 
