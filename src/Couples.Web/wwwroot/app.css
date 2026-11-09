@@ -187,3 +187,7 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, input:focu
 .mud-alert.mud-alert-outlined-info, .mud-alert.mud-alert-text-info { background: #EEF3EE; border-color: transparent; }
 .mud-alert.mud-alert-outlined-normal { background: #EEF3EE; border-color: transparent; color: #33473B; }
 .mud-input.mud-input-outlined { background: #fff; }
+
+/* Long unbroken text (a workspace name, a pasted link) wraps instead of widening the page. */
+main { overflow-wrap: break-word; }
+main h1, main h2, main h3 { overflow-wrap: anywhere; }
