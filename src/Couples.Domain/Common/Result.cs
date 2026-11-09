@@ -55,4 +55,5 @@ public enum DomainError
     PartnerPaused,
     SafetyHold,
     RateLimited,
+    PilotFull,
 }

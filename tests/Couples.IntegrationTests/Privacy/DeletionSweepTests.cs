@@ -119,6 +119,8 @@ public sealed class DeletionSweepTests(PostgresFixture db)
         await Run<IPaceService, Result<PaceSettings>>(s => s.SetMutedAsync(a, false));
         await Run<ISafetyService, SafetyStatus>(s => s.SetSafetyModeAsync(a, false));
         await Run<ICoachUsageStore, bool>(s => s.TryReserveAsync(a, new DateOnly(2026, 11, 9), 100, 100_000, 100_000_000));
+        await Run<Couples.Application.Pilot.IPilotService, Result<Couples.Application.Pilot.PilotStatus>>(s => s.EnrollAsync(a, Couples.Domain.Pilot.PilotDocuments.TermsVersion, Couples.Domain.Pilot.PilotDocuments.PrivacyNoticeVersion, null));
+        await Run<Couples.Application.Feedback.IFeedbackService, Result>(s => s.SubmitAsync(a, Couples.Domain.Feedback.FeedbackArea.General, 4, "Good", allowContact: true));
     }
 
     private static List<(string Key, string Table, string Column)> UserColumns()

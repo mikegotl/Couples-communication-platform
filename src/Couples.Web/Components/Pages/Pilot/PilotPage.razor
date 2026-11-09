@@ -1,0 +1,158 @@
+@page "/pilot"
+@attribute [Authorize]
+@using System.Security.Claims
+@using Couples.Application.Pilot
+@using Couples.Domain.Common
+@using Couples.Domain.Pilot
+@using Couples.Web.Components.Account
+@using Microsoft.Extensions.Options
+@inject IPilotService Pilot
+@inject IOptions<PilotOptions> PilotOptions
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Private pilot · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">BridgeTogether private pilot</MudText>
+
+    @if (status is { Enrolled: true })
+    {
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined">
+            You're taking part in the pilot. Thank you.
+        </MudAlert>
+        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="workspace">Go to your workspace</MudButton></div>
+
+        <section aria-labelledby="withdraw-heading" class="mt-4">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="withdraw-heading">Leaving the pilot</MudText>
+            <MudText Typo="Typo.body2" Class="mb-2">
+                You can leave at any time, without giving a reason. Your data stays until you delete it; you can
+                download or delete it in <a href="Account/Manage/PersonalData">Account › Personal data</a>.
+            </MudText>
+            <form method="post" @formname="withdraw" @onsubmit="WithdrawAsync">
+                <AntiforgeryToken />
+                <button type="submit" class="btn btn-danger">Leave the pilot</button>
+            </form>
+        </section>
+    }
+    else
+    {
+        @if (status is { NeedsReconsent: true })
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                The pilot terms or privacy notice have changed. Please read them and agree again to keep using the app.
+            </MudAlert>
+        }
+        else if (status is { Withdrawn: true })
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                You left the pilot. You can rejoin below, or download or delete your data in
+                <a href="Account/Manage/PersonalData">Account › Personal data</a>.
+            </MudAlert>
+        }
+
+        <MudText>
+            BridgeTogether is an early, educational communication tool. It isn't therapy, counselling or a crisis
+            service. Taking part is voluntary, and you can leave at any time.
+        </MudText>
+        <MudText>Before you start, please read:</MudText>
+        <ul class="mud-typography mud-typography-body1">
+            <li><a href="terms" target="_blank" rel="noopener">The pilot terms</a> (opens in a new tab)</li>
+            <li><a href="privacy-notice" target="_blank" rel="noopener">The privacy notice</a> (opens in a new tab)</li>
+        </ul>
+
+        <EditForm Model="Input" FormName="enroll" OnValidSubmit="EnrollAsync" method="post">
+            <fieldset class="choice-group">
+                <legend class="visually-hidden">Agreement</legend>
+                <div class="form-check mb-2">
+                    <InputCheckbox @bind-Value="Input.AgreeTerms" id="agree-terms" />
+                    <label for="agree-terms">I've read the pilot terms and agree to them.</label>
+                </div>
+                <div class="form-check mb-2">
+                    <InputCheckbox @bind-Value="Input.AgreePrivacy" id="agree-privacy" />
+                    <label for="agree-privacy">I've read the privacy notice and agree to my data being used as it describes, including anything sensitive I choose to write.</label>
+                </div>
+            </fieldset>
+            @if (codeRequired)
+            {
+                <div class="mb-3">
+                    <label for="access-code" class="form-label d-block">Your invitation code</label>
+                    <InputText @bind-Value="Input.AccessCode" id="access-code" class="form-control" autocomplete="off" />
+                </div>
+            }
+            @if (error is not null)
+            {
+                <div class="alert alert-danger" role="alert">@error</div>
+            }
+            <input type="hidden" name="Input.TermsVersion" value="@PilotDocuments.TermsVersion" />
+            <input type="hidden" name="Input.PrivacyNoticeVersion" value="@PilotDocuments.PrivacyNoticeVersion" />
+            <button type="submit" class="btn btn-primary">Join the pilot</button>
+        </EditForm>
+    }
+</MudStack>
+
+@code {
+    private PilotStatus? status;
+    private bool codeRequired;
+    private string? error;
+    private Guid userId;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "enroll")]
+    private EnrollModel Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+        userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        codeRequired = !string.IsNullOrWhiteSpace(PilotOptions.Value.AccessCodeSha256);
+        status = await Pilot.GetStatusAsync(userId);
+    }
+
+    private async Task EnrollAsync()
+    {
+        if (!Input.AgreeTerms || !Input.AgreePrivacy)
+        {
+            error = "Please tick both boxes to join. You don't have to join.";
+            return;
+        }
+
+        var result = await Pilot.EnrollAsync(userId, Input.TermsVersion ?? "", Input.PrivacyNoticeVersion ?? "", Input.AccessCode);
+        if (!result.Succeeded)
+        {
+            error = result.Error switch
+            {
+                DomainError.Validation => "That invitation code isn't right. Please check it and try again.",
+                DomainError.PilotFull => "The pilot is full at the moment. We're sorry.",
+                DomainError.ConsentMismatch => "The documents changed while you were reading. Please reload the page and read them again.",
+                _ => "We couldn't save that. Please try again.",
+            };
+            return;
+        }
+
+        RedirectManager.RedirectTo(ReturnUrl is { Length: > 1 } url && url.StartsWith('/') && !url.StartsWith("//", StringComparison.Ordinal) && !url.StartsWith("/\\", StringComparison.Ordinal) ? url : "/workspace");
+    }
+
+    private async Task WithdrawAsync()
+    {
+        status = await Pilot.WithdrawAsync(userId);
+        RedirectManager.RedirectTo("/pilot");
+    }
+
+    private sealed class EnrollModel
+    {
+        public bool AgreeTerms { get; set; }
+
+        public bool AgreePrivacy { get; set; }
+
+        public string? AccessCode { get; set; }
+
+        public string? TermsVersion { get; set; }
+
+        public string? PrivacyNoticeVersion { get; set; }
+    }
+}

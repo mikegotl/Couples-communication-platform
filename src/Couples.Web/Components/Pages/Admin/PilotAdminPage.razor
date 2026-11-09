@@ -1,0 +1,84 @@
+@page "/admin/pilot"
+@inherits ScopedPage
+@attribute [Authorize(Roles = Couples.Web.Administration.AdminBootstrap.AdminRole)]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application
+@using Couples.Application.Feedback
+@using Couples.Application.Observability
+@inject Microsoft.FeatureManagement.IFeatureManager Features
+
+<InteractiveProviders />
+<PageTitle>Pilot overview · Admin · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Pilot overview</MudText>
+    <MudText Typo="Typo.body2">
+        Totals only. Counts under @OperationsSnapshot.SuppressBelow are shown as "fewer than @OperationsSnapshot.SuppressBelow".
+        Nothing here shows what anyone wrote, apart from feedback people chose to send.
+        Exercise content and clinician sign-off are on <MudLink Href="admin/exercises">Exercise review</MudLink>.
+    </MudText>
+
+    @if (snapshot is null)
+    {
+        <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Outlined="true">
+            <tbody>
+                <tr><th scope="row">Accounts</th><td>@Show(snapshot.Accounts)</td></tr>
+                <tr><th scope="row">Pilot participants</th><td>@Show(snapshot.PilotParticipants)</td></tr>
+                <tr><th scope="row">Left the pilot</th><td>@Show(snapshot.PilotWithdrawn)</td></tr>
+                <tr><th scope="row">Workspaces with two partners</th><td>@Show(snapshot.ActiveWorkspaces)</td></tr>
+                <tr><th scope="row">Messages shared, last 7 days</th><td>@Show(snapshot.MessagesSharedLast7Days)</td></tr>
+                <tr><th scope="row">Feedback, last 30 days</th><td>@Show(snapshot.FeedbackLast30Days)</td></tr>
+                <tr><th scope="row">Deletions waiting</th><td>@Show(snapshot.PendingDeletions)</td></tr>
+            </tbody>
+        </MudSimpleTable>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2">Feature flags</MudText>
+        <MudText Typo="Typo.body2">Set in configuration (<code>FeatureManagement</code>); changing one needs a configuration change and restart.</MudText>
+        <MudSimpleTable Dense="true" Outlined="true">
+            <tbody>
+                @foreach (var (name, on) in flags)
+                {
+                    <tr><th scope="row">@name</th><td>@(on ? "On" : "Off")</td></tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2">Recent feedback</MudText>
+        @if (feedback.Count == 0)
+        {
+            <MudText>No feedback yet.</MudText>
+        }
+        @foreach (var item in feedback)
+        {
+            <MudPaper Class="pa-3" Outlined="true" @key="item.Id">
+                <MudText Typo="Typo.caption">@item.CreatedAt.ToString("d MMM yyyy") · @item.Area · @(item.Rating is { } r ? $"{r}/5" : "no rating")@(item.CanContact ? " · may be contacted" : " · anonymous")</MudText>
+                @if (item.Text is not null)
+                {
+                    <MudText Style="white-space: pre-wrap">@item.Text</MudText>
+                }
+            </MudPaper>
+        }
+    }
+</MudStack>
+
+@code {
+    private OperationsSnapshot? snapshot;
+    private List<(string Name, bool On)> flags = [];
+    private IReadOnlyList<FeedbackView> feedback = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        snapshot = await Service<IOperationsOverview>().GetAsync();
+        feedback = await Service<IFeedbackService>().ListAsync(100);
+        foreach (var name in FeatureFlags.All)
+        {
+            flags.Add((name, await Features.IsEnabledAsync(name)));
+        }
+    }
+
+    private static string Show(long? count) => count?.ToString("N0") ?? $"fewer than {OperationsSnapshot.SuppressBelow}";
+}

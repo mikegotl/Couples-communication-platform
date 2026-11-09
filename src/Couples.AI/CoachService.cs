@@ -44,6 +44,7 @@ internal sealed partial class CoachService(
             var elapsed = Stopwatch.GetElapsedTime(started);
             telemetry.Record(request.Task, outcome, provider, attempts, elapsed);
             LogOutcome(logger, requestId, request.UserId, request.Task, CoachPrompt.Version, provider, outcome, attempts, (long)elapsed.TotalMilliseconds);
+            Couples.Application.Observability.CouplesMetrics.CoachRequests.Add(1, new KeyValuePair<string, object?>("outcome", outcome.ToString()));
             return new CoachResult(outcome, suggestions ?? [], message ?? MessageFor(outcome, o));
         }
 

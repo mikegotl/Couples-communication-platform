@@ -1,0 +1,125 @@
+@page "/feedback"
+@inherits ScopedPage
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application
+@using Couples.Application.Feedback
+@using Couples.Domain.Common
+@using Couples.Domain.Feedback
+@inject CurrentUser CurrentUser
+@inject Microsoft.FeatureManagement.IFeatureManager Features
+
+<InteractiveProviders />
+<PageTitle>Send feedback · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Send feedback</MudText>
+
+    @if (!enabled)
+    {
+        <MudText>Feedback isn't open at the moment.</MudText>
+    }
+    else if (sent)
+    {
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" role="status">Thank you. We read every message.</MudAlert>
+        <div><MudButton Variant="Variant.Outlined" OnClick="() => sent = false">Send more</MudButton></div>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+            Please don't include private details about you or your partner. If you need help now, see
+            <MudLink Href="support">Support</MudLink>.
+        </MudAlert>
+
+        <MudSelect T="FeedbackArea" @bind-Value="area" Label="What is it about?" Variant="Variant.Outlined">
+            @foreach (var option in Enum.GetValues<FeedbackArea>())
+            {
+                <MudSelectItem Value="option">@Label(option)</MudSelectItem>
+            }
+        </MudSelect>
+
+        <fieldset class="choice-group">
+            <legend class="mud-typography mud-typography-body1">How is it going? (optional)</legend>
+            <MudRadioGroup T="int?" @bind-Value="rating">
+                @foreach (var (value, label) in Ratings)
+                {
+                    <MudRadio T="int?" Value="value" Color="Color.Primary">@label</MudRadio>
+                }
+            </MudRadioGroup>
+        </fieldset>
+
+        <MudTextField @bind-Value="text" Label="Your feedback" Lines="5" MaxLength="@FeedbackEntry.MaxTextLength"
+                      Counter="@FeedbackEntry.MaxTextLength" Variant="Variant.Outlined" Immediate="true" />
+
+        <MudCheckBox T="bool" @bind-Value="allowContact" Color="Color.Primary"
+                     Label="You can contact me about this (links it to my account; otherwise it's anonymous)" />
+
+        @if (error is not null)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" role="alert">@error</MudAlert>
+        }
+
+        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="busy">Send feedback</MudButton></div>
+    }
+</MudStack>
+
+@code {
+    private IFeedbackService Feedback => Service<IFeedbackService>();
+
+    private static readonly (int Value, string Label)[] Ratings = [(1, "Poor"), (2, "Not great"), (3, "OK"), (4, "Good"), (5, "Great")];
+
+    private bool enabled;
+    private bool busy;
+    private bool sent;
+    private FeedbackArea area = FeedbackArea.General;
+    private int? rating;
+    private string? text;
+    private bool allowContact;
+    private string? error;
+    private Guid userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        enabled = await Features.IsEnabledAsync(FeatureFlags.FeedbackForm);
+    }
+
+    private async Task SubmitAsync()
+    {
+        busy = true;
+        error = null;
+        try
+        {
+            var result = await Feedback.SubmitAsync(userId, area, rating, text, allowContact);
+            if (result.Succeeded)
+            {
+                sent = true;
+                rating = null;
+                text = null;
+                allowContact = false;
+                return;
+            }
+
+            error = result.Error switch
+            {
+                DomainError.RateLimited => "Thanks for all your feedback today. You can send more tomorrow.",
+                _ => "Please choose a rating or write something (up to 2,000 characters).",
+            };
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string Label(FeedbackArea a) => a switch
+    {
+        FeedbackArea.General => "General",
+        FeedbackArea.Messaging => "Messages",
+        FeedbackArea.Exercises => "Exercises",
+        FeedbackArea.Coach => "Writing suggestions",
+        FeedbackArea.Safety => "Safety and support",
+        FeedbackArea.Accessibility => "Accessibility",
+        _ => "Something else",
+    };
+}

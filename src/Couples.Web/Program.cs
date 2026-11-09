@@ -7,6 +7,7 @@ using Couples.Web;
 using Couples.Web.Components;
 using Couples.Web.Components.Account;
 using Couples.Web.Email;
+using Couples.Web.Observability;
 using Couples.Web.Security;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -17,6 +18,7 @@ using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddWebSecurity();
+builder.AddTelemetry("bridgetogether-web");
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents(options => options.DetailedErrors = false);
@@ -99,6 +101,12 @@ if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 
 await Couples.Web.Administration.AdminBootstrap.RunAsync(app.Services, app.Configuration, app.Logger);
 
+// First, so HTTPS redirection, HSTS, cookies and rate limits see the real scheme and client.
+if (app.Configuration.GetValue<bool>("ForwardedHeaders:Enabled"))
+{
+    app.UseForwardedHeaders();
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -107,6 +115,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseSecurityHeaders(upgradeInsecure: !app.Environment.IsDevelopment());
 app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UsePilotGate();
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 app.UseAntiforgery();

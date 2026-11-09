@@ -63,6 +63,10 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
 
     public DbSet<Couples.Domain.Safety.PersonalSafety> PersonalSafety => Set<Couples.Domain.Safety.PersonalSafety>();
 
+    public DbSet<Couples.Domain.Pilot.PilotEnrollment> PilotEnrollments => Set<Couples.Domain.Pilot.PilotEnrollment>();
+
+    public DbSet<Couples.Domain.Feedback.FeedbackEntry> Feedback => Set<Couples.Domain.Feedback.FeedbackEntry>();
+
     /// <summary>
     /// ASP.NET Core Data Protection key ring (cookies, antiforgery and account tokens). Shared by
     /// every web instance and kept across restarts; encrypted with a certificate outside

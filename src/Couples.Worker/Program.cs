@@ -12,6 +12,7 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration.GetConnectionString("Couples"));
 
+builder.AddTelemetry();
 builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<PrivacyMaintenanceWorker>();
 

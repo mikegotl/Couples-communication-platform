@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/.mail/
+**/TestResults/
+.git/
+.github/
+tests/
+*.md
+!docs/legal/*.md
+.env

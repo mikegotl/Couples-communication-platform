@@ -125,6 +125,19 @@ components that query the database during server rendering (like `MessagesNavLin
 own scope because static rendering runs sibling components concurrently. See ADR-0013 and
 [the threat model](docs/security/threat-model.md).
 
+## Pilot, observability and deployment
+
+`PilotGate` (middleware, after authorization) sends signed-in people without a current
+`PilotEnrollment` to `/pilot` while `PilotEnrollmentRequired` is on; open paths are listed in
+`PilotGate.IsOpen`. `IPilotService` records consent to the versioned documents in
+`PilotDocuments`, checks the invitation code hash in fixed time and enforces the cap.
+`LegalDocuments` renders the embedded `docs/legal/*.md` with Markdig (raw HTML off).
+`CouplesMetrics` (Application) holds the counters; `AddTelemetry` (web and worker) wires
+OpenTelemetry only when an OTLP endpoint is configured, with `ScrubbingActivityProcessor` and
+`ScrubbingLogProcessor` in front of every exporter. `IOperationsOverview` returns aggregate
+counts with values under 5 suppressed. Images: `deploy/docker`; local rehearsal:
+`deploy/staging`; Azure UK South Terraform: `deploy/azure` (ADR-0014).
+
 ## Exercises
 
 Exercise wording is code (`Couples.Domain.Exercises.ExerciseCatalog`); each version is published

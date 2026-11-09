@@ -48,4 +48,6 @@ public static class AuditActions
     public const string DeletionRequested = "data.deletion_requested";
     public const string DeletionCompleted = "data.deletion_completed";
     public const string ExerciseReviewed = "exercise.reviewed";
+    public const string PilotEnrolled = "pilot.enrolled";
+    public const string PilotWithdrawn = "pilot.withdrawn";
 }
