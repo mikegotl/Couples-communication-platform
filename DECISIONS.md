@@ -17,6 +17,8 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0010](docs/adr/0010-coach-safeguards-and-gated-live-provider.md) | Coach safeguards and an owner-gated live provider | Accepted |
 | [0011](docs/adr/0011-pace-controls-and-content-free-notifications.md) | Pace controls and content-free notifications | Accepted |
 | [0012](docs/adr/0012-private-safety-check-and-silent-joint-flow-hold.md) | Private safety check and a silent hold on joint flows | Accepted |
+| [0013](docs/adr/0013-security-baseline-and-encryption.md) | Security baseline, encryption and abuse limits | Accepted |
+| [0014](docs/adr/0014-private-pilot-observability-and-staging.md) | Private pilot enrollment, scrubbed observability, Azure UK staging | Accepted |
 
 ## Open decisions (owner)
 
@@ -27,6 +29,8 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
   safety check (see docs/safety/clinical-review.md).
 - Jurisdiction-specific support resources for the launch market (`Safety:Resources`).
 - Whether a therapist portal is a separate later product (no therapist access by default).
-- Hosting target for staging (milestone 11); nothing is deployed before then. It must provide a
-  TLS database connection, encrypted storage and backups (14-day retention), a secret store for
-  the key-ring certificate, and the real client address for rate limits (ADR-0013).
+- Approval to apply the Azure staging Terraform (`deploy/azure`), which costs money, and whether
+  to give it a public address. Hosting itself is decided: Azure, UK South (2026-11-09, ADR-0014).
+- Legal review of the pilot terms and privacy notice; DPIA; ICO registration
+  (`docs/operations/pilot-readiness.md`).
+- The pilot invitation code, and the named incident roles (`docs/operations/incident-response.md`).

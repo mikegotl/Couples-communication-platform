@@ -52,6 +52,27 @@ public sealed class HttpHardeningTests(CouplesWebFactory factory) : IClassFixtur
         Assert.NotEqual(Header(first, "Content-Security-Policy"), Header(second, "Content-Security-Policy"));
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task BehindATlsProxyTheForwardedSchemeIsTrustedOnlyWhenEnabled(bool enabled)
+    {
+        // The ingress terminates TLS and forwards plain HTTP. Production cookies require HTTPS,
+        // so the account pages only work when the proxy's X-Forwarded-Proto is trusted.
+        await using var proxied = factory.WithWebHostBuilder(b => b
+            .UseSetting("ForwardedHeaders:Enabled", enabled ? "true" : "false")
+            .UseSetting("ForwardedHeaders:TrustAllProxies", "true"));
+        using var client = proxied.CreateClient(new() { BaseAddress = new Uri("http://localhost") });
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/Account/Login", UriKind.Relative));
+        request.Headers.Add("X-Forwarded-Proto", "https");
+        request.Headers.Add("X-Forwarded-For", "203.0.113.7");
+
+        using var response = await client.SendAsync(request);
+
+        // Untrusted, the request counts as plain HTTP and the Secure-only antiforgery cookie fails.
+        Assert.Equal(enabled, response.IsSuccessStatusCode);
+    }
+
     [Fact]
     public async Task CookiesAreHostOnlySecureAndHttpOnlyInProduction()
     {

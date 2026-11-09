@@ -79,6 +79,10 @@ Never commit real credentials.
 | `/settings/pace` | Pause new messages, quiet hours, mute notifications |
 | `/admin/exercises` | Exercise content and clinician review status (Admin role only) |
 | `/privacy` | Plain-language summary of what is private and what is shared |
+| `/privacy-notice`, `/terms` | The privacy notice and pilot terms (drafts pending legal review; public) |
+| `/pilot` | Join the private pilot (agree to the terms and notice, invitation code) or leave it |
+| `/feedback` | Send anonymous feedback, optionally allowing contact (signed in) |
+| `/admin/pilot` | Pilot enrollment, operations counts (under 5 hidden) and feedback (Admin role only) |
 | `/Account/Manage/PersonalData` | Download your data, or delete your account and all your private data |
 | `/health` | Liveness (process up; no dependency checks) |
 | `/health/ready` | Readiness (includes PostgreSQL connectivity) |
@@ -109,6 +113,43 @@ Rate limits are under `RateLimits:`. See ADR-0013, the
 [backup policy](docs/operations/backup-policy.md). `./eng/scan-secrets.sh` checks tracked files
 for credentials (CI runs it too).
 
+### Private pilot
+
+With `FeatureManagement:PilotEnrollmentRequired=true` (the default outside Development) signed-in
+people must join the pilot at `/pilot` before using the app: they agree to the current pilot
+terms and privacy notice and enter the invitation code. Only the code's SHA-256 is configured
+(`Pilot:AccessCodeSha256`; `printf '%s' 'the-code' | sha256sum`), and the app refuses to start
+without it. `Pilot:MaxParticipants` caps enrollment (60). The legal texts are
+`docs/legal/*.md`, embedded at build time; bump `PilotDocuments` versions when they change so
+everyone agrees again. Feedback (`FeatureManagement:FeedbackForm`) is anonymous unless the person
+allows contact. Readiness: [pilot checklist](docs/operations/pilot-readiness.md).
+
+### Observability
+
+Metrics (counts only, meter `BridgeTogether`), traces and logs are exported over OTLP when
+`Observability:OtlpEndpoint` is set; otherwise only console logs. Telemetry is scrubbed first:
+no URLs, query strings, client addresses, user agents, exception messages or structured log
+values, and emails and invitation tokens are masked (ADR-0014).
+
+### Containers and staging
+
+`deploy/docker/web.Dockerfile` and `worker.Dockerfile` build non-root images on chiseled .NET
+bases (CI builds them; nothing is pushed). `deploy/staging/compose.yaml` is a local rehearsal
+with production settings, TLS to PostgreSQL, an encrypted key ring and a TLS proxy:
+
+```bash
+./deploy/staging/make-certs.sh
+docker compose -f deploy/staging/compose.yaml up --build   # then https://localhost:8443
+```
+
+`deploy/azure` is Terraform for Azure UK South (Container Apps, private PostgreSQL Flexible
+Server, Key Vault). It is validated in CI and **has not been applied**; see its
+[README](deploy/azure/README.md). Behind a proxy or ingress set `ForwardedHeaders:Enabled=true`
+and `ForwardedHeaders:KnownNetworks` (or `TrustAllProxies` when only the proxy can reach the
+app). Operations: [incident response](docs/operations/incident-response.md),
+[release and rollback](docs/operations/rollback-plan.md),
+[backup and restore](docs/operations/backup-policy.md).
+
 ### Admin access
 
 There is no self-service admin. List confirmed accounts under `Administration:AdminEmails`
@@ -125,6 +166,10 @@ src/
   Couples.AI              Provider-neutral AI coaching (milestone 06)
   Couples.Web             Blazor Web App + MudBlazor UI, HTTP endpoints
   Couples.Worker          Background jobs (retention, expiry, deletion)
+deploy/
+  docker                  Production Dockerfiles (web, worker)
+  staging                 Local staging rehearsal (Compose, TLS everywhere)
+  azure                   Terraform for Azure UK South staging (never applied)
 tests/
   Couples.UnitTests
   Couples.IntegrationTests

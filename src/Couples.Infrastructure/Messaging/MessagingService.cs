@@ -145,6 +145,7 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
 
         if (await OverShareLimitAsync(userId, cancellationToken))
         {
+            Couples.Application.Observability.CouplesMetrics.ShareBlocked.Add(1, new KeyValuePair<string, object?>("reason", "rate_limited"));
             return DomainError.RateLimited;
         }
 
@@ -165,6 +166,7 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         if (recipientPrefs is not null && recipientPrefs.IsPaused(now))
         {
             // The partner asked for a break. The draft is kept; nothing is delivered or recorded.
+            Couples.Application.Observability.CouplesMetrics.ShareBlocked.Add(1, new KeyValuePair<string, object?>("reason", "paused"));
             return DomainError.PartnerPaused;
         }
 
@@ -202,6 +204,7 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         }
 
         LogShared(logger, shared.Value.Id, draft.WorkspaceId);
+        Couples.Application.Observability.CouplesMetrics.MessagesShared.Add(1);
         return Result.Ok(ToView(shared.Value, userId));
     }
 
@@ -276,6 +279,7 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         if (saved.Succeeded)
         {
             LogRevoked(logger, message.Id);
+            Couples.Application.Observability.CouplesMetrics.MessagesWithdrawn.Add(1);
         }
 
         return saved;

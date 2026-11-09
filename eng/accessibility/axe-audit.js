@@ -77,9 +77,9 @@ async function audit(page, label, results) {
   global.CTXOPTS = { bypassCSP: true };
   const results = [];
   const anon = await (await b.newContext({ viewport: { width: 1280, height: 900 }, bypassCSP: true })).newPage();
-  for (const path of ['', 'support', 'privacy', 'Account/Login', 'Account/Register', 'Account/ForgotPassword']) { await anon.goto(BASE + path); await audit(anon, '/' + path, results); }
+  for (const path of ['', 'support', 'privacy', 'privacy-notice', 'terms', 'Account/Login', 'Account/Register', 'Account/ForgotPassword']) { await anon.goto(BASE + path); await audit(anon, '/' + path, results); }
   const q = await login(b, `kb${stamp}@example.test`);
-  for (const [label, url] of [['/workspace', BASE + 'workspace'], ['/intake', BASE + 'intake'], ['/exercises', BASE + 'exercises'], ['/exercises/attempt', attemptUrl], ['/messages', BASE + 'messages'], ['/messages/received', receivedUrl], ['/messages/new', BASE + 'messages/new'], ['/settings/pace', BASE + 'settings/pace'], ['/safety', BASE + 'safety'], ['/Account/Manage', BASE + 'Account/Manage'], ['/Account/Manage/PersonalData', BASE + 'Account/Manage/PersonalData']]) {
+  for (const [label, url] of [['/workspace', BASE + 'workspace'], ['/intake', BASE + 'intake'], ['/exercises', BASE + 'exercises'], ['/exercises/attempt', attemptUrl], ['/messages', BASE + 'messages'], ['/messages/received', receivedUrl], ['/messages/new', BASE + 'messages/new'], ['/settings/pace', BASE + 'settings/pace'], ['/safety', BASE + 'safety'], ['/pilot', BASE + 'pilot'], ['/feedback', BASE + 'feedback'], ['/Account/Manage', BASE + 'Account/Manage'], ['/Account/Manage/PersonalData', BASE + 'Account/Manage/PersonalData']]) {
     await q.goto(url); await audit(q, label, results);
   }
   fs.writeFileSync(OUT + '/axe.json', JSON.stringify(results, null, 1));

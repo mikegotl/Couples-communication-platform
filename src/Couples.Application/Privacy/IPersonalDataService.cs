@@ -34,7 +34,13 @@ public sealed record PersonalDataExport(
     IReadOnlyList<ExportedCoachingUsage> CoachingUsage,
     ExportedPace? Pace,
     IReadOnlyList<ExportedNotification> Notifications,
-    ExportedSafety? Safety);
+    ExportedSafety? Safety,
+    ExportedPilot? Pilot = null,
+    IReadOnlyList<ExportedFeedback>? Feedback = null);
+
+public sealed record ExportedPilot(string TermsVersion, string PrivacyNoticeVersion, DateTimeOffset ConsentedAt, DateTimeOffset? WithdrawnAt);
+
+public sealed record ExportedFeedback(DateTimeOffset CreatedAt, string Area, int? Rating, string? Text);
 
 public sealed record ExportedMembership(Guid WorkspaceId, string WorkspaceName, string Role, DateTimeOffset JoinedAt, DateTimeOffset? LeftAt);
 

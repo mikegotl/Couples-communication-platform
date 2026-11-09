@@ -15,6 +15,9 @@ same suite on every push and pull request, plus the vulnerability audit, secret 
 | Classification | `Privacy/ClassificationTests` | Every entity has a privacy classification and is in the data inventory |
 | Retention | `Privacy/RetentionTests` | Retention periods are applied |
 | Deletion | `Privacy/DeletionSweepTests` | After deletion no column in the model holds the user's id except documented evidence; an account restored from a backup is erased again |
+| Pilot | `Pilot/PilotAndFeedbackTests`, `Pilot/PilotGateTests` | Enrollment needs current consent and the code; cap; withdrawal; the gate redirects, blocks interactive connections and posts, and keeps support reachable; feedback anonymity and limits |
+| Telemetry and legal | `Pilot/TelemetryAndLegalTests` | Spans and logs are scrubbed before export; published legal pages match the reviewed files |
+| Forms | `Security/FormMarkupTests` | No form posts its antiforgery token twice; every plain post form has one |
 | Smoke | `SmokeTests` | Private pages require sign-in; health endpoints |
 
 Manual checks per release: the accessibility audit (`docs/accessibility/`), the clinical review

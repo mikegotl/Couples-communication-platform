@@ -1,0 +1,11 @@
+@page "/privacy-notice"
+@using Couples.Web.Legal
+
+<PageTitle>Privacy notice · BridgeTogether</PageTitle>
+
+<article class="legal-document">
+    @((MarkupString)LegalDocuments.Html(LegalDocuments.PrivacyNotice))
+</article>
+<p class="mud-typography mud-typography-body2">
+    A shorter summary is on <a href="privacy">How your privacy works</a>.
+</p>

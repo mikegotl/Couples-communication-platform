@@ -48,6 +48,11 @@ public static class DependencyInjection
         services.AddScoped<Couples.Application.Inbox.IInboxService, Couples.Infrastructure.Inbox.InboxService>();
         services.AddScoped<Couples.Application.Pace.IPaceService, Couples.Infrastructure.Pace.PaceService>();
         services.AddScoped<Couples.Application.Notifications.INotificationService, Couples.Infrastructure.Pace.NotificationService>();
+        services.AddMemoryCache();
+        services.AddOptions<Couples.Application.Pilot.PilotOptions>().BindConfiguration(Couples.Application.Pilot.PilotOptions.SectionName);
+        services.AddScoped<Couples.Application.Pilot.IPilotService, Couples.Infrastructure.Pilot.PilotService>();
+        services.AddScoped<Couples.Application.Feedback.IFeedbackService, Couples.Infrastructure.Feedback.FeedbackService>();
+        services.AddScoped<Couples.Application.Observability.IOperationsOverview, Couples.Infrastructure.Observability.OperationsOverview>();
         services.AddScoped<Couples.Infrastructure.Safety.SafetyService>();
         services.AddScoped<Couples.Application.Safety.ISafetyService>(sp => sp.GetRequiredService<Couples.Infrastructure.Safety.SafetyService>());
         services.AddScoped<Couples.Application.Safety.ISafetyGate>(sp => sp.GetRequiredService<Couples.Infrastructure.Safety.SafetyService>());

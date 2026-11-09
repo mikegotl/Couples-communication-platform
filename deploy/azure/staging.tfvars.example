@@ -1,0 +1,11 @@
+# Copy to staging.tfvars (git-ignored) and fill in. Contains no secrets except the hash below,
+# which is not the code itself.
+location                 = "uksouth"
+environment_name         = "staging"
+web_image                = "bridgetogether-web:0.11.0"
+worker_image             = "bridgetogether-worker:0.11.0"
+public_ingress_enabled   = false
+pilot_access_code_sha256 = "<64 hex characters: printf '%s' 'the-code' | sha256sum>"
+admin_emails             = ["owner@example.com"]
+operator_ip_ranges       = ["203.0.113.10/32"]
+otlp_endpoint            = ""

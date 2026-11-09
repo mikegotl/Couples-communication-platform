@@ -1,9 +1,9 @@
 using System.Globalization;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.RateLimiting;
 using Couples.Infrastructure.Persistence;
 using Couples.Infrastructure.Security;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Couples.Web.Security;
@@ -44,13 +44,44 @@ public static class WebSecurity
         var certificatePath = configuration["DataProtection:CertificatePath"];
         if (!string.IsNullOrWhiteSpace(certificatePath))
         {
-            dataProtection.ProtectKeysWithCertificate(X509CertificateLoader.LoadPkcs12FromFile(certificatePath, configuration["DataProtection:CertificatePassword"]));
+            dataProtection.ProtectKeysWithCertificate(KeyRingCertificate.Load(certificatePath, configuration["DataProtection:CertificatePassword"]));
         }
         else if (!configuration.GetValue<bool>("DataProtection:AllowUnprotectedKeys"))
         {
             throw new InvalidOperationException(
                 "Set DataProtection:CertificatePath (and CertificatePassword) so the key ring is encrypted at rest. " +
                 "DataProtection:AllowUnprotectedKeys=true is for local development only.");
+        }
+
+        // A private pilot needs an invitation code; without one anyone who can register could join.
+        if (!development && configuration.GetValue<bool>("FeatureManagement:PilotEnrollmentRequired")
+            && string.IsNullOrWhiteSpace(configuration["Pilot:AccessCodeSha256"]))
+        {
+            throw new InvalidOperationException("Set Pilot:AccessCodeSha256 (SHA-256 hex of the invitation code) while PilotEnrollmentRequired is on.");
+        }
+
+        // Behind a TLS-terminating proxy or platform ingress the app sees plain HTTP; trust the
+        // proxy's X-Forwarded-* headers so HTTPS, Secure cookies and per-client limits work. Only
+        // listed networks are trusted unless the platform guarantees all traffic comes through it.
+        var forwarded = configuration.GetSection("ForwardedHeaders");
+        if (forwarded.GetValue<bool>("Enabled"))
+        {
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.ForwardLimit = 1;
+                var networks = forwarded.GetSection("KnownNetworks").Get<string[]>() ?? [];
+                if (forwarded.GetValue<bool>("TrustAllProxies"))
+                {
+                    options.KnownIPNetworks.Clear();
+                    options.KnownProxies.Clear();
+                }
+
+                foreach (var network in networks)
+                {
+                    options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+                }
+            });
         }
 
         builder.Services.AddAntiforgery(options =>

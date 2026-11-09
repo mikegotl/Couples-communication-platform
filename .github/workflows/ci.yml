@@ -72,3 +72,32 @@ jobs:
 
       - name: Validate Docker Compose file
         run: docker compose config --quiet
+
+  deployment:
+    name: Images and infrastructure (build and validate only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Built to prove the Dockerfiles work; nothing is pushed or deployed.
+      - name: Build web image
+        run: docker build --file deploy/docker/web.Dockerfile --tag bridgetogether-web:ci .
+
+      - name: Build worker image
+        run: docker build --file deploy/docker/worker.Dockerfile --tag bridgetogether-worker:ci .
+
+      - name: Validate staging rehearsal compose file
+        run: docker compose --file deploy/staging/compose.yaml config --quiet
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.17.1
+
+      # No backend and no credentials: this never talks to Azure.
+      - name: Validate Azure Terraform
+        working-directory: deploy/azure
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -input=false
+          terraform validate

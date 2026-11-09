@@ -148,4 +148,15 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, input:focu
 }
 
 /* Links inside running text are underlined, not just coloured (WCAG 1.4.1). */
-.mud-typography .mud-link, .mud-alert-message .mud-link, p .mud-link, li .mud-link { text-decoration: underline; }
+.mud-typography .mud-link, .mud-alert-message .mud-link, p .mud-link, li .mud-link,
+.mud-typography a, .mud-alert-message a, main p a, main li a { text-decoration: underline; }
+
+.legal-document h1 { font-size: 2rem; font-weight: 400; margin: 0 0 1rem; }
+.legal-document h2 { font-size: 1.35rem; font-weight: 500; margin: 1.75rem 0 .5rem; }
+.legal-document p, .legal-document li { line-height: 1.6; max-width: 48rem; }
+.legal-document blockquote { border-left: 4px solid #8a4b00; margin: 1rem 0; padding: .5rem 1rem; background: #fff8e1; }
+.legal-document table { border-collapse: collapse; margin: 1rem 0; }
+.legal-document th, .legal-document td { border: 1px solid #ccc; padding: .5rem; text-align: left; vertical-align: top; }
+.legal-document a { text-decoration: underline; }
+.site-footer { border-top: 1px solid #e0e0e0; margin-top: 2rem; padding: 1rem 0; font-size: .875rem; }
+.site-footer a { display: inline-block; min-height: 24px; padding: .25rem 0; margin-right: 1rem; text-decoration: underline; }

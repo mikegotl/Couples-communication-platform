@@ -1,0 +1,10 @@
+# TLS termination for the local rehearsal, standing in for the Azure Container Apps ingress.
+# Caddy issues a certificate from its own local CA, so the browser shows a warning you accept.
+{
+	local_certs
+	skip_install_trust
+}
+
+https://localhost:8443 {
+	reverse_proxy web:8080
+}

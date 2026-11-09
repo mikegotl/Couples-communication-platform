@@ -486,3 +486,9 @@ $RECYCLE.BIN/
 
 # Development email pickup folder
 .mail/
+deploy/staging/certs/
+deploy/azure/.terraform/
+deploy/azure/.terraform.lock.hcl
+deploy/azure/*.tfvars
+deploy/azure/*.tfstate*
+deploy/azure/backend.hcl

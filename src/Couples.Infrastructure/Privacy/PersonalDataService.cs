@@ -111,11 +111,21 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
                 safetyRow.CheckedAt,
                 safetyRow.SafetyMode);
 
+        var pilot = await db.PilotEnrollments.AsNoTracking()
+            .Where(e => e.UserId == userId)
+            .Select(e => new ExportedPilot(e.TermsVersion, e.PrivacyNoticeVersion, e.ConsentedAt, e.WithdrawnAt))
+            .FirstOrDefaultAsync(cancellationToken);
+        var feedback = await db.Feedback.AsNoTracking()
+            .Where(f => f.ContactUserId == userId)
+            .OrderBy(f => f.CreatedAt)
+            .Select(f => new ExportedFeedback(f.CreatedAt, f.Area.ToString(), f.Rating, f.Text))
+            .ToListAsync(cancellationToken);
+
         var now = clock.UtcNow;
         db.AuditEvents.Add(AuditEvent.Record(userId, AuditActions.DataExported, null, null, now));
         await db.SaveChangesAsync(cancellationToken);
 
-        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts, coaching, pace, notifications, safety);
+        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts, coaching, pace, notifications, safety, pilot, feedback);
     }
 
     public async Task<Guid> RequestDeletionAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -157,6 +167,7 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
             db.AuditEvents.Add(AuditEvent.Record(request.UserId, AuditActions.DeletionCompleted, null, request.Id, now));
             await db.SaveChangesAsync(cancellationToken);
             LogCompleted(logger, request.Id);
+            Couples.Application.Observability.CouplesMetrics.AccountsDeleted.Add(1);
             completed++;
         }
 
@@ -196,6 +207,8 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
         await db.CoachingUsage.Where(u => u.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.PacePreferences.Where(p => p.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.PersonalSafety.Where(s => s.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.PilotEnrollments.Where(e => e.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.Feedback.Where(f => f.ContactUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.Notifications.Where(n => n.RecipientUserId == userId
                 || db.SharedMessages.Any(m => m.Id == n.SubjectId && (m.SenderUserId == userId || m.RecipientUserId == userId)))
             .ExecuteDeleteAsync(cancellationToken);

@@ -11,4 +11,16 @@ public static class FeatureFlags
     /// requires independent clinical and security sign-off (see DECISIONS.md, ADR-0005).
     /// </summary>
     public const string Phase2JointChat = "Phase2JointChat";
+
+    /// <summary>
+    /// Signed-in users must agree to the current pilot terms and privacy notice before using
+    /// the app. On in Production for the private pilot; off in Development.
+    /// </summary>
+    public const string PilotEnrollmentRequired = "PilotEnrollmentRequired";
+
+    /// <summary>The in-app feedback form. On for the pilot.</summary>
+    public const string FeedbackForm = "FeedbackForm";
+
+    /// <summary>Every flag, for the admin overview.</summary>
+    public static IReadOnlyList<string> All { get; } = [Phase2JointChat, PilotEnrollmentRequired, FeedbackForm];
 }

@@ -277,6 +277,41 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.ToTable("exercise_responses", "couples");
                 });
 
+            modelBuilder.Entity("Couples.Domain.Feedback.FeedbackEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("ContactUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactUserId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("feedback", "couples");
+                });
+
             modelBuilder.Entity("Couples.Domain.Intake.ConcernCategory", b =>
                 {
                     b.Property<string>("Key")
@@ -639,6 +674,38 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.HasKey("UserId");
 
                     b.ToTable("pace_preferences", "couples");
+                });
+
+            modelBuilder.Entity("Couples.Domain.Pilot.PilotEnrollment", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ConsentedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PrivacyNoticeVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("TermsVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("WithdrawnAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("pilot_enrollments", "couples");
                 });
 
             modelBuilder.Entity("Couples.Domain.Privacy.DataDeletionRequest", b =>
@@ -1162,6 +1229,14 @@ namespace Couples.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Couples.Domain.Feedback.FeedbackEntry", b =>
+                {
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ContactUserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("Couples.Domain.Intake.ConcernSelection", b =>
                 {
                     b.HasOne("Couples.Domain.Intake.ConcernCategory", null)
@@ -1257,6 +1332,15 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
                         .WithOne()
                         .HasForeignKey("Couples.Domain.Pace.PacePreferences", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Couples.Domain.Pilot.PilotEnrollment", b =>
+                {
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("Couples.Domain.Pilot.PilotEnrollment", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

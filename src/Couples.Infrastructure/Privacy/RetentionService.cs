@@ -54,11 +54,14 @@ internal sealed partial class RetentionService(
         var notificationCutoff = now - o.Notifications;
         var notifications = await db.Notifications.Where(n => n.CreatedAt < notificationCutoff).ExecuteDeleteAsync(cancellationToken);
 
-        var report = new RetentionReport(invitations, drafts, workspaces, audits, requests, usage, notifications);
-        LogApplied(logger, invitations, drafts, workspaces, audits, requests, usage, notifications);
+        var feedbackCutoff = now - o.Feedback;
+        var feedback = await db.Feedback.Where(f => f.CreatedAt < feedbackCutoff).ExecuteDeleteAsync(cancellationToken);
+
+        var report = new RetentionReport(invitations, drafts, workspaces, audits, requests, usage, notifications, feedback);
+        LogApplied(logger, invitations, drafts, workspaces, audits, requests, usage, notifications, feedback);
         return report;
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Retention purged {Invitations} invitations, {Drafts} discarded drafts, {Workspaces} empty workspaces, {Audits} audit events, {Requests} deletion requests, {UsageDays} coaching usage days, {Notifications} notifications")]
-    private static partial void LogApplied(ILogger logger, int invitations, int drafts, int workspaces, int audits, int requests, int usageDays, int notifications);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Retention purged {Invitations} invitations, {Drafts} discarded drafts, {Workspaces} empty workspaces, {Audits} audit events, {Requests} deletion requests, {UsageDays} coaching usage days, {Notifications} notifications, {Feedback} feedback entries")]
+    private static partial void LogApplied(ILogger logger, int invitations, int drafts, int workspaces, int audits, int requests, int usageDays, int notifications, int feedback);
 }

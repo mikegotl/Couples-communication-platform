@@ -13,8 +13,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | 07 | Draft, preview, approve and deliver | Done (PR #7) |
 | 08 | Asynchronous partner responses | Done (PR #8) |
 | 09 | Safety and support pathways | Done (PR #9; clinical review pending) |
-| 10 | Accessibility, security and data lifecycle | In review |
-| 11 | Private pilot readiness and observability | Not started |
+| 10 | Accessibility, security and data lifecycle | Done (PR #10) |
+| 11 | Private pilot readiness and observability | In review (legal and clinical review, email provider and apply approval pending) |
 | 12 | Phase 2 joint chat, flag OFF | Not started |
 
 ## Milestone 01: Repository and architecture
@@ -417,3 +417,44 @@ deletion sweep and restore re-erasure, plus every earlier privacy and safety tes
 
 **Not yet**: a screen reader pass and zoom/reflow checks (triaged in the audit), a penetration
 test before public launch, forwarded-header configuration for the chosen host.
+
+## Milestone 11: Private pilot readiness and observability
+
+**Delivered**
+
+- Pilot enrollment at `/pilot`: agreement to versioned pilot terms and privacy notice, an
+  invitation code (only its SHA-256 is configured; startup fails without it outside
+  Development), a participant cap, re-agreement when a document changes, and leaving at any
+  time. `PilotGate` keeps people who haven't joined out of the app but always lets them reach
+  support, the legal pages and their account. Migration `PilotAndFeedback`.
+- Content publishing: the privacy notice and pilot terms (`docs/legal`, drafts pending legal
+  review) are embedded and rendered at `/privacy-notice` and `/terms`; a test checks the pages
+  match the files. Footer links on every page; `/privacy` links to the notice.
+- Monitoring: OpenTelemetry metrics, traces and logs over OTLP (opt-in), scrubbed of URLs,
+  addresses, agents, exception messages, structured values, emails and tokens. Count-only
+  metrics for sharing, withdrawal, blocked shares, coach use, enrollment, feedback and deletion.
+- Feedback at `/feedback`: anonymous by default, contact only if allowed, 5 per day, kept 365
+  days, in export and deletion. `/admin/pilot` shows enrollment, operations counts (under 5
+  hidden) and feedback.
+- Containers: non-root chiseled images for web and worker, built in CI (not pushed). A local
+  staging rehearsal (`deploy/staging`) with production settings behind a TLS proxy, TLS to
+  PostgreSQL and a certificate-encrypted key ring. Forwarded-header support for proxies.
+- Azure UK South staging as Terraform (`deploy/azure`): Container Apps, private PostgreSQL
+  Flexible Server (TLS, 14-day restore, UK geo-backup), Key Vault with a vault-generated
+  key-ring certificate, managed identities, no public ingress by default. Validated in CI;
+  never applied.
+- Plans: incident response (severity, kill switches, UK GDPR 72-hour breach steps with safe
+  participant contact), release and rollback (expand/contract migrations), pilot readiness
+  checklist. ADR-0014.
+- Fixes found in the rehearsal: joining the pilot failed with 400 (the form posted its
+  antiforgery token twice; a test now checks every form); the worker waited 6 hours to retry
+  retention after a failure at start-up (now the next 5-minute tick). The key ring certificate
+  can be read in Key Vault's base64 form.
+
+**Verification**: see the PR description for the commands run on a fresh clone and their results.
+
+**Not yet (owner)**: legal review of the notice and terms, clinical sign-off, an email provider
+(nobody can confirm an account on a deployed instance without one), approval to apply the
+Terraform and to make it public, named incident roles, a screen reader pass, restore and
+rollback drills. See `docs/operations/pilot-readiness.md`.
+

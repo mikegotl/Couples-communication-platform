@@ -8,10 +8,14 @@ namespace Couples.Web.Email;
 /// <summary>
 /// Development-only sender that writes emails to a local, git-ignored folder so account
 /// confirmation and password reset can be exercised without a mail provider. Refuses to run
-/// outside the Development environment.
+/// outside the Development environment and the local staging rehearsal (deploy/staging), which
+/// otherwise runs with production settings.
 /// </summary>
 internal sealed partial class PickupDirectoryEmailSender : IEmailSender<ApplicationUser>
 {
+    /// <summary>The environment name used by the local staging rehearsal.</summary>
+    public const string RehearsalEnvironment = "Rehearsal";
+
     private readonly string directory;
     private readonly ILogger<PickupDirectoryEmailSender> logger;
 
@@ -19,7 +23,7 @@ internal sealed partial class PickupDirectoryEmailSender : IEmailSender<Applicat
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(environment);
-        if (!environment.IsDevelopment())
+        if (!environment.IsDevelopment() && !environment.IsEnvironment(RehearsalEnvironment))
         {
             throw new InvalidOperationException("The pickup-directory email sender is for local development only.");
         }

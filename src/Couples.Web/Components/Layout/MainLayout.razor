@@ -22,7 +22,7 @@
                 <MudLink Href="intake" Color="Color.Inherit" Class="mx-1 mx-sm-2">My topics</MudLink>
                 <MudLink Href="exercises" Color="Color.Inherit" Class="mx-1 mx-sm-2">Exercises</MudLink>
                 <AuthorizeView Roles="@Couples.Web.Administration.AdminBootstrap.AdminRole" Context="admin">
-                    <MudLink Href="admin/exercises" Color="Color.Inherit" Class="mx-1 mx-sm-2">Admin</MudLink>
+                    <MudLink Href="admin/pilot" Color="Color.Inherit" Class="mx-1 mx-sm-2">Admin</MudLink>
                 </AuthorizeView>
                 <MudLink Href="support" Color="Color.Inherit" Class="mx-1 mx-sm-2">Support</MudLink>
                 <MudLink Href="Account/Manage" Color="Color.Inherit" Class="mx-1 mx-sm-2">Account</MudLink>
@@ -43,6 +43,15 @@
         <main id="main-content" tabindex="-1">
             <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
                 @Body
+                <footer class="site-footer">
+                    <a href="privacy-notice">Privacy notice</a>
+                    <a href="terms">Pilot terms</a>
+                    <a href="support">Support</a>
+                    <AuthorizeView>
+                        <a href="pilot">Pilot</a>
+                        <a href="feedback">Send feedback</a>
+                    </AuthorizeView>
+                </footer>
             </MudContainer>
         </main>
     </MudMainContent>

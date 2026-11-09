@@ -14,6 +14,8 @@ public static class RouteTitles
         ("exercises/attempt/", "Exercise"),
         ("exercises", "Exercises"),
         ("admin/exercises", "Exercise review · Admin"),
+        ("admin/pilot", "Pilot overview · Admin"),
+        ("feedback", "Send feedback"),
         ("settings/pace", "Pace and notifications"),
         ("workspace", "Your workspace"),
         ("intake", "Your private topics"),

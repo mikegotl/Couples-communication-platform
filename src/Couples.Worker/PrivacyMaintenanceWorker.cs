@@ -25,9 +25,13 @@ public sealed partial class PrivacyMaintenanceWorker(IServiceScopeFactory scopes
 
                 if (DateTimeOffset.UtcNow >= nextRetention)
                 {
-                    await RunSafelyAsync("retention", async services =>
-                        await services.GetRequiredService<IRetentionService>().ApplyAsync(stoppingToken), stoppingToken);
-                    nextRetention = DateTimeOffset.UtcNow + RetentionInterval;
+                    // A failed run (for example while a deployment is still migrating) retries on
+                    // the next tick rather than waiting a full retention interval.
+                    if (await RunSafelyAsync("retention", async services =>
+                        await services.GetRequiredService<IRetentionService>().ApplyAsync(stoppingToken), stoppingToken))
+                    {
+                        nextRetention = DateTimeOffset.UtcNow + RetentionInterval;
+                    }
                 }
             }
             while (await timer.WaitForNextTickAsync(stoppingToken));
@@ -38,17 +42,19 @@ public sealed partial class PrivacyMaintenanceWorker(IServiceScopeFactory scopes
         }
     }
 
-    private async Task RunSafelyAsync(string job, Func<IServiceProvider, Task> work, CancellationToken stoppingToken)
+    private async Task<bool> RunSafelyAsync(string job, Func<IServiceProvider, Task> work, CancellationToken stoppingToken)
     {
         try
         {
             await using var scope = scopes.CreateAsyncScope();
             await work(scope.ServiceProvider);
+            return true;
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
         {
             // Exception messages from the data layer can include SQL but never row content.
             LogJobFailed(logger, job, ex.GetType().Name);
+            return false;
         }
     }
 
