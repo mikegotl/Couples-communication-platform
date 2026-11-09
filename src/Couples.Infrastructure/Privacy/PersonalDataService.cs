@@ -121,11 +121,37 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
             .Select(f => new ExportedFeedback(f.CreatedAt, f.Area.ToString(), f.Rating, f.Text))
             .ToListAsync(cancellationToken);
 
+        var chatSessions = await db.JointChatSessions.AsNoTracking()
+            .Where(c => c.InitiatorUserId == userId || c.InviteeUserId == userId)
+            .OrderBy(c => c.InvitedAt)
+            .Select(c => new
+            {
+                c.Id,
+                c.InvitedAt,
+                c.StartedAt,
+                c.EndedAt,
+                PartnerVisible = db.WorkspaceMemberships.Count(m => m.WorkspaceId == c.WorkspaceId && m.LeftAt == null
+                    && (m.UserId == c.InitiatorUserId || m.UserId == c.InviteeUserId)) == 2,
+            })
+            .ToListAsync(cancellationToken);
+        var chatIds = chatSessions.Select(c => c.Id).ToList();
+        var chatLines = await db.JointChatMessages.AsNoTracking()
+            .Where(m => chatIds.Contains(m.SessionId))
+            .OrderBy(m => m.SentAt).ThenBy(m => m.Id)
+            .ToListAsync(cancellationToken);
+        var jointChats = chatSessions.Select(c => new ExportedJointChat(
+            c.Id,
+            c.InvitedAt,
+            c.StartedAt,
+            c.EndedAt,
+            [.. chatLines.Where(l => l.SessionId == c.Id && (l.AuthorUserId == userId || c.PartnerVisible))
+                .Select(l => new ExportedJointChatLine(l.AuthorUserId == userId, l.Body, l.SentAt))])).ToList();
+
         var now = clock.UtcNow;
         db.AuditEvents.Add(AuditEvent.Record(userId, AuditActions.DataExported, null, null, now));
         await db.SaveChangesAsync(cancellationToken);
 
-        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts, coaching, pace, notifications, safety, pilot, feedback);
+        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts, coaching, pace, notifications, safety, pilot, feedback, jointChats);
     }
 
     public async Task<Guid> RequestDeletionAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -213,6 +239,13 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
                 || db.SharedMessages.Any(m => m.Id == n.SubjectId && (m.SenderUserId == userId || m.RecipientUserId == userId)))
             .ExecuteDeleteAsync(cancellationToken);
         await db.SharedMessages.Where(m => m.SenderUserId == userId || m.RecipientUserId == userId).ExecuteDeleteAsync(cancellationToken);
+        // Joint chats they took part in go entirely, including the partner's lines (as with shared messages).
+        await db.JointChatMessages.Where(m => m.AuthorUserId == userId
+                || db.JointChatSessions.Any(c => c.Id == m.SessionId && (c.InitiatorUserId == userId || c.InviteeUserId == userId)))
+            .ExecuteDeleteAsync(cancellationToken);
+        await db.JointChatSessions.Where(c => c.InitiatorUserId == userId || c.InviteeUserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.JointChatEligibility.Where(e => e.GrantedByUserId == userId)
+            .ExecuteUpdateAsync(set => set.SetProperty(e => e.GrantedByUserId, Guid.Empty), cancellationToken);
         await db.DraftMessages.Where(d => d.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.ConsentRecords.Where(c => c.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.Invitations.Where(i => i.CreatedByUserId == userId).ExecuteDeleteAsync(cancellationToken);

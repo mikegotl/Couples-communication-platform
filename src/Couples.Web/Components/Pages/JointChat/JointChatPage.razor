@@ -1,0 +1,337 @@
+@page "/joint-chat"
+@inherits ScopedPage
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@implements IDisposable
+@using Couples.Application.JointChat
+@using Couples.Domain.Common
+@using Couples.Domain.JointChat
+@inject CurrentUser CurrentUser
+@inject IJointChatNotifier Notifier
+
+<InteractiveProviders />
+<PageTitle>Joint chat (pilot) · BridgeTogether</PageTitle>
+
+@if (view is null)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Joint chat <span class="pilot-tag">pilot</span></MudText>
+
+        @if (supportShown)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" role="status">
+                Your message wasn't sent, and the chat has ended. If you or someone else might not be safe, please
+                <a href="support">look at the support options</a>. You can also do a private
+                <a href="safety">safety check-in</a>. Your partner only sees that the chat ended.
+            </MudAlert>
+        }
+
+        @switch (view.State)
+        {
+            case JointChatState.Unavailable:
+                <MudText>Joint chat isn't available for your workspace. You can keep using messages at your own pace.</MudText>
+                <div><MudButton Href="messages" Variant="Variant.Outlined">Go to messages</MudButton></div>
+                break;
+
+            case JointChatState.HeldForYou:
+                <MudText>
+                    Joint chat is off for you at the moment, because of your private safety check-in or safety mode.
+                    Your partner isn't told why. You can change this on your <a href="safety">safety page</a>, and
+                    <a href="support">support</a> is always available.
+                </MudText>
+                break;
+
+            case JointChatState.Ready:
+            case JointChatState.Ended when view.Transcript.Count == 0:
+                @if (view.State == JointChatState.Ended)
+                {
+                    <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" role="status">@EndingText(view.Ending)</MudAlert>
+                }
+                <Rules />
+                <MudCheckBox T="bool" @bind-Value="agreed" Label="I've read how joint chat works and I'd like to invite my partner to a chat now." />
+                <div><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartAsync" Disabled="busy || !agreed">Invite my partner</MudButton></div>
+                break;
+
+            case JointChatState.WaitingForPartner:
+                <MudText role="status">
+                    You've invited your partner. The chat starts if they join in the next @MinutesUntil(view.InvitationExpiresAt) minutes.
+                    They don't have to, and you won't be told why if they don't.
+                </MudText>
+                <div><MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="LeaveAsync" Disabled="busy">Cancel the invitation</MudButton></div>
+                break;
+
+            case JointChatState.InvitedByPartner:
+                <MudText>Your partner has invited you to a joint chat. It's up to you; saying no is fine, and you don't need to give a reason.</MudText>
+                <Rules />
+                <MudCheckBox T="bool" @bind-Value="agreed" Label="I've read how joint chat works and I want to join this chat." />
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="JoinAsync" Disabled="busy || !agreed">Join</MudButton>
+                    <MudButton Variant="Variant.Outlined" OnClick="DeclineAsync" Disabled="busy">Not now</MudButton>
+                </MudStack>
+                break;
+
+            case JointChatState.Active:
+            case JointChatState.Ended:
+                @if (view.State == JointChatState.Ended)
+                {
+                    <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" role="status">
+                        @EndingText(view.Ending) This transcript is deleted for both of you on @view.TranscriptDeletedAt?.UtcDateTime.ToString("d MMMM", System.Globalization.CultureInfo.InvariantCulture).
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudPaper Class="pa-3" Outlined="true">
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" AlignItems="AlignItems.Center">
+                            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="LeaveAsync" Disabled="busy">Leave chat now</MudButton>
+                            @if (view.Paused && view.PausedByMe)
+                            {
+                                <MudButton Variant="Variant.Outlined" OnClick="ResumeAsync" Disabled="busy">End my break</MudButton>
+                            }
+                            else if (!view.Paused)
+                            {
+                                @foreach (var minutes in JointChatPolicy.PauseMinutes)
+                                {
+                                    var m = minutes;
+                                    <MudButton Variant="Variant.Outlined" OnClick="() => PauseAsync(m)" Disabled="busy">Pause @m min</MudButton>
+                                }
+                            }
+                        </MudStack>
+                        <MudText Typo="Typo.body2" Class="mt-2">
+                            Leaving ends the chat for both of you straight away. The chat ends by itself after @((int)JointChatPolicy.MaxDuration.TotalMinutes) minutes.
+                        </MudText>
+                    </MudPaper>
+                }
+
+                <section aria-labelledby="transcript-heading">
+                    <MudText Typo="Typo.h6" HtmlTag="h2" id="transcript-heading">Conversation</MudText>
+                    @if (view.Transcript.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2">No messages yet.</MudText>
+                    }
+                    <ol class="joint-chat-transcript" aria-live="polite">
+                        @foreach (var line in view.Transcript)
+                        {
+                            <li class="@(line.Mine ? "mine" : "theirs")">
+                                <span class="visually-hidden">@(line.Mine ? "You" : "Your partner"):</span>
+                                <span class="who" aria-hidden="true">@(line.Mine ? "You" : "Your partner")</span>
+                                <span class="body">@line.Body</span>
+                            </li>
+                        }
+                    </ol>
+                </section>
+
+                @if (view.State == JointChatState.Active)
+                {
+                    <div role="status" class="turn-status">
+                        @if (view.Paused)
+                        {
+                            <MudText>@(view.PausedByMe ? "You're taking a break." : "Your partner is taking a break.") Nobody can write for @MinutesUntil(view.PausedUntil) more minutes.</MudText>
+                        }
+                        else if (view.MyTurn && view.OpenTurn)
+                        {
+                            <MudText>Either of you can write now.</MudText>
+                        }
+                        else if (view.MyTurn)
+                        {
+                            <MudText>It's your turn. Take your time.</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Your partner's turn. There's no hurry; you'll see their reply here.</MudText>
+                        }
+                    </div>
+
+                    @if (heldText)
+                    {
+                        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" role="alert">
+                            This wasn't sent. Some words can land as blame or contempt. Could you say what you feel and what you need instead?
+                            Your words are still in the box for you to change.
+                        </MudAlert>
+                    }
+
+                    <MudTextField T="string" @bind-Value="text" Label="Your message" Lines="3" Variant="Variant.Outlined" Immediate="true"
+                                  MaxLength="JointChatPolicy.MaxMessageLength" Counter="JointChatPolicy.MaxMessageLength" Disabled="!view.MyTurn || busy" />
+                    <div><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SendAsync" Disabled="!view.MyTurn || busy || string.IsNullOrWhiteSpace(text)">Send</MudButton></div>
+                }
+                else
+                {
+                    <div><MudButton Variant="Variant.Outlined" OnClick="NewChat">Start a new chat</MudButton></div>
+                }
+                break;
+        }
+
+        @if (error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" role="alert">@error</MudAlert>
+        }
+    </MudStack>
+}
+
+@code {
+    private IJointChatService Chat => Service<IJointChatService>();
+
+    private readonly SemaphoreSlim gate = new(1, 1);
+    private PeriodicTimer? timer;
+    private JointChatView? view;
+    private Guid userId;
+    private bool busy;
+    private bool agreed;
+    private bool heldText;
+    private bool supportShown;
+    private bool startOver;
+    private string? text;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        await ReloadAsync();
+        Notifier.SessionChanged += OnSessionChanged;
+        timer = new PeriodicTimer(TimeSpan.FromSeconds(20));
+        _ = TickAsync(timer);
+    }
+
+    private async Task TickAsync(PeriodicTimer periodic)
+    {
+        try
+        {
+            while (await periodic.WaitForNextTickAsync())
+            {
+                await InvokeAsync(ReloadAndRenderAsync);
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // Page closed.
+        }
+    }
+
+    private void OnSessionChanged(Guid sessionId)
+    {
+        if (view?.SessionId == sessionId || view?.State is JointChatState.Ready or JointChatState.Ended)
+        {
+            _ = InvokeAsync(ReloadAndRenderAsync);
+        }
+    }
+
+    private async Task ReloadAndRenderAsync()
+    {
+        await ReloadAsync();
+        StateHasChanged();
+    }
+
+    private async Task ReloadAsync()
+    {
+        await gate.WaitAsync();
+        try
+        {
+            var loaded = await Chat.GetAsync(userId);
+            view = startOver && loaded.State == JointChatState.Ended ? loaded with { Transcript = [] } : loaded;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private Task StartAsync() => RunAsync(() => Chat.StartAsync(userId, JointChatPolicy.Version), resetAgreement: true);
+
+    private Task JoinAsync() => RunAsync(() => Chat.JoinAsync(userId, view!.SessionId!.Value, JointChatPolicy.Version), resetAgreement: true);
+
+    private Task DeclineAsync() => RunAsync(() => Chat.DeclineAsync(userId, view!.SessionId!.Value));
+
+    private Task LeaveAsync() => RunAsync(() => Chat.LeaveAsync(userId, view!.SessionId!.Value));
+
+    private Task PauseAsync(int minutes) => RunAsync(() => Chat.PauseAsync(userId, view!.SessionId!.Value, minutes));
+
+    private Task ResumeAsync() => RunAsync(() => Chat.ResumeAsync(userId, view!.SessionId!.Value));
+
+    private async Task SendAsync()
+    {
+        await RunAsync(async () =>
+        {
+            var sent = await Chat.SendAsync(userId, view!.SessionId!.Value, text);
+            if (!sent.Succeeded)
+            {
+                return sent.Error!.Value;
+            }
+
+            heldText = sent.Value.Outcome == ModerationOutcome.HeldToRephrase;
+            supportShown = sent.Value.Outcome == ModerationOutcome.EndedForSafety;
+            if (!heldText)
+            {
+                text = null;
+            }
+
+            return Result.Ok(sent.Value.View);
+        });
+    }
+
+    private void NewChat()
+    {
+        startOver = true;
+        supportShown = false;
+        view = view! with { Transcript = [] };
+    }
+
+    private async Task RunAsync(Func<Task<Result<JointChatView>>> action, bool resetAgreement = false)
+    {
+        busy = true;
+        error = null;
+        await gate.WaitAsync();
+        try
+        {
+            var result = await action();
+            if (result.Succeeded)
+            {
+                view = result.Value;
+                startOver = false;
+                if (resetAgreement)
+                {
+                    agreed = false;
+                }
+            }
+            else
+            {
+                error = result.Error switch
+                {
+                    DomainError.SafetyHold => null,
+                    DomainError.Validation => $"Messages can be up to {JointChatPolicy.MaxMessageLength} characters.",
+                    _ => "That didn't go through because the chat has changed. Here's where it is now.",
+                };
+            }
+        }
+        finally
+        {
+            gate.Release();
+            busy = false;
+        }
+
+        if (error is not null || view?.State is not JointChatState.Active)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private static string EndingText(JointChatEnding? ending) => ending switch
+    {
+        JointChatEnding.YouLeft => "You left the chat.",
+        JointChatEnding.YouDeclined => "You said not now.",
+        JointChatEnding.NotJoined => "Your partner didn't join this time.",
+        _ => "This chat has ended.",
+    };
+
+    private static int MinutesUntil(DateTimeOffset? when) =>
+        when is { } w ? Math.Max(1, (int)Math.Ceiling((w - DateTimeOffset.UtcNow).TotalMinutes)) : 0;
+
+    public void Dispose()
+    {
+        Notifier.SessionChanged -= OnSessionChanged;
+        timer?.Dispose();
+        gate.Dispose();
+    }
+}

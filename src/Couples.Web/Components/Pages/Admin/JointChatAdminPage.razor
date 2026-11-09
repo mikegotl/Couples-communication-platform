@@ -1,0 +1,147 @@
+@page "/admin/joint-chat"
+@inherits ScopedPage
+@attribute [Authorize(Roles = Couples.Web.Administration.AdminBootstrap.AdminRole)]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.JointChat
+@using Couples.Domain.Common
+@using Couples.Domain.JointChat
+@inject CurrentUser CurrentUser
+
+<InteractiveProviders />
+<PageTitle>Joint chat pilot · Admin · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Joint chat pilot</MudText>
+    <MudText Typo="Typo.body2">
+        Workspaces can use joint chat only if they are listed here, both sign-offs are recorded in configuration
+        (<code>JointChat:ClinicalSignOff</code>, <code>JointChat:SecuritySignOff</code>), and neither partner's
+        safety check-in holds joint flows. No names, emails or conversation content are shown here.
+    </MudText>
+
+    @if (overview is null)
+    {
+        <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Outlined="true">
+            <tbody>
+                <tr><th scope="row">Clinical sign-off</th><td>@(overview.ClinicalSignOff ?? "Missing: no workspace can be made eligible")</td></tr>
+                <tr><th scope="row">Security sign-off</th><td>@(overview.SecuritySignOff ?? "Missing: no workspace can be made eligible")</td></tr>
+            </tbody>
+        </MudSimpleTable>
+
+        <section aria-labelledby="eligible-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="eligible-heading">Eligible workspaces</MudText>
+            @if (overview.Workspaces.Count == 0)
+            {
+                <MudText Typo="Typo.body2">None.</MudText>
+            }
+            else
+            {
+                <div class="table-scroll" tabindex="0" role="region" aria-labelledby="eligible-heading">
+                <MudSimpleTable Dense="true" Outlined="true">
+                    <thead><tr><th scope="col">Pilot reference</th><th scope="col">Workspace id</th><th scope="col">Since</th><th scope="col">Chat running</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <tbody>
+                        @foreach (var w in overview.Workspaces)
+                        {
+                            <tr>
+                                <td>@w.Reference</td>
+                                <td><code class="breakable">@w.WorkspaceId</code></td>
+                                <td>@w.GrantedAt.UtcDateTime.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)</td>
+                                <td>@(w.ChatRunning ? "Yes" : "No")</td>
+                                <td><MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" Disabled="busy" OnClick="() => RevokeAsync(w.WorkspaceId)">Remove<span class="visually-hidden"> @w.Reference</span></MudButton></td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+                </div>
+            }
+        </section>
+
+        <section aria-labelledby="grant-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="grant-heading">Add a workspace</MudText>
+            <MudText Typo="Typo.body2" Class="mb-2">
+                Use the workspace id a recruited couple gives you (it's shown on their Workspace page while the pilot is on),
+                and your recruitment or screening reference. Never enter a name.
+            </MudText>
+            <MudStack Spacing="2">
+                <MudTextField T="string" @bind-Value="workspaceId" Label="Workspace id" Variant="Variant.Outlined" />
+                <MudTextField T="string" @bind-Value="reference" Label="Pilot reference" MaxLength="JointChatEligibility.ReferenceMaxLength" Variant="Variant.Outlined" />
+                <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="busy" OnClick="GrantAsync">Make eligible</MudButton></div>
+            </MudStack>
+        </section>
+
+        @if (message is not null)
+        {
+            <MudAlert Severity="@(failed ? Severity.Error : Severity.Success)" Variant="Variant.Outlined" role="status">@message</MudAlert>
+        }
+    }
+</MudStack>
+
+@code {
+    private IJointChatAdminService Admin => Service<IJointChatAdminService>();
+
+    private Guid userId;
+    private bool busy;
+    private bool failed;
+    private string? message;
+    private string? workspaceId;
+    private string? reference;
+    private JointChatAdminOverview? overview;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        var result = await Admin.GetOverviewAsync(userId);
+        overview = result.Succeeded ? result.Value : new JointChatAdminOverview(false, null, null, []);
+    }
+
+    private async Task GrantAsync()
+    {
+        if (!Guid.TryParse(workspaceId, out var id))
+        {
+            Show("That isn't a workspace id.", true);
+            return;
+        }
+
+        await RunAsync(() => Admin.GrantAsync(userId, id, reference), "Workspace added.");
+        if (!failed)
+        {
+            workspaceId = reference = null;
+        }
+    }
+
+    private Task RevokeAsync(Guid id) => RunAsync(() => Admin.RevokeAsync(userId, id), "Workspace removed. Any running chat has ended.");
+
+    private async Task RunAsync(Func<Task<Result>> action, string success)
+    {
+        busy = true;
+        try
+        {
+            var result = await action();
+            Show(result.Succeeded ? success : result.Error switch
+            {
+                DomainError.Conflict => "Both sign-offs must be recorded before any workspace can be added.",
+                DomainError.Validation => $"Enter a pilot reference of up to {JointChatEligibility.ReferenceMaxLength} characters.",
+                _ => "No workspace with that id.",
+            }, !result.Succeeded);
+            await RefreshAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void Show(string text, bool isError)
+    {
+        message = text;
+        failed = isError;
+    }
+}

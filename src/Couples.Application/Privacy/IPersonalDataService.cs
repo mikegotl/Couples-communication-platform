@@ -36,7 +36,13 @@ public sealed record PersonalDataExport(
     IReadOnlyList<ExportedNotification> Notifications,
     ExportedSafety? Safety,
     ExportedPilot? Pilot = null,
-    IReadOnlyList<ExportedFeedback>? Feedback = null);
+    IReadOnlyList<ExportedFeedback>? Feedback = null,
+    IReadOnlyList<ExportedJointChat>? JointChats = null);
+
+/// <summary>A joint chat the user took part in. The partner's lines are included only while both are still in the workspace, as for received messages.</summary>
+public sealed record ExportedJointChat(Guid Id, DateTimeOffset InvitedAt, DateTimeOffset? StartedAt, DateTimeOffset? EndedAt, IReadOnlyList<ExportedJointChatLine> Lines);
+
+public sealed record ExportedJointChatLine(bool Mine, string Body, DateTimeOffset SentAt);
 
 public sealed record ExportedPilot(string TermsVersion, string PrivacyNoticeVersion, DateTimeOffset ConsentedAt, DateTimeOffset? WithdrawnAt);
 

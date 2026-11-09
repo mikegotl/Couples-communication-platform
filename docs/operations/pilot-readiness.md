@@ -51,7 +51,8 @@ ticked by the person named. Items marked **owner** cannot be done by engineering
       Put the result in `pilot_access_code_sha256` (Terraform) or `Pilot__AccessCodeSha256`.
       To close enrollment, change the hash; enrolled people keep access.
 - [ ] `Pilot:MaxParticipants` set (default 60).
-- [ ] `FeatureManagement:Phase2JointChat` is `false`.
+- [ ] `FeatureManagement:Phase2JointChat` is `false`. Joint chat stays off for the first pilot
+      unless both reviews in `docs/safety/joint-chat-review.md` are signed.
 - [ ] `Coaching:Provider` stays `Disabled` unless the AI provider decision and DPA are done.
 - [ ] Admin accounts listed in `Administration:AdminEmails`; `/admin/pilot` shows counts.
 

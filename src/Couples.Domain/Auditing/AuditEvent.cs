@@ -50,4 +50,9 @@ public static class AuditActions
     public const string ExerciseReviewed = "exercise.reviewed";
     public const string PilotEnrolled = "pilot.enrolled";
     public const string PilotWithdrawn = "pilot.withdrawn";
+    public const string JointChatEligibilityGranted = "jointchat.eligibility_granted";
+    public const string JointChatEligibilityRevoked = "jointchat.eligibility_revoked";
+    public const string JointChatInvited = "jointchat.invited";
+    public const string JointChatJoined = "jointchat.joined";
+    public const string JointChatEnded = "jointchat.ended";
 }

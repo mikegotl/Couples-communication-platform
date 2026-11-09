@@ -15,6 +15,8 @@ public static class RouteTitles
         ("exercises", "Exercises"),
         ("admin/exercises", "Exercise review · Admin"),
         ("admin/pilot", "Pilot overview · Admin"),
+        ("admin/joint-chat", "Joint chat pilot · Admin"),
+        ("joint-chat", "Joint chat (pilot)"),
         ("feedback", "Send feedback"),
         ("settings/pace", "Pace and notifications"),
         ("workspace", "Your workspace"),

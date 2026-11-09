@@ -83,6 +83,7 @@ Never commit real credentials.
 | `/pilot` | Join the private pilot (agree to the terms and notice, invitation code) or leave it |
 | `/feedback` | Send anonymous feedback, optionally allowing contact (signed in) |
 | `/admin/pilot` | Pilot enrollment, operations counts (under 5 hidden) and feedback (Admin role only) |
+| `/joint-chat`, `/admin/joint-chat` | Phase 2 joint chat and its per-workspace eligibility. **404 unless `Phase2JointChat` is on**, which it isn't anywhere by default |
 | `/Account/Manage/PersonalData` | Download your data, or delete your account and all your private data |
 | `/health` | Liveness (process up; no dependency checks) |
 | `/health/ready` | Readiness (includes PostgreSQL connectivity) |
@@ -123,6 +124,15 @@ without it. `Pilot:MaxParticipants` caps enrollment (60). The legal texts are
 `docs/legal/*.md`, embedded at build time; bump `PilotDocuments` versions when they change so
 everyone agrees again. Feedback (`FeatureManagement:FeedbackForm`) is anonymous unless the person
 allows contact. Readiness: [pilot checklist](docs/operations/pilot-readiness.md).
+
+### Phase 2 joint chat (off)
+
+A guided, turn-based chat between partners, built for a later pilot and switched off. Using it
+needs all of: `FeatureManagement:Phase2JointChat=true`, `JointChat:ClinicalSignOff` and
+`JointChat:SecuritySignOff` (references to the signed reviews in
+[the sign-off checklist](docs/safety/joint-chat-review.md)), and an administrator making the
+workspace eligible at `/admin/joint-chat`. Do not turn it on for real participants before both
+reviews are signed (ADR-0015).
 
 ### Observability
 

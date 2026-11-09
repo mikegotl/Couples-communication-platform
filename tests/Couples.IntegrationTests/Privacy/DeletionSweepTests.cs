@@ -121,6 +121,23 @@ public sealed class DeletionSweepTests(PostgresFixture db)
         await Run<ICoachUsageStore, bool>(s => s.TryReserveAsync(a, new DateOnly(2026, 11, 9), 100, 100_000, 100_000_000));
         await Run<Couples.Application.Pilot.IPilotService, Result<Couples.Application.Pilot.PilotStatus>>(s => s.EnrollAsync(a, Couples.Domain.Pilot.PilotDocuments.TermsVersion, Couples.Domain.Pilot.PilotDocuments.PrivacyNoticeVersion, null));
         await Run<Couples.Application.Feedback.IFeedbackService, Result>(s => s.SubmitAsync(a, Couples.Domain.Feedback.FeedbackArea.General, 4, "Good", allowContact: true));
+
+        // Joint chat (milestone 12): A granted eligibility (as an admin), left one chat, and is
+        // invited into a second where it is A's turn and A has paused.
+        await using (var provider = db.BuildServices(configure: JointChatPilot.On()))
+        {
+            await using var scope = provider.CreateAsyncScope();
+            await JointChatPilot.MakeEligibleAsync(scope.ServiceProvider.GetRequiredService<CouplesDbContext>(), workspace.Value.Id, a, db.Clock.UtcNow);
+            var chat = scope.ServiceProvider.GetRequiredService<Couples.Application.JointChat.IJointChatService>();
+            var first = await chat.StartAsync(a, Couples.Domain.JointChat.JointChatPolicy.Version);
+            Assert.True((await chat.JoinAsync(b, first.Value.SessionId!.Value, Couples.Domain.JointChat.JointChatPolicy.Version)).Succeeded);
+            Assert.True((await chat.SendAsync(a, first.Value.SessionId!.Value, "Hello from A")).Succeeded);
+            await chat.LeaveAsync(a, first.Value.SessionId!.Value);
+            var second = await chat.StartAsync(b, Couples.Domain.JointChat.JointChatPolicy.Version);
+            Assert.True((await chat.JoinAsync(a, second.Value.SessionId!.Value, Couples.Domain.JointChat.JointChatPolicy.Version)).Succeeded);
+            Assert.True((await chat.SendAsync(b, second.Value.SessionId!.Value, "Hello from B")).Succeeded);
+            Assert.True((await chat.PauseAsync(a, second.Value.SessionId!.Value, 5)).Succeeded);
+        }
     }
 
     private static List<(string Key, string Table, string Column)> UserColumns()

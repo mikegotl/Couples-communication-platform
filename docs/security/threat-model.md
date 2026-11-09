@@ -49,6 +49,10 @@ assets and actors first, then STRIDE per boundary. Review this when hosting is c
 | D3 | AI cost exhaustion | Per-user and global daily caps, fail closed | `CoachServiceTests`, `CoachingTests` |
 | E1 | Non-admin reaches admin pages | Role check on pages; roles granted only from configuration | `SmokeTests.PrivatePagesRequireSignIn` |
 | E2 | Prompt injection makes the coach act on instructions | Nonce-delimited input, canary leak check, schema validation, no tools | `PromptAndValidatorTests` |
+| J1 | Joint chat reachable before it is approved | `Phase2JointChat` off by default: pages 404 before authentication, every service method checks the flag; also needs both sign-offs in configuration and per-workspace eligibility | `JointChatHttpTests`, `JointChatPilotTests.WithTheFlagOff...`, `TheDefaultConfigurationKeepsThePilotOff` |
+| J2 | One partner pressures the other into a live chat, or keeps it going | Fresh consent from both per chat; declining needs no reason; either leaves at once; pauses; turn-taking; idle and total time limits | `JointChatPilotTests`, `JointChatRulesTests` |
+| J3 | Joint chat used to threaten or demean | Local moderation: contempt held for rephrasing (not stored), risk phrases end the chat with support shown only to the writer; no text in logs | `JointChatPilotTests.ModerationHolds...`, `NoChatTextOrModerationOutcomeReachesTheLogs` |
+| J4 | Partner infers the other's safety check from joint chat behaviour | Held user's chats end with the same neutral text as any ending; invitations to them lapse like any unanswered invitation; no audit or log of the reason | `JointChatPilotTests.ASafetyHoldEndsTheChatSilentlyAndHidesInvitations` |
 | E3 | Compromised dependency or leaked secret | NuGet audit, CodeQL, Dependabot, secret scan in CI | CI |
 
 ## Residual risks and open items
@@ -58,3 +62,7 @@ assets and actors first, then STRIDE per boundary. Review this when hosting is c
 - No application-level field encryption (ADR-0013).
 - Accessibility and safety copy still need human review (screen reader pass, clinician review).
 - A penetration test before any public launch.
+- Joint chat moderation is a short, local phrase list: it will miss things and occasionally hold
+  harmless text. It is a guard rail for a supervised pilot, not a safety system; the clinical
+  review decides whether it is enough (`docs/safety/joint-chat-review.md`).
+- Joint chat live updates are in-process, so the web app must run as a single replica.

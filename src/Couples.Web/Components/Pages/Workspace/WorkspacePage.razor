@@ -116,6 +116,27 @@ else
             </MudPaper>
         }
 
+        @if (jointChatPilotOn)
+        {
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Joint chat pilot</MudText>
+                    @if (jointChatOffered)
+                    {
+                        <MudText Typo="Typo.body2">Your workspace is taking part in the joint chat pilot.</MudText>
+                        <div><MudButton Variant="Variant.Outlined" Href="joint-chat">Joint chat</MudButton></div>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2">
+                            If you've been invited to the joint chat pilot, the pilot team will ask for this reference:
+                            <code class="breakable">@workspace.Id</code>
+                        </MudText>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+
         <MudPaper Class="pa-4" Outlined="true">
             <MudStack Spacing="2">
                 <MudText Typo="Typo.h6" HtmlTag="h2">Your safety</MudText>
@@ -152,12 +173,16 @@ else
     private string newName = "Our space";
     private string? createdLink;
     private DateTimeOffset? createdExpiresAt;
+    private bool jointChatPilotOn;
+    private bool jointChatOffered;
 
     protected override async Task OnInitializedAsync()
     {
         userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
         await RefreshAsync();
         intakeStatus = (await Intake.GetAsync(userId))?.Status;
+        jointChatPilotOn = await Service<Couples.Application.Abstractions.IFeatureFlags>().IsEnabledAsync(Couples.Application.FeatureFlags.Phase2JointChat);
+        jointChatOffered = jointChatPilotOn && await Service<Couples.Application.JointChat.IJointChatService>().IsOfferedAsync(userId);
         loading = false;
     }
 

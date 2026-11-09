@@ -138,6 +138,16 @@ OpenTelemetry only when an OTLP endpoint is configured, with `ScrubbingActivityP
 counts with values under 5 suppressed. Images: `deploy/docker`; local rehearsal:
 `deploy/staging`; Azure UK South Terraform: `deploy/azure` (ADR-0014).
 
+## Joint chat (Phase 2, off)
+
+`JointChatSession`, `JointChatMessage` and `JointChatEligibility` (Domain) hold the rules: turns,
+pauses, time limits and endings live on the session; `JointChatModeration` checks text locally.
+`JointChatService` re-checks the flag (through `IFeatureFlags`), both sign-offs
+(`JointChatOptions`), eligibility, membership and `ISafetyGate` on every call, and clears its
+change tracker first because a page keeps one DbContext while the partner changes the same chat.
+`JointChatGate` answers 404 for the pages while the flag is off, before authentication.
+`IJointChatNotifier` (in-process) refreshes both partners' open pages. ADR-0015.
+
 ## Exercises
 
 Exercise wording is code (`Couples.Domain.Exercises.ExerciseCatalog`); each version is published
