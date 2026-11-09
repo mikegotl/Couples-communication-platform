@@ -8,3 +8,16 @@ document.addEventListener("click", function (e) {
     e.preventDefault();
     window.location.replace(link.getAttribute("href"));
 });
+
+// "Skip to main content": move focus to the main landmark without a navigation.
+document.addEventListener("click", function (e) {
+    var link = e.target instanceof Element ? e.target.closest("[data-skip-link]") : null;
+    var main = document.getElementById("main-content");
+    if (!link || !main) {
+        return;
+    }
+
+    e.preventDefault();
+    main.focus();
+    main.scrollIntoView();
+});

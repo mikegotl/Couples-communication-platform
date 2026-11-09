@@ -1,9 +1,9 @@
 @page "/admin/exercises"
+@inherits ScopedPage
 @attribute [Authorize(Roles = Couples.Web.Administration.AdminBootstrap.AdminRole)]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Exercises
 @using Couples.Domain.Exercises
-@inject IExerciseAdminService Admin
 @inject CurrentUser CurrentUser
 @inject ISnackbar Snackbar
 
@@ -61,6 +61,8 @@
 </MudStack>
 
 @code {
+    private IExerciseAdminService Admin => Service<IExerciseAdminService>();
+
     private Guid userId;
     private bool busy;
     private IReadOnlyList<ExerciseDefinitionAdminView>? definitions;

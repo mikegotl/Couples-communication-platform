@@ -41,6 +41,7 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `Notification` | `notifications` | Personal | The recipient | Kind and message id only, never text. Removed when the message is withdrawn or deleted; purged after 90 days; deleted with the account. |
 | `PersonalSafety` | `personal_safety` | PrivateSensitive | Owner only (the partner can't tell whether it exists) | Until the owner deletes their answers or account. Never logged, audited, sent to the coach or used in analytics. |
 | `DataDeletionRequest` | `data_deletion_requests` | Internal | Operators (no UI yet) | 400 days after completion. |
+| `DataProtectionKey` | `data_protection_keys` | Internal (secret) | The app only | ASP.NET Core Data Protection key ring for cookies, antiforgery and account tokens. Encrypted with a certificate outside Development (ADR-0013); a new key is created every 90 days. |
 
 ## AI coach
 
@@ -75,11 +76,16 @@ to a live provider unless `Coaching:Provider` is `Gateway` and the owner has set
 
 1. The user confirms on **Account › Personal data › Delete** (password required).
 2. A `DataDeletionRequest` is recorded and processed immediately: reflections, intake topics and
-   profile, exercise answers and attempts, shared messages
-   sent or received, drafts, consent records, invitations they issued, memberships, then the
-   account, in one transaction.
+   profile, exercise answers and attempts, coaching usage, pace settings, safety answers,
+   notifications, shared messages sent or received, drafts, consent records, invitations they
+   issued or accepted, memberships, then the account, in one transaction. Workspaces they created
+   lose the link to them.
 3. If processing fails, the worker retries pending requests every 5 minutes.
 4. The partner keeps their account, their private data and the workspace.
+5. Afterwards no column holding a user id contains theirs, except the audit events (ids only)
+   and the deletion request itself (`DeletionSweepTests`).
+6. If the account reappears, for example after a backup restore, the worker erases it again.
+   Backups age out after 14 days ([backup policy](../operations/backup-policy.md)).
 
 ## Retention job
 
@@ -88,4 +94,6 @@ configurable under `Retention` in configuration.
 
 ## Not yet covered
 
-- Field-level encryption and backup retention (milestone 10).
+- Application-level field encryption: not used (ADR-0013). Candidate columns if hosting adds a
+  key management service: reflection, intake, exercise response, draft and shared message text,
+  safety answers.

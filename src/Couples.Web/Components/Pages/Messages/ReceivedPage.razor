@@ -1,8 +1,8 @@
 @page "/messages/received/{MessageId:guid}"
+@inherits ScopedPage
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Inbox
-@inject IInboxService Inbox
 @inject CurrentUser CurrentUser
 @inject ISnackbar Snackbar
 
@@ -76,6 +76,8 @@ else
 }
 
 @code {
+    private IInboxService Inbox => Service<IInboxService>();
+
     [Parameter]
     public Guid MessageId { get; set; }
 

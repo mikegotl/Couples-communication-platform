@@ -1,3 +1,4 @@
+@using Couples.Web.Security
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,7 +10,7 @@
     <link rel="stylesheet" href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["Couples.Web.styles.css"]" />
-    <ImportMap />
+    <ImportMap nonce="@HttpContext?.GetCspNonce()" />
     <HeadOutlet />
 </head>
 
@@ -23,3 +24,9 @@
 </body>
 
 </html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+}
+

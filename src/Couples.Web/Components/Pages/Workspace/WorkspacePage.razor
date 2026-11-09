@@ -1,11 +1,10 @@
 @page "/workspace"
+@inherits ScopedPage
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Workspaces
 @using Couples.Application.Intake
 @using Couples.Domain.Intake
-@inject IIntakeService Intake
-@inject IWorkspaceService Workspaces
 @inject CurrentUser CurrentUser
 @inject NavigationManager Navigation
 @inject IDialogService Dialogs
@@ -142,6 +141,9 @@ else
 }
 
 @code {
+    private IIntakeService Intake => Service<IIntakeService>();
+    private IWorkspaceService Workspaces => Service<IWorkspaceService>();
+
     private bool loading = true;
     private bool busy;
     private Guid userId;

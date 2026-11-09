@@ -1,10 +1,10 @@
 @page "/exercises/attempt/{AttemptId:guid}"
+@inherits ScopedPage
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Exercises
 @using Couples.Domain.Common
 @using Couples.Domain.Exercises
-@inject IExerciseService Exercises
 @inject CurrentUser CurrentUser
 @inject NavigationManager Navigation
 @inject IDialogService Dialogs
@@ -143,6 +143,8 @@ else
 }
 
 @code {
+    private IExerciseService Exercises => Service<IExerciseService>();
+
     [Parameter]
     public Guid AttemptId { get; set; }
 

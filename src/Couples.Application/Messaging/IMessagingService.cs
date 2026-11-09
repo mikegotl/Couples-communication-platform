@@ -50,3 +50,10 @@ public sealed record DraftView(Guid Id, string Body, string Status, string Finge
 public sealed record SharePreview(Guid DraftId, string Body, string Fingerprint, string WorkspaceName);
 
 public sealed record SharedMessageView(Guid Id, bool SentByMe, string Body, DateTimeOffset SharedAt, bool Revoked);
+
+/// <summary>Limits that slow down rapid back-and-forth during conflict (see ADR-0013).</summary>
+public static class MessagingLimits
+{
+    /// <summary>Messages one person can send in any rolling hour.</summary>
+    public const int SharesPerHour = 10;
+}

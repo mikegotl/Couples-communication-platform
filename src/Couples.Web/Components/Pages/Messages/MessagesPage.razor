@@ -1,4 +1,5 @@
 @page "/messages"
+@inherits ScopedPage
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Inbox
@@ -6,12 +7,6 @@
 @using Couples.Application.Notifications
 @using Couples.Application.Pace
 @using Couples.Application.Workspaces
-@inject IMessagingService Messages
-@inject IInboxService Inbox
-@inject INotificationService Notifications
-@inject IPaceService Pace
-@inject Couples.Application.Safety.ISafetyGate SafetyGate
-@inject IWorkspaceService Workspaces
 @inject CurrentUser CurrentUser
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
@@ -161,6 +156,13 @@ else
 }
 
 @code {
+    private IMessagingService Messages => Service<IMessagingService>();
+    private IInboxService Inbox => Service<IInboxService>();
+    private INotificationService Notifications => Service<INotificationService>();
+    private IPaceService Pace => Service<IPaceService>();
+    private Couples.Application.Safety.ISafetyGate SafetyGate => Service<Couples.Application.Safety.ISafetyGate>();
+    private IWorkspaceService Workspaces => Service<IWorkspaceService>();
+
     private bool loading = true;
     private bool busy;
     private Guid userId;

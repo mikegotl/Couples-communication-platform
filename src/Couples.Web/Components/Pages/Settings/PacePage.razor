@@ -1,9 +1,9 @@
 @page "/settings/pace"
+@inherits ScopedPage
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Pace
 @using Couples.Domain.Common
-@inject IPaceService Pace
 @inject CurrentUser CurrentUser
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
@@ -94,6 +94,8 @@ else
 }
 
 @code {
+    private IPaceService Pace => Service<IPaceService>();
+
     private PaceSettings? settings;
     private Guid userId;
     private bool busy;

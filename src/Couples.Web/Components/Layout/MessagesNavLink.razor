@@ -1,8 +1,7 @@
 @* Statically rendered with the layout. Shows only a count of notices that are past the user's
    quiet hours; no message text. *@
 @using Couples.Application.Notifications
-@inject INotificationService Notifications
-@inject Couples.Application.Safety.ISafetyGate SafetyGate
+@inject IServiceScopeFactory ScopeFactory
 @inject CurrentUser CurrentUser
 
 <MudLink Href="messages" Color="Color.Inherit" Class="mx-1 mx-sm-2">
@@ -18,10 +17,20 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // No count at all while the user's safety settings are on: nothing for anyone else to notice.
-        if (await CurrentUser.GetIdAsync() is { } id && !await SafetyGate.UserBlocksJointFlowsAsync(id))
+        if (await CurrentUser.GetIdAsync() is not { } id)
         {
-            unread = await Notifications.UnreadCountAsync(id);
+            return;
+        }
+
+        // Static rendering runs this alongside the page's own OnInitializedAsync, so it must not
+        // share the request's DbContext (account pages use it through UserManager).
+        await using var scope = ScopeFactory.CreateAsyncScope();
+        var services = scope.ServiceProvider;
+
+        // No count at all while the user's safety settings are on: nothing for anyone else to notice.
+        if (!await services.GetRequiredService<Couples.Application.Safety.ISafetyGate>().UserBlocksJointFlowsAsync(id))
+        {
+            unread = await services.GetRequiredService<INotificationService>().UnreadCountAsync(id);
         }
     }
 }

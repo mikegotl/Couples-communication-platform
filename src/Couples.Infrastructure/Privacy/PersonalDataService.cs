@@ -160,6 +160,22 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
             completed++;
         }
 
+        // An account that reappears after its deletion completed (for example when a backup taken
+        // before the deletion is restored) is erased again. Requests are kept for 400 days, longer
+        // than any backup is retained, so every restorable deletion is covered.
+        var reappeared = await db.DataDeletionRequests
+            .Where(r => r.Status == DeletionStatus.Completed && db.Users.Any(u => u.Id == r.UserId))
+            .Select(r => r.UserId)
+            .Distinct()
+            .Take(50)
+            .ToListAsync(cancellationToken);
+        foreach (var userId in reappeared)
+        {
+            await EraseAsync(userId, cancellationToken);
+            LogReErased(logger);
+            completed++;
+        }
+
         return completed;
     }
 
@@ -187,7 +203,11 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
         await db.DraftMessages.Where(d => d.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.ConsentRecords.Where(c => c.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.Invitations.Where(i => i.CreatedByUserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.Invitations.Where(i => i.AcceptedByUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.WorkspaceMemberships.Where(m => m.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        // The workspace stays for the partner; only the link to who created it goes.
+        await db.Workspaces.Where(w => w.CreatedByUserId == userId)
+            .ExecuteUpdateAsync(set => set.SetProperty(w => w.CreatedByUserId, Guid.Empty), cancellationToken);
         await db.Users.Where(u => u.Id == userId).ExecuteDeleteAsync(cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
@@ -195,6 +215,9 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Data deletion request {RequestId} recorded")]
     private static partial void LogRequested(ILogger logger, Guid requestId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Re-erased an account whose deletion had already completed (restored from backup?)")]
+    private static partial void LogReErased(ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Data deletion request {RequestId} completed")]
     private static partial void LogCompleted(ILogger logger, Guid requestId);

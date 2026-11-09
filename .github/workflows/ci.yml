@@ -67,5 +67,8 @@ jobs:
             exit 1
           fi
 
+      - name: Scan tracked files for secrets
+        run: ./eng/scan-secrets.sh
+
       - name: Validate Docker Compose file
         run: docker compose config --quiet
