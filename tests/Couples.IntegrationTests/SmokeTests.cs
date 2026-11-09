@@ -1,5 +1,7 @@
 using System.Net;
 using Couples.Application;
+using Couples.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.FeatureManagement;
 
@@ -41,6 +43,32 @@ public sealed class SmokeTests(CouplesWebFactory factory) : IClassFixture<Couple
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("/workspace")]
+    [InlineData("/invite/some-token")]
+    public async Task WorkspacePagesRequireSignIn(string path)
+    {
+        using var client = factory.CreateClient(new() { AllowAutoRedirect = false });
+
+        using var response = await client.GetAsync(new Uri(path, UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.StartsWith("/Account/Login", response.Headers.Location?.PathAndQuery, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("/Account/Register")]
+    [InlineData("/Account/Login")]
+    [InlineData("/Account/ForgotPassword")]
+    public async Task AccountPagesLoadAnonymously(string path)
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.GetAsync(new Uri(path, UriKind.Relative));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     [Fact]
     public async Task Phase2JointChatIsOffByDefault()
     {
@@ -48,5 +76,16 @@ public sealed class SmokeTests(CouplesWebFactory factory) : IClassFixture<Couple
         var features = scope.ServiceProvider.GetRequiredService<IFeatureManager>();
 
         Assert.False(await features.IsEnabledAsync(FeatureFlags.Phase2JointChat));
+    }
+
+    [Fact]
+    public void MigrationsMatchTheWebAppModel()
+    {
+        // Guards against the app's Identity or entity configuration drifting from the
+        // committed migrations, which would make Migrate() fail at startup.
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<CouplesDbContext>();
+
+        Assert.False(db.Database.HasPendingModelChanges());
     }
 }

@@ -1,0 +1,77 @@
+@page "/invite/{Token}"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Workspaces
+@inject IWorkspaceService Workspaces
+@inject CurrentUser CurrentUser
+@inject NavigationManager Navigation
+
+<PageTitle>Join a workspace · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    @if (loading)
+    {
+        <MudProgressCircular Indeterminate="true" aria-label="Checking invite" />
+    }
+    else if (preview is not null)
+    {
+        <MudText Typo="Typo.h4" HtmlTag="h1">You've been invited to join "@preview.WorkspaceName"</MudText>
+        <MudText>
+            Joining connects your account to your partner's workspace. Your account, and anything you
+            write privately, stays yours. Your partner sees only messages you choose to share.
+        </MudText>
+        <MudText Typo="Typo.body2">Only join if you want to. You can leave at any time.</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AcceptAsync" Disabled="busy">Join workspace</MudButton>
+            <MudButton Variant="Variant.Text" Href="">Not now</MudButton>
+        </MudStack>
+    }
+    else
+    {
+        <MudText Typo="Typo.h4" HtmlTag="h1">This invite can't be used</MudText>
+        <MudAlert Severity="Severity.Warning">@message</MudAlert>
+        <div><MudButton Variant="Variant.Text" Href="workspace">Go to your workspace</MudButton></div>
+    }
+</MudStack>
+
+@code {
+    private bool loading = true;
+    private bool busy;
+    private Guid userId;
+    private InvitationPreview? preview;
+    private string? message;
+
+    [Parameter]
+    public string Token { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        var result = await Workspaces.PreviewInvitationAsync(userId, Token);
+        if (result.Succeeded)
+        {
+            preview = result.Value;
+        }
+        else
+        {
+            message = WorkspaceMessages.Describe(result.Error);
+        }
+
+        loading = false;
+    }
+
+    private async Task AcceptAsync()
+    {
+        busy = true;
+        var result = await Workspaces.AcceptInvitationAsync(userId, Token);
+        busy = false;
+        if (result.Succeeded)
+        {
+            Navigation.NavigateTo("workspace");
+            return;
+        }
+
+        preview = null;
+        message = WorkspaceMessages.Describe(result.Error);
+    }
+}

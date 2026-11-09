@@ -28,8 +28,18 @@ Each library exposes a single `AddXxx` extension for dependency injection; hosts
 
 - **UI**: Blazor Web App with interactive server rendering and MudBlazor. Mobile-first and
   accessible; no third-party font or analytics requests from the page.
-- **Data**: PostgreSQL via Npgsql EF Core, default schema `couples`, migrations history table
-  `couples.__ef_migrations_history`. Entities and migrations start in milestone 02.
+- **Data**: PostgreSQL via Npgsql EF Core, default schema `couples`, migrations in
+  `Couples.Infrastructure/Persistence/Migrations`, history table `couples.__ef_migrations_history`.
+  Domain entities generate their own UUIDv7 ids; aggregates that can be changed concurrently use
+  PostgreSQL `xmin` as a concurrency token.
+- **Identity**: ASP.NET Core Identity with `Guid` keys, cookie authentication, confirmed email
+  required, lockout, MFA and passkeys (ADR-0006). The scaffolded account UI lives in
+  `Couples.Web/Components/Account` and renders as static server-side pages.
+- **Workspaces**: `RelationshipWorkspace` aggregate (Domain) owns `WorkspaceMembership` and
+  `Invitation`. `IWorkspaceService` (Application) is implemented in Infrastructure; every
+  method takes the acting user's id and checks active membership in the query itself.
+  Interactive pages resolve the user id with `CurrentUser` and never pass ids from the URL as
+  proof of access.
 - **Feature flags**: `Microsoft.FeatureManagement`, configured under `FeatureManagement` and
   evaluated server-side. `Phase2JointChat` is `false` in base configuration and every flagged
   backend path must check it, not only the UI.
@@ -55,6 +65,8 @@ Each library exposes a single `AddXxx` extension for dependency injection; hosts
 ## Testing
 
 - `Couples.UnitTests`: domain and application logic, no I/O.
-- `Couples.IntegrationTests`: in-memory host via `WebApplicationFactory<Program>` in the
-  Production environment, with an intentionally unreachable database so tests never depend on
-  local state. Database-backed tests arrive with migrations in milestone 02.
+- `Couples.IntegrationTests`:
+  - HTTP smoke tests via `WebApplicationFactory<Program>` in the Production environment with an
+    unreachable database (pages, auth redirects, flags, migration drift check).
+  - Database tests against a disposable PostgreSQL container (Testcontainers) migrated with the
+    real migrations: workspace, invitation and isolation rules, including concurrency.

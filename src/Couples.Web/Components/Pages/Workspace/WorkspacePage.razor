@@ -1,0 +1,227 @@
+@page "/workspace"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Workspaces
+@inject IWorkspaceService Workspaces
+@inject CurrentUser CurrentUser
+@inject NavigationManager Navigation
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<PageTitle>Your workspace · BridgeTogether</PageTitle>
+
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else if (workspace is null)
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Set up your shared workspace</MudText>
+        <MudText>
+            A workspace connects you and your partner. Each of you keeps your own account, and
+            anything you write privately stays private. Nothing is shared unless you approve it.
+        </MudText>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <EditForm Model="this" OnValidSubmit="CreateAsync">
+                <MudStack Spacing="3">
+                    <MudTextField @bind-Value="newName" Label="Workspace name" HelperText="Only you and your partner will see this."
+                                  MaxLength="80" Counter="80" Required="true" RequiredError="Give your workspace a name." />
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Disabled="busy">Create workspace</MudButton>
+                </MudStack>
+            </EditForm>
+        </MudPaper>
+
+        <MudText Typo="Typo.body2">Did your partner send you an invite link? Open it to join their workspace instead.</MudText>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">@workspace.Name</MudText>
+
+        <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock">
+            Your partner can't see your private reflections or drafts. Only messages you review and approve are shared.
+        </MudAlert>
+
+        @if (workspace.PartnerJoined)
+        {
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Your partner has joined</MudText>
+                <MudText Typo="Typo.body2">They joined on @Format(workspace.PartnerJoinedAt).</MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Invite your partner</MudText>
+                    <MudText Typo="Typo.body2">
+                        Your partner creates their own account, then opens the link to join. A link works once
+                        and expires after a few days. Anyone who has it can use it, so send it only to your partner.
+                    </MudText>
+
+                    @if (createdLink is not null)
+                    {
+                        <MudTextField Value="createdLink" ReadOnly="true" Label="Invite link" Variant="Variant.Outlined"
+                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                                      OnAdornmentClick="CopyAsync" AdornmentAriaLabel="Copy invite link" />
+                        <MudText Typo="Typo.caption">
+                            This is the only time the link is shown. It expires @Format(createdExpiresAt).
+                        </MudText>
+                    }
+                    else if (workspace.PendingInvitation is { } pending)
+                    {
+                        <MudText Typo="Typo.body2">
+                            An invite link is active until @Format(pending.ExpiresAt). For your privacy we don't show it again.
+                            Create a new link if you need it; the old one will stop working.
+                        </MudText>
+                    }
+
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="InviteAsync" Disabled="busy">
+                            @(workspace.PendingInvitation is null && createdLink is null ? "Create invite link" : "Create a new link")
+                        </MudButton>
+                        @if (workspace.PendingInvitation is { } active)
+                        {
+                            <MudButton Variant="Variant.Text" OnClick="() => RevokeAsync(active.Id)" Disabled="busy">Cancel invite</MudButton>
+                        }
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        }
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Leave this workspace</MudText>
+                <MudText Typo="Typo.body2">
+                    You can leave at any time. You'll lose access straight away and your account stays yours.
+                </MudText>
+                <div>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="LeaveAsync" Disabled="busy">Leave workspace</MudButton>
+                </div>
+            </MudStack>
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    private bool loading = true;
+    private bool busy;
+    private Guid userId;
+    private WorkspaceSummary? workspace;
+    private string newName = "Our space";
+    private string? createdLink;
+    private DateTimeOffset? createdExpiresAt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        await RefreshAsync();
+        loading = false;
+    }
+
+    private async Task RefreshAsync() => workspace = await Workspaces.GetMyWorkspaceAsync(userId);
+
+    private async Task CreateAsync()
+    {
+        await RunAsync(async () =>
+        {
+            var result = await Workspaces.CreateAsync(userId, newName);
+            Report(result.Succeeded, "Workspace created.", result.Error);
+        });
+    }
+
+    private async Task InviteAsync()
+    {
+        if (workspace is null)
+        {
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            var result = await Workspaces.CreateInvitationAsync(userId, workspace.Id);
+            if (result.Succeeded)
+            {
+                createdLink = Navigation.ToAbsoluteUri($"invite/{result.Value.Token}").AbsoluteUri;
+                createdExpiresAt = result.Value.ExpiresAt;
+            }
+
+            Report(result.Succeeded, "Invite link created.", result.Error);
+        });
+    }
+
+    private async Task RevokeAsync(Guid invitationId)
+    {
+        if (workspace is null)
+        {
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            var result = await Workspaces.RevokeInvitationAsync(userId, workspace.Id, invitationId);
+            createdLink = null;
+            Report(result.Succeeded, "Invite cancelled. The link no longer works.", result.Error);
+        });
+    }
+
+    private async Task LeaveAsync()
+    {
+        if (workspace is null)
+        {
+            return;
+        }
+
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Leave this workspace?",
+            "You'll lose access to the workspace straight away. Your partner will no longer be connected to you here.",
+            yesText: "Leave", cancelText: "Stay");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            var result = await Workspaces.LeaveAsync(userId, workspace.Id);
+            createdLink = null;
+            Report(result.Succeeded, "You've left the workspace.", result.Error);
+        });
+    }
+
+    private async Task CopyAsync()
+    {
+        if (createdLink is null)
+        {
+            return;
+        }
+
+        await using var module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/clipboard.js");
+        await module.InvokeVoidAsync("copyText", createdLink);
+        Snackbar.Add("Invite link copied.", Severity.Success);
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        busy = true;
+        try
+        {
+            await action();
+            await RefreshAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void Report(bool succeeded, string success, Couples.Domain.Common.DomainError? error) =>
+        Snackbar.Add(succeeded ? success : WorkspaceMessages.Describe(error), succeeded ? Severity.Success : Severity.Warning);
+
+    private static string Format(DateTimeOffset? value) =>
+        value?.ToLocalTime().ToString("d MMMM yyyy 'at' HH:mm", System.Globalization.CultureInfo.CurrentCulture) ?? "";
+}

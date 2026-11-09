@@ -27,7 +27,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) and [DECISIONS.md](DECISIONS.md).
 ## Prerequisites
 
 - .NET SDK 10.0.100 or later (pinned with `global.json`, `latestFeature` roll-forward)
-- Docker with Compose v2 (for local PostgreSQL)
+- Docker with Compose v2 (local PostgreSQL; integration tests start their own PostgreSQL container with Testcontainers)
 
 ## Getting started
 
@@ -44,6 +44,17 @@ dotnet run --project src/Couples.Web       # web app (Development profile)
 dotnet run --project src/Couples.Worker    # background worker
 ```
 
+In Development the app applies EF Core migrations on startup (`Database:MigrateOnStartup`) and
+writes account emails (confirmation, password reset) as HTML files to `src/Couples.Web/.mail/`
+instead of sending them. Open the newest file to confirm a test account. To apply migrations by
+hand, or after adding one:
+
+```bash
+dotnet tool install --global dotnet-ef
+dotnet ef database update -p src/Couples.Infrastructure -s src/Couples.Infrastructure
+dotnet ef migrations add <Name> -p src/Couples.Infrastructure -s src/Couples.Infrastructure -o Persistence/Migrations
+```
+
 The Development connection string in `src/Couples.Web/appsettings.Development.json` matches the
 local-only Compose defaults. To change them, copy `.env.example` to `.env` (git-ignored) and
 override `ConnectionStrings__Couples` through environment variables or `dotnet user-secrets`.
@@ -54,6 +65,9 @@ Never commit real credentials.
 | Path | Purpose |
 |------|---------|
 | `/` | Anonymous home page |
+| `/Account/Register`, `/Account/Login`, `/Account/Manage` | Accounts: sign-up with email confirmation, sign-in, password reset, MFA, passkeys |
+| `/workspace` | Create a workspace, invite your partner, leave (signed in) |
+| `/invite/{token}` | Review and accept an invitation (signed in) |
 | `/health` | Liveness (process up; no dependency checks) |
 | `/health/ready` | Readiness (includes PostgreSQL connectivity) |
 
