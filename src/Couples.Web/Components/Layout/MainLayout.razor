@@ -2,9 +2,6 @@
 @inject NavigationManager NavigationManager
 
 <MudThemeProvider />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
 
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Primary">
@@ -13,6 +10,7 @@
         <AuthorizeView>
             <Authorized>
                 <MudLink Href="workspace" Color="Color.Inherit" Class="mx-1 mx-sm-2">Workspace</MudLink>
+                <MudLink Href="intake" Color="Color.Inherit" Class="mx-1 mx-sm-2">My topics</MudLink>
                 <MudLink Href="Account/Manage" Color="Color.Inherit" Class="mx-1 mx-sm-2">Account</MudLink>
                 <form action="Account/Logout" method="post" class="d-inline">
                     <AntiforgeryToken />

@@ -13,7 +13,7 @@ public interface IPersonalDataService
     Task<Guid> RequestDeletionAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Erases the user's app data for every pending request (reflections, drafts, consent records,
+    /// Erases the user's app data for every pending request (reflections, intake, drafts, consent records,
     /// memberships, text of messages they sent) and then their account. Safe to run repeatedly.
     /// Returns the number of requests completed.
     /// </summary>
@@ -28,7 +28,8 @@ public sealed record PersonalDataExport(
     IReadOnlyList<ExportedDraft> Drafts,
     IReadOnlyList<ExportedMessage> MessagesSent,
     IReadOnlyList<ExportedMessage> MessagesReceived,
-    IReadOnlyList<ExportedConsent> Consents);
+    IReadOnlyList<ExportedConsent> Consents,
+    ExportedIntake? Intake);
 
 public sealed record ExportedMembership(Guid WorkspaceId, string WorkspaceName, string Role, DateTimeOffset JoinedAt, DateTimeOffset? LeftAt);
 
@@ -39,3 +40,7 @@ public sealed record ExportedDraft(Guid Id, string Body, string Status, DateTime
 public sealed record ExportedMessage(Guid Id, string Body, DateTimeOffset SharedAt, DateTimeOffset? RevokedAt);
 
 public sealed record ExportedConsent(Guid Id, string Purpose, Guid SubjectId, DateTimeOffset GrantedAt, DateTimeOffset? WithdrawnAt);
+
+public sealed record ExportedIntake(string Status, DateTimeOffset? CompletedAt, DateTimeOffset? SkippedAt, IReadOnlyList<ExportedConcern> Concerns);
+
+public sealed record ExportedConcern(Guid Id, string Category, string? CustomLabel, string Summary, DateTimeOffset? WarningAcknowledgedAt, DateTimeOffset UpdatedAt);

@@ -6,8 +6,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 |---|-----------|--------|
 | 01 | Repository and architecture | Done (PR #1) |
 | 02 | Identity and partner workspace | Done (PR #2) |
-| 03 | Privacy, consent and data boundaries | In review |
-| 04 | Intake and concern mapping | Not started |
+| 03 | Privacy, consent and data boundaries | Done (PR #3) |
+| 04 | Intake and concern mapping | In review |
 | 05 | Guided private reflection exercises | Not started |
 | 06 | AI coaching abstraction and safeguards | Not started |
 | 07 | Draft, preview, approve and deliver | Not started |
@@ -147,3 +147,38 @@ records past their rule.
 
 Notifications do not exist yet (milestone 08); the data inventory records the no-content rule
 they must follow.
+
+## Milestone 04: Intake and concern mapping
+
+**Delivered**
+
+- Topic catalog `ConcernCategory` (finances, trust, infidelity, parenting, conflict, intimacy,
+  custom) seeded by migration. Infidelity, conflict and intimacy carry content warnings that must
+  be acknowledged before the topic is added; the conflict warning points to emergency services
+  and domestic abuse support.
+- Owner-only `IntakeProfile` and `ConcernSelection` with `IIntakeService`: add topics (up to 12,
+  up to 5 custom), editable private notes (up to 4,000 characters), remove, finish, skip and
+  resume, start over. No workspace scope at all (ADR-0008).
+- `/intake` page ("My topics" in the app bar) and a "Your private topics" card on the workspace
+  page showing only the viewer's own status. Not-therapy disclaimer on the intro.
+- Intake added to personal data export and to the deletion workflow; data inventory updated.
+- Fix: MudBlazor dialog and snackbar providers moved into interactive pages
+  (`InteractiveProviders`). They were in the static layout, so the "Leave workspace"
+  confirmation from milestone 02 never appeared.
+- Fix: on narrow screens the app bar links wrap instead of running off-screen.
+- Migration `IntakeAndConcerns`; ADR-0008.
+
+**Verification** (2026-11-09, fresh clone of the branch)
+
+| Command | Result |
+|---------|--------|
+| `dotnet build -c Release` | Succeeded, 0 warnings, 0 errors |
+| `dotnet test -c Release` | UnitTests 32/32, IntegrationTests 52/52 passed |
+| `dotnet list package --vulnerable --include-transitive` | No vulnerable packages |
+| Browser check (Development, 390px wide) | A and B in one workspace. A adds Trust, sees the infidelity warning before it is added, acknowledges it, adds a custom topic, saves a note and finishes; the note survives reload. B's workspace and intake pages contain none of A's topics, notes or status. B skips, sees the resume prompt, then completes their own intake. A's export contains A's intake. "Leave workspace" dialog now renders. |
+
+Gate tests (database-backed): each partner completes intake independently; a partner cannot
+update or remove another partner's topic by id; the partner's workspace view contains nothing
+about intake; export contains only the requester's intake; logs contain no topic labels or notes;
+skip, start over and account deletion erase intake; concurrent first selections create one
+intake; unknown topics and unacknowledged warnings are rejected; `/intake` requires sign-in.

@@ -69,6 +69,7 @@ Never commit real credentials.
 | `/Account/Register`, `/Account/Login`, `/Account/Manage` | Accounts: sign-up with email confirmation, sign-in, password reset, MFA, passkeys |
 | `/workspace` | Create a workspace, invite your partner, leave (signed in) |
 | `/invite/{token}` | Review and accept an invitation (signed in) |
+| `/intake` | Private intake: choose topics to work on and write private notes (signed in) |
 | `/privacy` | Plain-language summary of what is private and what is shared |
 | `/Account/Manage/PersonalData` | Download your data, or delete your account and all your private data |
 | `/health` | Liveness (process up; no dependency checks) |

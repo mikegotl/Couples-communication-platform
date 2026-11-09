@@ -1,0 +1,367 @@
+@page "/intake"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Intake
+@using Couples.Domain.Common
+@using Couples.Domain.Intake
+@inject IIntakeService Intake
+@inject CurrentUser CurrentUser
+@inject NavigationManager Navigation
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<InteractiveProviders />
+<PageTitle>Your private topics · BridgeTogether</PageTitle>
+
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else if (!editing && (intake is null || intake.Status == IntakeStatus.Skipped))
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Your private topics</MudText>
+        <MudText>
+            Take a few minutes to think about what you'd like to work on. Choose the topics that matter to you and,
+            if you like, write a short note on each in your own words. You can change this at any time.
+        </MudText>
+        <PrivacyNote />
+        <MudText Typo="Typo.body2">
+            BridgeTogether is a communication tool. It is not therapy or counselling, and it can't promise any outcome
+            for your relationship.
+        </MudText>
+        @if (intake?.Status == IntakeStatus.Skipped)
+        {
+            <MudText Typo="Typo.body2">You skipped this earlier. Start whenever you're ready.</MudText>
+        }
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => editing = true">Start</MudButton>
+            @if (intake is null)
+            {
+                <MudButton Variant="Variant.Text" OnClick="SkipAsync" Disabled="busy">Skip for now</MudButton>
+            }
+        </MudStack>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="4">
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.h4" HtmlTag="h1">Your private topics</MudText>
+            <PrivacyNote />
+        </MudStack>
+
+        <section aria-labelledby="choose-heading">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h5" HtmlTag="h2" id="choose-heading">1. Choose what you'd like to work on</MudText>
+                <MudText Typo="Typo.body2">Pick as many as fit. You can add or remove topics later.</MudText>
+
+                @foreach (var category in Intake.Categories.Where(c => !c.AllowsCustomLabel))
+                {
+                    var added = Concerns.Any(c => c.CategoryKey == category.Key);
+                    <MudPaper Class="pa-3" Outlined="true">
+                        <MudStack Spacing="2">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                                <div>
+                                    <MudText Typo="Typo.subtitle1" HtmlTag="h3">@category.Name</MudText>
+                                    <MudText Typo="Typo.body2">@category.Description</MudText>
+                                </div>
+                                @if (added)
+                                {
+                                    <MudChip T="string" Icon="@Icons.Material.Filled.Check" Color="Color.Success" Variant="Variant.Outlined">Added</MudChip>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="busy"
+                                               OnClick="() => ChooseAsync(category)" aria-label="@($"Add {category.Name}")">Add</MudButton>
+                                }
+                            </MudStack>
+
+                            @if (pendingWarning == category.Key && category.ContentWarning is { } warning)
+                            {
+                                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" role="alert">
+                                    <MudStack Spacing="2">
+                                        <MudText Typo="Typo.body2">@warning</MudText>
+                                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="busy"
+                                                       OnClick="() => AddAsync(category.Key, null, true)">I understand, add this topic</MudButton>
+                                            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="() => pendingWarning = null">Not now</MudButton>
+                                        </MudStack>
+                                    </MudStack>
+                                </MudAlert>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                }
+
+                @if (Intake.Categories.FirstOrDefault(c => c.AllowsCustomLabel) is { } custom)
+                {
+                    <MudPaper Class="pa-3" Outlined="true">
+                        <EditForm Model="this" OnValidSubmit="() => AddAsync(custom.Key, customLabel, false)">
+                            <MudStack Spacing="2">
+                                <MudText Typo="Typo.subtitle1" HtmlTag="h3">@custom.Name</MudText>
+                                <MudText Typo="Typo.body2">@custom.Description</MudText>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Spacing="2">
+                                    <MudTextField @bind-Value="customLabel" Label="Your own topic" MaxLength="@ConcernSelection.MaxCustomLabelLength"
+                                                  Immediate="true" Class="flex-grow-1" />
+                                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary"
+                                               Disabled="@(busy || string.IsNullOrWhiteSpace(customLabel))">Add topic</MudButton>
+                                </MudStack>
+                            </MudStack>
+                        </EditForm>
+                    </MudPaper>
+                }
+            </MudStack>
+        </section>
+
+        <section aria-labelledby="notes-heading">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h5" HtmlTag="h2" id="notes-heading">2. Your private notes</MudText>
+                @if (Concerns.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">Add a topic above, then you can write a note about it here.</MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">
+                        Optional. What is this topic about for you, and what would you like to be different? Only you can see these notes.
+                    </MudText>
+                }
+
+                @foreach (var concern in Concerns)
+                {
+                    <MudPaper Class="pa-3" Outlined="true" @key="concern.Id">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.subtitle1" HtmlTag="h3">@concern.Title</MudText>
+                            <MudTextField @bind-Value="notes[concern.Id]" Label="@($"Your note on {concern.Title}")" Lines="4" Sizing="InputSizing.Auto"
+                                          MaxLines="12" MaxLength="@ConcernSelection.MaxSummaryLength" Counter="@ConcernSelection.MaxSummaryLength"
+                                          Variant="Variant.Outlined" Immediate="true" />
+                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@(busy || !IsDirty(concern))"
+                                           OnClick="() => SaveNoteAsync(concern)">Save note</MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" Disabled="busy"
+                                           OnClick="() => RemoveAsync(concern)" aria-label="@($"Remove {concern.Title}")">Remove topic</MudButton>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+                }
+            </MudStack>
+        </section>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            @if (intake?.Status == IntakeStatus.Completed)
+            {
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">You're all set</MudText>
+                    <MudText Typo="Typo.body2">
+                        Your topics are saved. Come back and update them whenever things change.
+                        If you'd rather start fresh, you can erase everything on this page.
+                    </MudText>
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="workspace">Go to your workspace</MudButton>
+                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="StartOverAsync" Disabled="busy">Start over</MudButton>
+                    </MudStack>
+                </MudStack>
+            }
+            else
+            {
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">3. Finish</MudText>
+                    <MudText Typo="Typo.body2">Choose at least one topic to finish. Notes are optional, and you can change everything later.</MudText>
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CompleteAsync" Disabled="@(busy || Concerns.Count == 0)">Finish</MudButton>
+                        <MudButton Variant="Variant.Text" OnClick="SkipAsync" Disabled="busy">Skip for now</MudButton>
+                    </MudStack>
+                </MudStack>
+            }
+        </MudPaper>
+    </MudStack>
+}
+
+@code {
+    private bool loading = true;
+    private bool busy;
+    private bool editing;
+    private Guid userId;
+    private IntakeView? intake;
+    private string? pendingWarning;
+    private string? customLabel;
+    private readonly Dictionary<Guid, string> notes = [];
+
+    private IReadOnlyList<ConcernView> Concerns => intake?.Concerns ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        Apply(await Intake.GetAsync(userId));
+        editing = intake is { Status: not IntakeStatus.Skipped };
+        loading = false;
+    }
+
+    private async Task ChooseAsync(ConcernCategoryView category)
+    {
+        if (category.ContentWarning is not null)
+        {
+            pendingWarning = category.Key;
+            return;
+        }
+
+        await AddAsync(category.Key, null, false);
+    }
+
+    private async Task AddAsync(string key, string? label, bool acknowledged)
+    {
+        var result = await RunAsync(() => Intake.AddConcernAsync(userId, key, label, acknowledged));
+        if (result.Succeeded)
+        {
+            pendingWarning = null;
+            customLabel = null;
+            Snackbar.Add("Topic added.", Severity.Success);
+        }
+    }
+
+    private async Task SaveNoteAsync(ConcernView concern)
+    {
+        var result = await RunAsync(() => Intake.UpdateSummaryAsync(userId, concern.Id, notes.GetValueOrDefault(concern.Id)));
+        if (result.Succeeded)
+        {
+            Snackbar.Add("Note saved.", Severity.Success);
+        }
+    }
+
+    private async Task RemoveAsync(ConcernView concern)
+    {
+        if (!string.IsNullOrWhiteSpace(concern.Summary) || IsDirty(concern))
+        {
+            var confirmed = await Dialogs.ShowMessageBoxAsync(
+                $"Remove {concern.Title}?",
+                "Your note on this topic will be erased.",
+                yesText: "Remove", cancelText: "Keep");
+            if (confirmed != true)
+            {
+                return;
+            }
+        }
+
+        var result = await RunAsync(() => Intake.RemoveConcernAsync(userId, concern.Id));
+        if (result.Succeeded)
+        {
+            Snackbar.Add("Topic removed.", Severity.Success);
+        }
+    }
+
+    private async Task CompleteAsync()
+    {
+        if (Concerns.Any(IsDirty))
+        {
+            Snackbar.Add("You have a note that isn't saved yet. Save it or clear your changes first.", Severity.Warning);
+            return;
+        }
+
+        var result = await RunAsync(() => Intake.CompleteAsync(userId));
+        if (result.Succeeded)
+        {
+            Snackbar.Add("Saved. Only you can see your topics.", Severity.Success);
+        }
+    }
+
+    private async Task SkipAsync()
+    {
+        var result = await RunAsync(() => Intake.SkipAsync(userId));
+        if (result.Succeeded)
+        {
+            Navigation.NavigateTo("workspace");
+        }
+    }
+
+    private async Task StartOverAsync()
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Start over?",
+            "This erases all your topics and notes on this page. It can't be undone.",
+            yesText: "Erase and start over", cancelText: "Cancel");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            await Intake.DeleteAsync(userId);
+            Apply(null);
+            editing = false;
+            Snackbar.Add("Your topics and notes were erased.", Severity.Success);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task<Result<IntakeView>> RunAsync(Func<Task<Result<IntakeView>>> action)
+    {
+        busy = true;
+        try
+        {
+            var result = await action();
+            if (result.Succeeded)
+            {
+                Apply(result.Value);
+            }
+            else
+            {
+                Snackbar.Add(Describe(result.Error), Severity.Warning);
+                if (result.Error == DomainError.Conflict)
+                {
+                    Apply(await Intake.GetAsync(userId));
+                }
+            }
+
+            return result;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    /// <summary>Takes a fresh view while keeping unsaved note edits for topics that still exist.</summary>
+    private void Apply(IntakeView? view)
+    {
+        intake = view;
+        var current = Concerns.ToDictionary(c => c.Id);
+        foreach (var id in notes.Keys.Where(id => !current.ContainsKey(id)).ToList())
+        {
+            notes.Remove(id);
+        }
+
+        foreach (var concern in Concerns)
+        {
+            if (!notes.TryGetValue(concern.Id, out var edited) || edited == previous.GetValueOrDefault(concern.Id))
+            {
+                notes[concern.Id] = concern.Summary;
+            }
+        }
+
+        previous.Clear();
+        foreach (var concern in Concerns)
+        {
+            previous[concern.Id] = concern.Summary;
+        }
+    }
+
+    private readonly Dictionary<Guid, string> previous = [];
+
+    private bool IsDirty(ConcernView concern) =>
+        (notes.GetValueOrDefault(concern.Id) ?? string.Empty).Trim() != concern.Summary;
+
+    private static string Describe(DomainError? error) => error switch
+    {
+        DomainError.WarningNotAcknowledged => "Please read the note about this topic before adding it.",
+        DomainError.Conflict => "You've already added that topic, or reached the limit for topics.",
+        DomainError.Validation => "Please check what you entered and try again.",
+        DomainError.NotFound => "That topic no longer exists. The page has been refreshed.",
+        _ => "Something went wrong. Please try again.",
+    };
+}

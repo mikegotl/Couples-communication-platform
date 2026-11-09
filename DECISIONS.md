@@ -12,6 +12,7 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0005](docs/adr/0005-server-side-feature-flags.md) | Server-side feature flags, Phase 2 off | Accepted |
 | [0006](docs/adr/0006-identity-and-workspace-membership.md) | Identity and workspace membership | Accepted |
 | [0007](docs/adr/0007-consent-ledger-and-per-message-sharing.md) | Consent ledger and per-message sharing | Accepted |
+| [0008](docs/adr/0008-private-intake-outside-workspace-scope.md) | Private intake lives outside workspace scope | Accepted |
 
 ## Open decisions (owner)
 

@@ -45,8 +45,9 @@ public sealed class SmokeTests(CouplesWebFactory factory) : IClassFixture<Couple
 
     [Theory]
     [InlineData("/workspace")]
+    [InlineData("/intake")]
     [InlineData("/invite/some-token")]
-    public async Task WorkspacePagesRequireSignIn(string path)
+    public async Task PrivatePagesRequireSignIn(string path)
     {
         using var client = factory.CreateClient(new() { AllowAutoRedirect = false });
 

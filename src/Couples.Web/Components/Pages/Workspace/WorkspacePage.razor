@@ -2,6 +2,9 @@
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Workspaces
+@using Couples.Application.Intake
+@using Couples.Domain.Intake
+@inject IIntakeService Intake
 @inject IWorkspaceService Workspaces
 @inject CurrentUser CurrentUser
 @inject NavigationManager Navigation
@@ -9,6 +12,7 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 
+<InteractiveProviders />
 <PageTitle>Your workspace · BridgeTogether</PageTitle>
 
 @if (loading)
@@ -45,6 +49,25 @@ else
         <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock">
             Your partner can't see your private reflections or drafts. Only messages you review and approve are shared.
         </MudAlert>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Your private topics</MudText>
+                @if (intakeStatus == IntakeStatus.Completed)
+                {
+                    <MudText Typo="Typo.body2">You've chosen what you'd like to work on. Only you can see it.</MudText>
+                    <div><MudButton Variant="Variant.Outlined" Href="intake">Review your topics</MudButton></div>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">
+                        Take a few minutes, on your own, to choose what you'd like to work on. Your partner won't see your
+                        topics or notes, or whether you've done this.
+                    </MudText>
+                    <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="intake">@(intakeStatus is null ? "Start" : "Continue")</MudButton></div>
+                }
+            </MudStack>
+        </MudPaper>
 
         @if (workspace.PartnerJoined)
         {
@@ -112,6 +135,7 @@ else
     private bool busy;
     private Guid userId;
     private WorkspaceSummary? workspace;
+    private IntakeStatus? intakeStatus;
     private string newName = "Our space";
     private string? createdLink;
     private DateTimeOffset? createdExpiresAt;
@@ -120,6 +144,7 @@ else
     {
         userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
         await RefreshAsync();
+        intakeStatus = (await Intake.GetAsync(userId))?.Status;
         loading = false;
     }
 

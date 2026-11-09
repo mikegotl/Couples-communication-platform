@@ -79,3 +79,19 @@ body { font-family: Roboto, "Helvetica Neue", Arial, sans-serif; }
 .d-inline { display: inline; }
 .col-lg-3 { flex: 0 0 12rem; }
 .col-lg-9 { flex: 1 1 20rem; }
+
+/* Narrow screens: let the app bar links wrap onto a second line instead of running off-screen. */
+@media (max-width: 599.98px) {
+    .mud-appbar .mud-toolbar {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 56px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        row-gap: 4px;
+    }
+
+    .mud-appbar ~ .mud-main-content {
+        padding-top: 96px;
+    }
+}
