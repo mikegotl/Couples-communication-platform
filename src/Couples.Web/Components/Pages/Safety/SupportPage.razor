@@ -39,6 +39,13 @@
     <section aria-labelledby="private-heading">
         <MudText Typo="Typo.h6" HtmlTag="h2" id="private-heading">Staying private</MudText>
         <MudText Typo="Typo.body2" Class="mb-1">@SafetyCopy.QuickExit</MudText>
+        <MudText Typo="Typo.body2" Class="mb-1">If someone may check your device:</MudText>
+        <ul class="privacy-tips">
+            @foreach (var tip in SafetyCopy.PrivacyTips)
+            {
+                <li>@tip</li>
+            }
+        </ul>
         <MudText Typo="Typo.body2">
             Signed in, you can take a private safety check and turn on safety mode on the
             <MudLink Href="safety">Your safety</MudLink> page. Your partner is never told.

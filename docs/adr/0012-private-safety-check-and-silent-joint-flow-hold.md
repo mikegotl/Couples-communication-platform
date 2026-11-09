@@ -26,7 +26,9 @@ tip off a controlling partner.
 - Safety answers are `PrivateSensitive`, owner only, included in the owner's export, erased with
   the account, and never logged, audited, sent to the AI coach or used in analytics.
 - A "Leave quickly" link on every page replaces the current history entry with a neutral site
-  (`Safety:ExitUrl`, https only). `/support` is public and lists resources from configuration plus
+  (`Safety:ExitUrl`, https only). It cannot remove earlier history entries, so Back can still
+  show the app; `/support` says so plainly and gives practical steps (private window, logging
+  out, deleting just this site from history, an email only they can open). `/support` is public and lists resources from configuration plus
   two built-in, jurisdiction-neutral entries. Copy never claims the app can contact anyone or
   monitor content.
 

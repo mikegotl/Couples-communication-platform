@@ -35,9 +35,18 @@ public static class SafetyCopy
         "Safety mode turns off sharing with your partner, stops notices from this app, and hides your partner's messages unless you choose to look. Your partner isn't told. Their messages still arrive, so nothing changes on their side.";
 
     public const string QuickExit =
-        "\"Leave quickly\" opens a neutral website in this tab. It can't erase your browser history; if someone may check your device, consider a private browsing window and logging out.";
+        "\"Leave quickly\" swaps this page for a neutral website. It can't erase your browser history, so pressing Back may still show earlier pages of this site.";
+
+    /// <summary>Practical steps for someone whose device may be checked. Shown on the Support page.</summary>
+    public static readonly string[] PrivacyTips =
+    [
+        "Use a private or incognito window. The browser forgets the pages you visited when you close it.",
+        "Log out when you finish, and leave \"Remember me\" unticked when you log in.",
+        "To remove visits afterwards, delete just this site from your browser history. Clearing all of it can be noticed.",
+        "Account emails, such as password resets, go to your email inbox. Use an address only you can open.",
+    ];
 
     /// <summary>Every string above, for review tooling and tests.</summary>
     public static IReadOnlyList<string> All { get; } =
-        [ImmediateDanger, NotACrisisService, NoPressure, SelfHarm, UnsafeResult, ConcernResult, NoConcernsResult, SharingHeld, SafetyModeExplained, QuickExit];
+        [ImmediateDanger, NotACrisisService, NoPressure, SelfHarm, UnsafeResult, ConcernResult, NoConcernsResult, SharingHeld, SafetyModeExplained, QuickExit, .. PrivacyTips];
 }
