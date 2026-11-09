@@ -14,3 +14,13 @@ indent_size = 2
 [*.cs]
 csharp_style_namespace_declarations = file_scoped:warning
 dotnet_sort_system_directives_first = true
+
+# ASP.NET Core Identity UI scaffolded from the Blazor template. Its logs carry user ids only
+# (security events), never emails, tokens or user-written content.
+[src/Couples.Web/Components/Account/**]
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA1873.severity = none
+
+# EF Core migrations are generated code.
+[src/Couples.Infrastructure/Persistence/Migrations/**]
+generated_code = true

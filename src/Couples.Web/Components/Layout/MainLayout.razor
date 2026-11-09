@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -7,9 +8,23 @@
 
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Primary">
-        <MudText Typo="Typo.h6" Class="ml-2">BridgeTogether</MudText>
+        <MudLink Href="" Color="Color.Inherit" Underline="Underline.None" Typo="Typo.h6" Class="ml-2">BridgeTogether</MudLink>
         <MudSpacer />
-        <MudText Typo="Typo.caption">Working name</MudText>
+        <AuthorizeView>
+            <Authorized>
+                <MudLink Href="workspace" Color="Color.Inherit" Class="mx-1 mx-sm-2">Workspace</MudLink>
+                <MudLink Href="Account/Manage" Color="Color.Inherit" Class="mx-1 mx-sm-2">Account</MudLink>
+                <form action="Account/Logout" method="post" class="d-inline">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <button type="submit" class="appbar-link mx-1 mx-sm-2">Log out</button>
+                </form>
+            </Authorized>
+            <NotAuthorized>
+                <MudLink Href="Account/Login" Color="Color.Inherit" Class="mx-1 mx-sm-2">Log in</MudLink>
+                <MudLink Href="Account/Register" Color="Color.Inherit" Class="mx-1 mx-sm-2">Create account</MudLink>
+            </NotAuthorized>
+        </AuthorizeView>
     </MudAppBar>
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">

@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # Local secrets
 .env
+
+# Development email pickup folder
+.mail/

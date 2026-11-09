@@ -1,6 +1,9 @@
 using Couples.Application.Abstractions;
+using Couples.Application.Workspaces;
 using Couples.Infrastructure.Persistence;
 using Couples.Infrastructure.Time;
+using Couples.Infrastructure.Workspaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,13 +24,26 @@ public static class DependencyInjection
 
         services.AddSingleton<IClock, SystemClock>();
 
-        services.AddDbContext<CouplesDbContext>(options =>
-            options.UseNpgsql(connectionString, npgsql =>
-                npgsql.MigrationsHistoryTable("__ef_migrations_history", "couples")));
+        // Identity store shape is part of the EF model, so it is fixed here rather than in each
+        // host. The web app, the worker, tests and `dotnet ef` then all build the same model.
+        services.Configure<IdentityOptions>(options =>
+        {
+            options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
+            options.Stores.MaxLengthForKeys = 128;
+        });
+
+        services.AddDbContext<CouplesDbContext>(options => ConfigureNpgsql(options, connectionString));
+
+        services.AddOptions<WorkspaceOptions>().BindConfiguration(WorkspaceOptions.SectionName);
+        services.AddScoped<IWorkspaceService, WorkspaceService>();
 
         services.AddHealthChecks()
             .AddDbContextCheck<CouplesDbContext>("database", tags: [ReadyTag]);
 
         return services;
     }
+
+    internal static void ConfigureNpgsql(DbContextOptionsBuilder options, string? connectionString) =>
+        options.UseNpgsql(connectionString, npgsql =>
+            npgsql.MigrationsHistoryTable("__ef_migrations_history", CouplesDbContext.Schema));
 }

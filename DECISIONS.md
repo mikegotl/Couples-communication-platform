@@ -10,10 +10,12 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0003](docs/adr/0003-postgresql-with-ef-core.md) | PostgreSQL with EF Core | Accepted |
 | [0004](docs/adr/0004-provider-neutral-ai-coach.md) | Provider-neutral AI coach | Accepted |
 | [0005](docs/adr/0005-server-side-feature-flags.md) | Server-side feature flags, Phase 2 off | Accepted |
+| [0006](docs/adr/0006-identity-and-workspace-membership.md) | Identity and workspace membership | Accepted |
 
 ## Open decisions (owner)
 
 - Working brand, jurisdiction, legal/privacy counsel and launch market.
+- Transactional email provider (needed before any non-development deployment; see ADR-0006).
 - AI provider and data-processing agreement (retention and training controls verified first).
 - Licensed clinician reviewers for exercises and high-risk flows.
 - Whether a therapist portal is a separate later product (no therapist access by default).
