@@ -113,13 +113,20 @@ internal static partial class CoachOutputValidator
             return false;
         }
 
-        if (LinkPattern().IsMatch(value) || EmailPattern().IsMatch(value) || PhonePattern().IsMatch(value) || MarkupPattern().IsMatch(value))
+        if (LinkPattern().IsMatch(value) || EmailPattern().IsMatch(value) || LooksLikePhoneNumber(value) || MarkupPattern().IsMatch(value))
         {
             return false;
         }
 
         return !Forbidden.Any(f => value.Contains(f, StringComparison.OrdinalIgnoreCase));
     }
+
+    /// <summary>
+    /// A run of digits and separators holding nine or more digits. Dates and times such as
+    /// "2026-11-09" or "18:30" have fewer digits and are allowed.
+    /// </summary>
+    private static bool LooksLikePhoneNumber(string value) =>
+        PhonePattern().Matches(value).Any(m => m.Value.Count(char.IsAsciiDigit) >= 9);
 
     private static string StripFence(string content)
     {
