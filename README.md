@@ -73,6 +73,8 @@ Never commit real credentials.
 | `/exercises` | Guided private exercises; progress saves after every step (signed in) |
 | `/messages` | Private drafts, messages from your partner, sent messages and withdrawal (signed in) |
 | `/messages/new`, `/messages/draft/{id}` | Write a draft, get optional wording suggestions, preview exactly what your partner will see, confirm and send |
+| `/messages/received/{id}` | Read a message from your partner, keep private notes, start an optional reply |
+| `/settings/pace` | Pause new messages, quiet hours, mute notifications |
 | `/admin/exercises` | Exercise content and clinician review status (Admin role only) |
 | `/privacy` | Plain-language summary of what is private and what is shared |
 | `/Account/Manage/PersonalData` | Download your data, or delete your account and all your private data |

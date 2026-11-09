@@ -24,6 +24,14 @@ public sealed class SharedMessage : Entity
 
     public Guid ConsentRecordId { get; private set; }
 
+    public Guid? InReplyToMessageId { get; private set; }
+
+    /// <summary>
+    /// When the recipient first opened it. For the recipient's own "new" marker only; never shown
+    /// to the sender, so there is no read receipt.
+    /// </summary>
+    public DateTimeOffset? RecipientOpenedAt { get; private set; }
+
     public string Body { get; private set; } = string.Empty;
 
     public DateTimeOffset SharedAt { get; private set; }
@@ -40,12 +48,21 @@ public sealed class SharedMessage : Entity
             SenderUserId = draft.OwnerUserId,
             RecipientUserId = recipientUserId,
             SourceDraftId = draft.Id,
+            InReplyToMessageId = draft.InReplyToMessageId,
             ConsentRecordId = consentRecordId,
             Body = draft.Body,
             SharedAt = now,
         };
         message.Touch(now);
         return message;
+    }
+
+    public void MarkOpenedByRecipient(Guid actingUserId, DateTimeOffset now)
+    {
+        if (actingUserId == RecipientUserId && RecipientOpenedAt is null)
+        {
+            RecipientOpenedAt = now;
+        }
     }
 
     /// <summary>

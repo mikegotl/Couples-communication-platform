@@ -15,6 +15,7 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0008](docs/adr/0008-private-intake-outside-workspace-scope.md) | Private intake lives outside workspace scope | Accepted |
 | [0009](docs/adr/0009-versioned-exercises-and-clinician-review.md) | Versioned exercises with clinician review metadata | Accepted |
 | [0010](docs/adr/0010-coach-safeguards-and-gated-live-provider.md) | Coach safeguards and an owner-gated live provider | Accepted |
+| [0011](docs/adr/0011-pace-controls-and-content-free-notifications.md) | Pace controls and content-free notifications | Accepted |
 
 ## Open decisions (owner)
 

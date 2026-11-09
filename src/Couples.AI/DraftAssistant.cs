@@ -22,6 +22,16 @@ internal sealed class DraftAssistant(IMessagingService messages, ICommunicationC
             return DomainError.Conflict;
         }
 
+        // For a reply, give the coach the partner's message too, if the user can still read it.
+        if (draft.Value.InReplyToMessageId is { } replyTo)
+        {
+            var received = await messages.GetSharedAsync(userId, replyTo, cancellationToken);
+            if (received.Succeeded && !received.Value.SentByMe && !received.Value.Revoked)
+            {
+                return Result.Ok(await coach.SuggestAsync(new CoachRequest(userId, CoachTask.SuggestReply, draft.Value.Body, received.Value.Body), cancellationToken));
+            }
+        }
+
         return Result.Ok(await coach.SuggestAsync(new CoachRequest(userId, CoachTask.RephraseDraft, draft.Value.Body), cancellationToken));
     }
 }

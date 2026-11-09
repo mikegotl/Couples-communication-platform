@@ -21,7 +21,7 @@ public interface IMessagingService
 
     /// <summary>
     /// What the partner would see if the draft were shared now, plus the fingerprint the author
-    /// must send back to approve exactly this text. Fails with NoPartner when nobody can receive it.
+    /// must send back to approve exactly this text. Fails with NoPartner when nobody can receive it, or PartnerPaused while the partner has paused messages.
     /// </summary>
     Task<Result<SharePreview>> PreviewShareAsync(Guid userId, Guid draftId, CancellationToken cancellationToken = default);
 
@@ -45,7 +45,7 @@ public interface IMessagingService
     Task<Result> RevokeAsync(Guid userId, Guid messageId, CancellationToken cancellationToken = default);
 }
 
-public sealed record DraftView(Guid Id, string Body, string Status, string Fingerprint, DateTimeOffset UpdatedAt);
+public sealed record DraftView(Guid Id, string Body, string Status, string Fingerprint, DateTimeOffset UpdatedAt, Guid? InReplyToMessageId = null);
 
 public sealed record SharePreview(Guid DraftId, string Body, string Fingerprint, string WorkspaceName);
 

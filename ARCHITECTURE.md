@@ -97,6 +97,14 @@ a repeated confirmation. Blazor Server pages share one scoped `DbContext` per ci
 must not start a second database call (or a navigation that re-creates the page) while one is
 running.
 
+## Inbox, pace and notifications
+
+`IInboxService` serves the recipient's side (list, open, private notes, start a reply) using the
+same readability rule as messaging (`MessageAccess.ReadableByRecipient`). `ShareAsync` checks the
+recipient's `PacePreferences` (pause blocks delivery) and, unless they muted notices, adds a
+`Notification` (kind + message id, visible after their quiet hours) in the same transaction.
+`MessagesNavLink` in the static layout shows the unread count. See ADR-0011.
+
 ## Exercises
 
 Exercise wording is code (`Couples.Domain.Exercises.ExerciseCatalog`); each version is published

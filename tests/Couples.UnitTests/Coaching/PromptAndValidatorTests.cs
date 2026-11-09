@@ -89,6 +89,13 @@ public sealed class PromptAndValidatorTests
     public void RejectsDiagnosisBlameLeaksLinksAndHiddenMarkup(string text) =>
         Assert.Equal(ValidationVerdict.Invalid, CoachOutputValidator.Validate(Coach.Json(text), Canary, Boundary).Verdict);
 
+    [Theory]
+    [InlineData("Could we talk on 2026-11-09 at 18:30?")]
+    [InlineData("Could we take 10 minutes tonight, around 9.30?")]
+    [InlineData("I'd like us to save 1,500 by June.")]
+    public void AllowsDatesTimesAndAmounts(string text) =>
+        Assert.Equal(ValidationVerdict.Valid, CoachOutputValidator.Validate(Coach.Json(text), Canary, Boundary).Verdict);
+
     [Fact]
     public void RejectsOutputThatLeaksTheCanaryOrBoundary()
     {

@@ -25,7 +25,8 @@ public sealed partial class CoachingTests(PostgresFixture db)
     {
         var a = await db.CreateUserAsync();
         var logs = new CapturingLoggerProvider();
-        var draft = $"You never call me back {Guid.NewGuid():N}";
+        // Letters only: a random hex id can contain a digit run that reads like a phone number.
+        var draft = $"You never call me back {new string(Guid.NewGuid().ToString("N").Select(c => (char)('a' + (c % 26))).ToArray())}";
 
         var result = await RunCoach(c => c.SuggestAsync(new CoachRequest(a, CoachTask.RephraseDraft, draft)), logs);
 

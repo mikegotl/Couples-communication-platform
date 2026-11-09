@@ -10,8 +10,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | 04 | Intake and concern mapping | Done (PR #4) |
 | 05 | Guided private reflection exercises | Done (PR #5) |
 | 06 | AI coaching abstraction and safeguards | Done (PR #6) |
-| 07 | Draft, preview, approve and deliver | In review |
-| 08 | Asynchronous partner responses | Not started |
+| 07 | Draft, preview, approve and deliver | Done (PR #7) |
+| 08 | Asynchronous partner responses | In review |
 | 09 | Safety and support pathways | Not started |
 | 10 | Accessibility, security and data lifecycle | Not started |
 | 11 | Private pilot readiness and observability | Not started |
@@ -312,3 +312,42 @@ preview; repeated and concurrent confirmations return one delivery with one cons
 audit event; a wrong approval is rejected; confirming after withdrawal never re-delivers;
 suggestions are owner-only, change nothing, share nothing and stay out of logs; a disabled coach
 reports itself unavailable.
+
+## Milestone 08: Asynchronous partner responses
+
+**Delivered**
+
+- Inbox (`IInboxService`): received messages with a "New" marker for the recipient only, whether
+  the recipient has private notes, a reply in progress or has replied. Opening a message
+  (`/messages/received/{id}`) clears its marker and its notice; the sender is never told.
+- Private notes on a received message, stored as the recipient's own `PrivateReflection` linked
+  to the message; prompts suggest noting what they heard, how they feel and what they'd need
+  before replying. The copy says there's no rush and no need to reply.
+- Optional reply: "Start a reply" creates a private reply draft (`InReplyToMessageId`) that goes
+  through the same preview and confirmation as any message. The coach suggests replies with the
+  partner's message as context. The partner sees the reply together with what they sent.
+- Pace (`/settings/pace`, `IPaceService`): pause new messages for 1 day to 2 weeks (delivery is
+  held and the sender's draft kept; the partner sees only that a pause is on and until when),
+  quiet hours in the user's time zone (notices held until they end, daylight saving handled), and
+  mute (no notices; messages still arrive). Pauses end by themselves.
+- Notifications (`INotificationService`): in-app only, kind and message id only, fixed wording,
+  shown in the "Messages (n)" link once past quiet hours, marked read when the inbox or the
+  message is opened, removed when the message is withdrawn, purged after 90 days.
+- Export and account deletion include pace settings and notifications; deleting an account
+  removes notices about its messages and unlinks (but keeps) the partner's own notes.
+- Migration `AsyncResponsesAndPace`; ADR-0011.
+
+**Verification**: see the PR description for the commands run on a fresh clone and their results.
+
+Gate tests (database-backed): a full exchange (send, content-free notice, open without a read
+receipt, private notes, reply through preview and approval, reply notice, thread view) with no
+text in logs and no notes in the sender's export; notification rows have metadata columns only;
+quiet hours hold notices but not messages; mute skips notices; pause blocks preview and delivery
+without writing anything, is visible to the partner only as an end time, and expires; withdrawal
+removes the notice and closes the inbox item; senders and outsiders cannot open, annotate or
+reply to the recipient's messages; account deletion erases pace and notices but keeps the
+partner's notes. Unit tests cover quiet hours across midnight and daylight saving, validation and
+pause limits.
+
+**Not yet**: email or push notifications (they need the email provider decision and would carry
+the same fixed, content-free wording).

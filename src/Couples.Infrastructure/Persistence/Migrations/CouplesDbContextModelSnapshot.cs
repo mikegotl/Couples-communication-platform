@@ -469,6 +469,9 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("DiscardedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("InReplyToMessageId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("OwnerUserId")
                         .HasColumnType("uuid");
 
@@ -491,6 +494,8 @@ namespace Couples.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("InReplyToMessageId");
+
                     b.HasIndex("OwnerUserId");
 
                     b.HasIndex("WorkspaceId");
@@ -512,6 +517,12 @@ namespace Couples.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("InReplyToMessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("RecipientOpenedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("RecipientUserId")
@@ -543,6 +554,8 @@ namespace Couples.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("InReplyToMessageId");
+
                     b.HasIndex("SourceDraftId")
                         .IsUnique();
 
@@ -553,6 +566,79 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.HasIndex("SenderUserId", "SharedAt");
 
                     b.ToTable("shared_messages", "couples");
+                });
+
+            modelBuilder.Entity("Couples.Domain.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("VisibleAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectId");
+
+                    b.HasIndex("RecipientUserId", "VisibleAt");
+
+                    b.ToTable("notifications", "couples");
+                });
+
+            modelBuilder.Entity("Couples.Domain.Pace.PacePreferences", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Muted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("PausedUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<TimeOnly?>("QuietEnd")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<TimeOnly?>("QuietStart")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("pace_preferences", "couples");
                 });
 
             modelBuilder.Entity("Couples.Domain.Privacy.DataDeletionRequest", b =>
@@ -595,6 +681,9 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("AboutMessageId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Body")
                         .IsRequired()
                         .HasMaxLength(20000)
@@ -616,7 +705,13 @@ namespace Couples.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AboutMessageId");
+
                     b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("OwnerUserId", "AboutMessageId")
+                        .IsUnique()
+                        .HasFilter("\"AboutMessageId\" IS NOT NULL");
 
                     b.ToTable("private_reflections", "couples");
                 });
@@ -1041,6 +1136,11 @@ namespace Couples.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Couples.Domain.Messaging.DraftMessage", b =>
                 {
+                    b.HasOne("Couples.Domain.Messaging.SharedMessage", null)
+                        .WithMany()
+                        .HasForeignKey("InReplyToMessageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("OwnerUserId")
@@ -1056,6 +1156,11 @@ namespace Couples.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Couples.Domain.Messaging.SharedMessage", b =>
                 {
+                    b.HasOne("Couples.Domain.Messaging.SharedMessage", null)
+                        .WithMany()
+                        .HasForeignKey("InReplyToMessageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("RecipientUserId")
@@ -1080,8 +1185,31 @@ namespace Couples.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Couples.Domain.Notifications.Notification", b =>
+                {
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Couples.Domain.Pace.PacePreferences", b =>
+                {
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("Couples.Domain.Pace.PacePreferences", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Couples.Domain.Reflections.PrivateReflection", b =>
                 {
+                    b.HasOne("Couples.Domain.Messaging.SharedMessage", null)
+                        .WithMany()
+                        .HasForeignKey("AboutMessageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("OwnerUserId")

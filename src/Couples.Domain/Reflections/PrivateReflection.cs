@@ -24,6 +24,12 @@ public sealed class PrivateReflection : Entity
 
     public string Body { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// A shared message this reflection is about (one the owner received or sent). The link is
+    /// the owner's own; the other partner can never see that a reflection exists.
+    /// </summary>
+    public Guid? AboutMessageId { get; private set; }
+
     public static Result<PrivateReflection> Create(Guid ownerUserId, string? title, string? body, DateTimeOffset now)
     {
         if (ownerUserId == Guid.Empty)
@@ -34,6 +40,17 @@ public sealed class PrivateReflection : Entity
         var reflection = new PrivateReflection { OwnerUserId = ownerUserId };
         var updated = reflection.Update(title, body, now);
         return updated.Succeeded ? Result.Ok(reflection) : updated.Error!.Value;
+    }
+
+    public static Result<PrivateReflection> AboutMessage(Guid ownerUserId, Guid messageId, string? body, DateTimeOffset now)
+    {
+        var created = Create(ownerUserId, "Thoughts on a message", body, now);
+        if (created.Succeeded)
+        {
+            created.Value.AboutMessageId = messageId;
+        }
+
+        return created;
     }
 
     public Result Update(string? title, string? body, DateTimeOffset now)

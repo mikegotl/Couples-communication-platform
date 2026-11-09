@@ -3,11 +3,13 @@
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Coaching
+@using Couples.Application.Inbox
 @using Couples.Application.Messaging
 @using Couples.Domain.Common
 @using Couples.Domain.Messaging
 @inject IMessagingService Messages
 @inject IDraftAssistant Assistant
+@inject IInboxService Inbox
 @inject CurrentUser CurrentUser
 @inject NavigationManager Navigation
 @inject IDialogService Dialogs
@@ -68,7 +70,11 @@ else if (stage == Stage.Preview && preview is not null)
 else
 {
     <MudStack Spacing="3">
-        <h1 class="mud-typography mud-typography-h4" tabindex="-1" @ref="heading">Write to your partner</h1>
+        <h1 class="mud-typography mud-typography-h4" tabindex="-1" @ref="heading">@(replyTo is null ? "Write to your partner" : "Reply to your partner")</h1>
+        @if (replyingToText is not null)
+        {
+            <MessageCard Heading="Their message" Body="@replyingToText" />
+        }
         <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock">
             Private draft. Only you can see this until you preview it and choose to send it.
         </MudAlert>
@@ -129,6 +135,12 @@ else
     [Parameter]
     public Guid? DraftId { get; set; }
 
+    [SupplyParameterFromQuery(Name = "replyTo")]
+    public Guid? ReplyTo { get; set; }
+
+    private Guid? replyTo;
+    private string? replyingToText;
+
     private enum Stage
     {
         Write,
@@ -168,6 +180,21 @@ else
             {
                 draftId = id;
                 body = savedBody = draft.Value.Body;
+                replyTo = draft.Value.InReplyToMessageId;
+            }
+        }
+        else if (ReplyTo is { } target)
+        {
+            replyTo = target;
+        }
+
+        if (replyTo is { } original)
+        {
+            var received = await Messages.GetSharedAsync(userId, original);
+            replyingToText = received.Succeeded && !received.Value.SentByMe ? received.Value.Body : null;
+            if (DraftId is null && replyingToText is null)
+            {
+                notFound = true;
             }
         }
 
@@ -198,7 +225,26 @@ else
             return true;
         }
 
-        var result = draftId is { } id ? await Messages.EditDraftAsync(userId, id, body) : await Messages.CreateDraftAsync(userId, body);
+        Result<DraftView> result;
+        if (draftId is { } id)
+        {
+            result = await Messages.EditDraftAsync(userId, id, body);
+        }
+        else if (replyTo is { } original)
+        {
+            var started = await Inbox.StartReplyAsync(userId, original, body);
+            result = started.Succeeded ? await Messages.GetDraftAsync(userId, started.Value) : started.Error!.Value;
+            if (result.Succeeded && result.Value.Body != body?.Trim())
+            {
+                // A reply draft already existed (another tab); keep its text and the user's on-screen edits.
+                result = await Messages.EditDraftAsync(userId, started.Value, body);
+            }
+        }
+        else
+        {
+            result = await Messages.CreateDraftAsync(userId, body);
+        }
+
         if (!result.Succeeded)
         {
             error = result.Error switch
@@ -278,9 +324,12 @@ else
             var result = await Messages.PreviewShareAsync(userId, draftId!.Value);
             if (!result.Succeeded)
             {
-                error = result.Error == DomainError.NoPartner
-                    ? "Your partner hasn't joined your workspace yet. Your draft is saved; you can send it once they join."
-                    : "We couldn't prepare a preview. Please try again.";
+                error = result.Error switch
+                {
+                    DomainError.NoPartner => "Your partner hasn't joined your workspace yet. Your draft is saved; you can send it once they join.",
+                    DomainError.PartnerPaused => "Your partner has paused new messages for now. Your draft is saved; you can send it after the pause ends.",
+                    _ => "We couldn't prepare a preview. Please try again.",
+                };
                 return;
             }
 
@@ -326,6 +375,7 @@ else
             {
                 DomainError.ConsentMismatch => "Your draft changed after this preview, so nothing was sent. Go back and preview it again.",
                 DomainError.NoPartner => "Your partner is no longer in this workspace, so nothing was sent. Your draft is kept.",
+                DomainError.PartnerPaused => "Your partner has just paused new messages, so nothing was sent. Your draft is kept for later.",
                 _ => "Nothing was sent. Please go back to your messages and try again.",
             };
         }
