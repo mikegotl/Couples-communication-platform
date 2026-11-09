@@ -29,8 +29,8 @@ h1:focus {
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
-    text-align: end;
+    color: var(--mud-palette-text-secondary);
+    text-align: start;
 }
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
@@ -38,12 +38,14 @@ h1:focus {
 }
 /* Lightweight styles for the ASP.NET Core Identity pages (scaffolded with Bootstrap class
    names). Kept local so no third-party CSS is fetched. */
-body { font-family: Roboto, "Helvetica Neue", Arial, sans-serif; }
-.mud-main-content h1 { font-size: 2rem; font-weight: 400; margin: 0 0 1rem; }
+@font-face { font-family: "Fraunces"; src: url("fonts/fraunces-latin.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("fonts/nunito-latin.woff2") format("woff2"); font-weight: 200 1000; font-display: swap; }
+body { font-family: Nunito, "Helvetica Neue", Arial, sans-serif; background: var(--mud-palette-background); color: var(--mud-palette-text-primary); }
+.mud-main-content h1 { font-family: Fraunces, Georgia, serif; font-size: 2rem; font-weight: 500; margin: 0 0 1rem; }
 .mud-main-content h2, .mud-main-content h3 { font-size: 1.25rem; font-weight: 500; margin: 1rem 0 .5rem; }
 .mud-main-content hr { border: 0; border-top: 1px solid #e0e0e0; margin: 1rem 0; }
 .mud-main-content p { margin: 0 0 .75rem; }
-.mud-main-content a:not(.mud-button-root) { color: #594ae2; }
+.mud-main-content a:not(.mud-button-root) { color: var(--mud-palette-primary); }
 .row { display: flex; flex-wrap: wrap; gap: 2rem; }
 .col-md-6, .col-lg-6, .col-xl-6 { flex: 1 1 22rem; max-width: 32rem; }
 .mb-3 { margin-bottom: 1rem; }
@@ -51,18 +53,18 @@ body { font-family: Roboto, "Helvetica Neue", Arial, sans-serif; }
 .form-floating { display: flex; flex-direction: column-reverse; }
 .form-floating > label, .form-label { font-size: .875rem; color: #424242; margin-bottom: .25rem; }
 .form-control {
-    font: inherit; padding: .625rem .75rem; border: 1px solid #9e9e9e; border-radius: 4px; width: 100%; box-sizing: border-box;
+    font: inherit; padding: .625rem .75rem; border: 1px solid #8C7D72; border-radius: 12px; width: 100%; box-sizing: border-box; background: #fff;
 }
-.form-control:focus { outline: 2px solid #594ae2; outline-offset: 1px; }
+.form-control:focus { outline: 2px solid var(--mud-palette-primary); outline-offset: 1px; }
 .form-check { display: flex; gap: .5rem; align-items: center; }
 .btn {
-    font: inherit; font-weight: 500; padding: .625rem 1rem; border-radius: 4px; border: 1px solid transparent; cursor: pointer;
+    font: inherit; font-weight: 600; padding: .625rem 1.25rem; border-radius: 999px; border: 1px solid transparent; cursor: pointer;
     display: inline-block; text-decoration: none; text-align: center;
 }
-.btn-primary { background: #594ae2; color: #fff; }
-.btn-primary:hover { background: #4a3cc7; }
+.btn-primary { background: var(--mud-palette-primary); color: #fff; }
+.btn-primary:hover { background: var(--mud-palette-primary-darken); }
 .btn-danger, a.btn-danger { background: #b00020; color: #fff !important; text-decoration: none; }
-.btn-link { background: none; color: #594ae2; border: 0; padding: 0; }
+.btn-link { background: none; color: var(--mud-palette-primary); border: 0; padding: 0; }
 .btn:focus-visible { outline: 2px solid #212121; outline-offset: 2px; }
 .text-danger { color: #c62828; }
 .alert { padding: .75rem 1rem; border-radius: 4px; margin-bottom: 1rem; }
@@ -72,7 +74,7 @@ body { font-family: Roboto, "Helvetica Neue", Arial, sans-serif; }
 .alert-dismissible .btn-close { display: none; }
 .nav { list-style: none; padding: 0; margin: 0; }
 .nav-pills .nav-link { display: block; padding: .5rem .75rem; border-radius: 4px; text-decoration: none; }
-.nav-pills .nav-link.active { background: #594ae2; color: #fff !important; }
+.nav-pills .nav-link.active { background: var(--mud-palette-primary); color: #fff !important; }
 .appbar-link { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0; white-space: nowrap; }
 .mud-appbar .mud-link { white-space: nowrap; }
 .appbar-link:hover { text-decoration: underline; }
@@ -127,19 +129,19 @@ fieldset.choice-group {
 .mud-main-content .message-card h3 { margin: 0; }
 
 .quick-exit {
-    background: #fff; color: #b00020 !important; font-weight: 600; border-radius: 4px; padding: .25rem .75rem;
+    background: #fff; color: #b00020 !important; font-weight: 700; border: 1px solid #e9c9c4; border-radius: 999px; padding: .3rem .9rem;
     margin: 0 .5rem; text-decoration: none; white-space: nowrap;
 }
-.quick-exit:focus-visible { outline: 3px solid #ffd54f; outline-offset: 2px; }
+.quick-exit:focus-visible { outline: 3px solid #2F2925; outline-offset: 2px; }
 
 /* Keyboard access (WCAG 2.4.1, 2.4.7, 2.4.11) */
 .skip-link {
     position: absolute; left: .5rem; top: -4rem; z-index: 2000;
     background: #fff; color: #1a1a1a; padding: .5rem 1rem; border-radius: 4px; font-weight: 600;
 }
-.skip-link:focus { top: .5rem; outline: 3px solid #ffd54f; }
+.skip-link:focus { top: .5rem; outline: 3px solid #2F2925; }
 #main-content:focus { outline: none; }
-.mud-appbar a:focus-visible, .mud-appbar .appbar-link:focus-visible { outline: 3px solid #ffd54f; outline-offset: 2px; border-radius: 2px; }
+.mud-appbar a:focus-visible, .mud-appbar .appbar-link:focus-visible { outline: 3px solid #2F2925; outline-offset: 2px; border-radius: 2px; }
 a:focus-visible, button:focus-visible, [role="button"]:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
     outline: 2px solid currentColor; outline-offset: 2px;
 }
@@ -151,23 +153,37 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, input:focu
 .mud-typography .mud-link, .mud-alert-message .mud-link, p .mud-link, li .mud-link,
 .mud-typography a, .mud-alert-message a, main p a, main li a { text-decoration: underline; }
 
-.legal-document h1 { font-size: 2rem; font-weight: 400; margin: 0 0 1rem; }
+.legal-document h1 { font-family: Fraunces, Georgia, serif; font-size: 2rem; font-weight: 500; margin: 0 0 1rem; }
 .legal-document h2 { font-size: 1.35rem; font-weight: 500; margin: 1.75rem 0 .5rem; }
 .legal-document p, .legal-document li { line-height: 1.6; max-width: 48rem; }
 .legal-document blockquote { border-left: 4px solid #8a4b00; margin: 1rem 0; padding: .5rem 1rem; background: #fff8e1; }
 .legal-document table { border-collapse: collapse; margin: 1rem 0; }
 .legal-document th, .legal-document td { border: 1px solid #ccc; padding: .5rem; text-align: left; vertical-align: top; }
 .legal-document a { text-decoration: underline; }
-.site-footer { border-top: 1px solid #e0e0e0; margin-top: 2rem; padding: 1rem 0; font-size: .875rem; }
+.site-footer { border-top: 1px solid var(--mud-palette-lines-default); margin-top: 2rem; padding: 1rem 0; font-size: .875rem; }
 .site-footer a { display: inline-block; min-height: 24px; padding: .25rem 0; margin-right: 1rem; text-decoration: underline; }
 
 /* Joint chat (pilot) */
 .pilot-tag { font-size: .875rem; vertical-align: middle; border: 1px solid currentColor; border-radius: 4px; padding: 0 .35rem; margin-left: .5rem; }
 .joint-chat-transcript { list-style: none; padding: 0; margin: .5rem 0; display: flex; flex-direction: column; gap: .5rem; }
-.joint-chat-transcript li { max-width: 85%; padding: .5rem .75rem; border-radius: 8px; border: 1px solid #c4c4c4; overflow-wrap: anywhere; }
+.joint-chat-transcript li { max-width: 85%; padding: .6rem .9rem; border-radius: 14px; border: 1px solid #E2D6C9; overflow-wrap: anywhere; }
 .joint-chat-transcript .body { white-space: pre-wrap; }
-.joint-chat-transcript li.mine { align-self: flex-end; background: #eef0fb; }
+.joint-chat-transcript li.mine { align-self: flex-end; background: #F6E9E3; }
 .joint-chat-transcript li.theirs { align-self: flex-start; background: #fff; }
 .joint-chat-transcript .who { display: block; font-size: .75rem; font-weight: 600; color: #424242; }
 .breakable { word-break: break-all; }
 .table-scroll { position: relative; overflow-x: auto; max-width: 100%; }
+
+/* Warm look (2026-11-09). Colours, fonts and corner radius come from AppTheme; these rules cover
+   what the theme can't express. */
+.mud-appbar { box-shadow: none; border-bottom: 1px solid var(--mud-palette-lines-default); }
+.mud-appbar .mud-toolbar > .mud-link:first-child { font-family: Fraunces, Georgia, serif; font-size: 1.5rem; font-weight: 600; color: var(--mud-palette-primary) !important; }
+.mud-appbar .mud-link, .mud-appbar .appbar-link { font-weight: 600; }
+.mud-main-content h1.mud-typography { font-size: clamp(2rem, 1.4rem + 2.4vw, 2.75rem); line-height: 1.15; }
+.mud-paper:not(.mud-popover):not(.mud-dialog) { border: none; box-shadow: 0 1px 2px rgba(80, 50, 30, .06), 0 6px 20px rgba(80, 50, 30, .06); }
+.mud-paper-outlined { border: 1px solid var(--mud-palette-lines-default) !important; box-shadow: 0 1px 2px rgba(80, 50, 30, .04); }
+.mud-button-root.mud-button-filled, .mud-button-root.mud-button-outlined, .mud-button-root.mud-button-text { border-radius: 999px; padding-left: 1.25rem; padding-right: 1.25rem; }
+.mud-button-root.mud-button-filled { box-shadow: none; }
+.mud-alert.mud-alert-outlined-info, .mud-alert.mud-alert-text-info { background: #EEF3EE; border-color: transparent; }
+.mud-alert.mud-alert-outlined-normal { background: #EEF3EE; border-color: transparent; color: #33473B; }
+.mud-input.mud-input-outlined { background: #fff; }
