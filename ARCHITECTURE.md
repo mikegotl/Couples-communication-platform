@@ -59,7 +59,7 @@ classification, readers and retention, and ADR-0007 for sharing and consent.
 - Logs, telemetry, notifications, search and analytics never contain message bodies,
   reflections, AI transcripts or safety flags. A test captures all logs from a full flow and
   fails if any private text or invite token appears.
-- Services: `IPrivateReflectionService` and `IMessagingService` (owner-scoped), `IPersonalDataService`
+- Services: `IPrivateReflectionService`, `IIntakeService` and `IMessagingService` (owner-scoped), `IPersonalDataService`
   (export and deletion workflow), `IRetentionService` (purge by rule). The worker's
   `PrivacyMaintenanceWorker` retries pending deletions every 5 minutes and applies retention
   every 6 hours.
@@ -78,3 +78,9 @@ classification, readers and retention, and ADR-0007 for sharing and consent.
     unreachable database (pages, auth redirects, flags, migration drift check).
   - Database tests against a disposable PostgreSQL container (Testcontainers) migrated with the
     real migrations: workspace, invitation and isolation rules, including concurrency.
+
+## UI notes
+
+The layout renders statically; pages that need interactivity opt in with
+`InteractiveServerRenderMode(prerender: false)` and render `<InteractiveProviders />` so MudBlazor
+dialogs, snackbars and popovers work in that page's circuit.

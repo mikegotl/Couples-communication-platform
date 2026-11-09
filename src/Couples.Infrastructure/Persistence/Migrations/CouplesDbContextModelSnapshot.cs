@@ -102,6 +102,182 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.ToTable("consent_records", "couples");
                 });
 
+            modelBuilder.Entity("Couples.Domain.Intake.ConcernCategory", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<bool>("AllowsCustomLabel")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ContentWarning")
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("concern_categories", "couples");
+
+                    b.HasData(
+                        new
+                        {
+                            Key = "finances",
+                            AllowsCustomLabel = false,
+                            Description = "Spending, saving, debt, income, and how you make money decisions together.",
+                            Name = "Money and finances",
+                            SortOrder = 10
+                        },
+                        new
+                        {
+                            Key = "trust",
+                            AllowsCustomLabel = false,
+                            Description = "Feeling able to rely on each other: honesty, keeping promises and following through.",
+                            Name = "Trust",
+                            SortOrder = 20
+                        },
+                        new
+                        {
+                            Key = "infidelity",
+                            AllowsCustomLabel = false,
+                            ContentWarning = "This topic can bring up intense feelings. Go at your own pace and take a break whenever you need. What you write here stays private to you.",
+                            Description = "An affair, a secret relationship, or another breach of what you agreed.",
+                            Name = "Infidelity or betrayal",
+                            SortOrder = 30
+                        },
+                        new
+                        {
+                            Key = "parenting",
+                            AllowsCustomLabel = false,
+                            Description = "Raising children, step-family life, wider family, and sharing the load at home.",
+                            Name = "Parenting and family",
+                            SortOrder = 40
+                        },
+                        new
+                        {
+                            Key = "conflict",
+                            AllowsCustomLabel = false,
+                            ContentWarning = "If arguments involve threats, fear for your safety, or anyone being hurt, this app is not the right place to work through them. Please contact local emergency services or a domestic abuse support service.",
+                            Description = "How disagreements start, how they escalate, and how you recover from them.",
+                            Name = "Conflict and arguments",
+                            SortOrder = 50
+                        },
+                        new
+                        {
+                            Key = "intimacy",
+                            AllowsCustomLabel = false,
+                            ContentWarning = "This topic includes your sexual relationship. Write only what you are comfortable with. What you write here stays private to you.",
+                            Description = "Emotional and physical closeness, affection and your sexual relationship.",
+                            Name = "Intimacy and closeness",
+                            SortOrder = 60
+                        },
+                        new
+                        {
+                            Key = "custom",
+                            AllowsCustomLabel = true,
+                            Description = "Name a topic in your own words.",
+                            Name = "Something else",
+                            SortOrder = 100
+                        });
+                });
+
+            modelBuilder.Entity("Couples.Domain.Intake.ConcernSelection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CategoryKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomLabel")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<Guid>("IntakeProfileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("WarningAcknowledgedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryKey");
+
+                    b.HasIndex("IntakeProfileId");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.ToTable("concern_selections", "couples");
+                });
+
+            modelBuilder.Entity("Couples.Domain.Intake.IntakeProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("SkippedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId")
+                        .IsUnique();
+
+                    b.ToTable("intake_profiles", "couples");
+                });
+
             modelBuilder.Entity("Couples.Domain.Messaging.DraftMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -619,6 +795,36 @@ namespace Couples.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Couples.Domain.Intake.ConcernSelection", b =>
+                {
+                    b.HasOne("Couples.Domain.Intake.ConcernCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryKey")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Couples.Domain.Intake.IntakeProfile", null)
+                        .WithMany("Selections")
+                        .HasForeignKey("IntakeProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Couples.Domain.Intake.IntakeProfile", b =>
+                {
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Couples.Domain.Messaging.DraftMessage", b =>
                 {
                     b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
@@ -804,6 +1010,11 @@ namespace Couples.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Couples.Domain.Intake.IntakeProfile", b =>
+                {
+                    b.Navigation("Selections");
                 });
 
             modelBuilder.Entity("Couples.Domain.Workspaces.RelationshipWorkspace", b =>

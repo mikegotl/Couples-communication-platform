@@ -26,6 +26,9 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `WorkspaceMembership` | `workspace_memberships` | Personal | Members of that workspace (own row and partner's joined date only) | With the workspace; deleted with the member's account. |
 | `Invitation` | `invitations` | Internal | Active members (status only); holder of the token (workspace name only) | Token hash only. Purged 30 days after it expires, is used or is revoked. |
 | `PrivateReflection` | `private_reflections` | PrivateSensitive | Owner only | Until the owner deletes it or their account. |
+| `ConcernCategory` | `concern_categories` | Internal | Everyone (topic names and descriptions) | Reference data seeded by migrations. |
+| `IntakeProfile` | `intake_profiles` | Personal | Owner only (not even whether it exists or is complete) | Until the owner starts over or deletes their account. |
+| `ConcernSelection` | `concern_selections` | PrivateSensitive | Owner only | Until the owner removes the topic, starts over or deletes their account. |
 | `DraftMessage` | `draft_messages` | PrivateSensitive | Owner only | While in use; discarded drafts purged after 30 days; deleted with the account. |
 | `SharedMessage` | `shared_messages` | SharedSensitive | Sender always; recipient only while both are active members and it is not revoked | Text erased on revoke; deleted when either party deletes their account or the workspace is purged. |
 | `ConsentRecord` | `consent_records` | Personal | The user who gave consent | Life of the account, as evidence; deleted with the account. Stores a SHA-256 fingerprint of approved text, never the text. |
@@ -34,8 +37,10 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 
 ## Access rules (enforced in services, not the UI)
 
-- Reflections and drafts are queried only with `OwnerUserId == acting user`. Another user's id
+- Reflections, drafts and intake are queried only with `OwnerUserId == acting user`. Another user's id
   returns the same "not found" as an id that does not exist.
+- Intake has no workspace scope: no workspace view, partner page or notification reads it, so a
+  partner cannot learn which topics were chosen, whether intake was completed or skipped, or any notes.
 - Workspace data requires an active membership (`LeftAt IS NULL`) in the query.
 - A shared message is created only by `IMessagingService.ShareAsync`, which requires the
   fingerprint of the exact text the author previewed, records a `ConsentRecord` and an
@@ -49,7 +54,8 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 ## Deletion workflow
 
 1. The user confirms on **Account › Personal data › Delete** (password required).
-2. A `DataDeletionRequest` is recorded and processed immediately: reflections, shared messages
+2. A `DataDeletionRequest` is recorded and processed immediately: reflections, intake topics and
+   profile, shared messages
    sent or received, drafts, consent records, invitations they issued, memberships, then the
    account, in one transaction.
 3. If processing fails, the worker retries pending requests every 5 minutes.

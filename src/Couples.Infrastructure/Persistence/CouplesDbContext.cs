@@ -1,6 +1,7 @@
 using Couples.Domain.Auditing;
 using Couples.Domain.Common;
 using Couples.Domain.Consent;
+using Couples.Domain.Intake;
 using Couples.Domain.Messaging;
 using Couples.Domain.Privacy;
 using Couples.Domain.Reflections;
@@ -38,6 +39,12 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     public DbSet<DataDeletionRequest> DataDeletionRequests => Set<DataDeletionRequest>();
+
+    public DbSet<ConcernCategory> ConcernCategories => Set<ConcernCategory>();
+
+    public DbSet<IntakeProfile> IntakeProfiles => Set<IntakeProfile>();
+
+    public DbSet<ConcernSelection> ConcernSelections => Set<ConcernSelection>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

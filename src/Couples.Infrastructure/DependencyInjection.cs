@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddOptions<WorkspaceOptions>().BindConfiguration(WorkspaceOptions.SectionName);
         services.AddScoped<IWorkspaceService, WorkspaceService>();
         services.AddScoped<IPrivateReflectionService, PrivateReflectionService>();
+        services.AddScoped<Couples.Application.Intake.IIntakeService, Couples.Infrastructure.Intake.IntakeService>();
         services.AddScoped<IMessagingService, MessagingService>();
         services.AddScoped<IPersonalDataService, PersonalDataService>();
         services.AddOptions<RetentionOptions>().BindConfiguration(RetentionOptions.SectionName);
