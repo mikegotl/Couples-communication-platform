@@ -46,6 +46,9 @@ public sealed class SmokeTests(CouplesWebFactory factory) : IClassFixture<Couple
     [Theory]
     [InlineData("/workspace")]
     [InlineData("/intake")]
+    [InlineData("/exercises")]
+    [InlineData("/exercises/attempt/0198f3c2-0000-7000-8000-000000000000")]
+    [InlineData("/admin/exercises")]
     [InlineData("/invite/some-token")]
     public async Task PrivatePagesRequireSignIn(string path)
     {

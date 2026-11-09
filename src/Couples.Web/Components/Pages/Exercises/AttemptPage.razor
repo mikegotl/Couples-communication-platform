@@ -1,0 +1,337 @@
+@page "/exercises/attempt/{AttemptId:guid}"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Exercises
+@using Couples.Domain.Common
+@using Couples.Domain.Exercises
+@inject IExerciseService Exercises
+@inject CurrentUser CurrentUser
+@inject NavigationManager Navigation
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<InteractiveProviders />
+<PageTitle>@(attempt?.Title ?? "Exercise") · BridgeTogether</PageTitle>
+
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else if (attempt is null)
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Exercise not found</MudText>
+        <MudText>It may have been deleted.</MudText>
+        <div><MudButton Variant="Variant.Outlined" Href="exercises">Back to exercises</MudButton></div>
+    </MudStack>
+}
+else if (reviewing)
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">@attempt.Title</MudText>
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined">
+            Done@(attempt.CompletedAt is { } done ? $" on {done.ToLocalTime():d MMMM yyyy}" : "").
+            Only you can see these answers.
+        </MudAlert>
+
+        @foreach (var step in attempt.Steps.Where(s => s.Kind != ExerciseStepKind.Info))
+        {
+            <MudPaper Class="pa-3" Outlined="true" @key="step.Key">
+                <MudText Typo="Typo.subtitle1" HtmlTag="h2">@step.Title</MudText>
+                <MudText Typo="Typo.body2" Class="mb-1">@step.Prompt</MudText>
+                @if (attempt.Answers.TryGetValue(step.Key, out var answer))
+                {
+                    <MudText Style="white-space: pre-wrap">@Display(step, answer)</MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2"><em>Skipped</em></MudText>
+                }
+            </MudPaper>
+        }
+
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="exercises">Back to exercises</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="EditAsync" Disabled="busy">Edit answers</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="DeleteAsync" Disabled="busy">Delete</MudButton>
+        </MudStack>
+    </MudStack>
+}
+else
+{
+    var step = attempt.Steps[index];
+    var isLast = index == attempt.Steps.Count - 1;
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">@attempt.Title</MudText>
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.body2" id="step-position">Step @(index + 1) of @attempt.Steps.Count</MudText>
+            <MudProgressLinear Color="Color.Primary" Value="@(100.0 * (index + 1) / attempt.Steps.Count)"
+                               aria-labelledby="step-position" />
+        </MudStack>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <h2 class="mud-typography mud-typography-h5 step-heading" tabindex="-1" @ref="heading">
+                    @step.Title@(step.Optional ? " (optional)" : "")
+                </h2>
+                <MudText id="@($"prompt-{step.Key}")">@step.Prompt</MudText>
+                @if (step.Help is { } help)
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@help</MudText>
+                }
+
+                @switch (step.Kind)
+                {
+                    case ExerciseStepKind.Text:
+                        <MudTextField @bind-Value="text" Label="Your answer" Lines="5" Sizing="InputSizing.Auto" MaxLines="16"
+                                      MaxLength="@step.MaxLength" Counter="@step.MaxLength" Variant="Variant.Outlined" Immediate="true"
+                                      aria-describedby="@($"prompt-{step.Key}")" />
+                        break;
+
+                    case ExerciseStepKind.Choice:
+                        <fieldset class="choice-group">
+                            <legend class="visually-hidden">@step.Prompt</legend>
+                            <MudRadioGroup T="string" @bind-Value="choice">
+                                @foreach (var option in step.Choices)
+                                {
+                                    <div><MudRadio T="string" Value="option.Key" Color="Color.Primary">@option.Label</MudRadio></div>
+                                }
+                            </MudRadioGroup>
+                        </fieldset>
+                        break;
+
+                    case ExerciseStepKind.MultiChoice:
+                        <fieldset class="choice-group">
+                            <legend class="visually-hidden">@step.Prompt</legend>
+                            @foreach (var option in step.Choices)
+                            {
+                                <div>
+                                    <MudCheckBox T="bool" Value="selected.Contains(option.Key)" Color="Color.Primary"
+                                                 ValueChanged="(bool on) => Toggle(option.Key, on)" Label="@option.Label" />
+                                </div>
+                            }
+                        </fieldset>
+                        break;
+                }
+
+                @if (stepError is not null)
+                {
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" role="alert">@stepError</MudAlert>
+                }
+            </MudStack>
+        </MudPaper>
+
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" AlignItems="AlignItems.Center">
+            @if (index > 0)
+            {
+                <MudButton Variant="Variant.Outlined" OnClick="() => GoAsync(index - 1)" Disabled="busy">Back</MudButton>
+            }
+            @if (isLast)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="FinishAsync" Disabled="busy">Finish</MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => GoAsync(index + 1)" Disabled="busy">Save and continue</MudButton>
+            }
+            <MudButton Variant="Variant.Text" OnClick="SaveAndExitAsync" Disabled="busy">Save and exit</MudButton>
+        </MudStack>
+
+        <p class="mud-typography mud-typography-caption" aria-live="polite">@savedNote</p>
+        <ReviewNote Status="attempt.ReviewStatus" />
+    </MudStack>
+}
+
+@code {
+    [Parameter]
+    public Guid AttemptId { get; set; }
+
+    private bool loading = true;
+    private bool busy;
+    private bool reviewing;
+    private bool focusHeading;
+    private Guid userId;
+    private AttemptView? attempt;
+    private int index;
+    private string? text;
+    private string? choice;
+    private HashSet<string> selected = [];
+    private string? stepError;
+    private string? savedNote;
+    private ElementReference heading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        var loaded = await Exercises.GetAttemptAsync(userId, AttemptId);
+        if (loaded.Succeeded)
+        {
+            attempt = loaded.Value;
+            reviewing = attempt.Status == AttemptStatus.Completed;
+            ShowStep(Math.Clamp(attempt.CurrentStep, 0, attempt.Steps.Count - 1));
+        }
+
+        loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Move focus to the new step's heading so screen reader and keyboard users start there.
+        if (focusHeading && attempt is not null && !reviewing)
+        {
+            focusHeading = false;
+            await heading.FocusAsync();
+        }
+    }
+
+    private void ShowStep(int stepIndex)
+    {
+        index = stepIndex;
+        stepError = null;
+        var step = attempt!.Steps[index];
+        var answer = attempt.Answers.GetValueOrDefault(step.Key);
+        text = step.Kind == ExerciseStepKind.Text ? answer : null;
+        choice = step.Kind == ExerciseStepKind.Choice ? answer : null;
+        selected = step.Kind == ExerciseStepKind.MultiChoice && answer is not null ? [.. answer.Split('\n')] : [];
+        focusHeading = true;
+    }
+
+    private string? CurrentValue(ExerciseStep step) => step.Kind switch
+    {
+        ExerciseStepKind.Text => text,
+        ExerciseStepKind.Choice => choice,
+        ExerciseStepKind.MultiChoice => string.Join('\n', selected),
+        _ => null,
+    };
+
+    private void Toggle(string key, bool on)
+    {
+        if (on)
+        {
+            selected.Add(key);
+        }
+        else
+        {
+            selected.Remove(key);
+        }
+    }
+
+    /// <summary>Saves the current step (if it takes an answer) and moves to another step.</summary>
+    private async Task<bool> SaveAsync(int? moveTo)
+    {
+        var step = attempt!.Steps[index];
+        Result<AttemptView> result;
+        if (step.Kind == ExerciseStepKind.Info)
+        {
+            result = await Exercises.MoveToStepAsync(userId, attempt.Id, moveTo ?? index);
+        }
+        else
+        {
+            result = await Exercises.SaveStepAsync(userId, attempt.Id, step.Key, CurrentValue(step), moveTo);
+        }
+
+        if (!result.Succeeded)
+        {
+            stepError = result.Error switch
+            {
+                DomainError.Validation when step.NeedsAnswer && string.IsNullOrWhiteSpace(CurrentValue(step)) => "Please answer this step to continue, or go back.",
+                DomainError.Validation => "Please check your answer. It may be too long.",
+                DomainError.Conflict => "This exercise was changed somewhere else. Reload the page to see the latest answers.",
+                _ => "We couldn't save that. Please try again.",
+            };
+            return false;
+        }
+
+        attempt = result.Value;
+        savedNote = $"Saved at {DateTimeOffset.Now:HH:mm}.";
+        return true;
+    }
+
+    private async Task GoAsync(int target)
+    {
+        busy = true;
+        try
+        {
+            if (await SaveAsync(target))
+            {
+                ShowStep(target);
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task FinishAsync()
+    {
+        busy = true;
+        try
+        {
+            if (!await SaveAsync(null))
+            {
+                return;
+            }
+
+            var completed = await Exercises.CompleteAsync(userId, attempt!.Id);
+            if (completed.Succeeded)
+            {
+                attempt = completed.Value;
+                reviewing = true;
+                Snackbar.Add("Saved. Only you can see your answers.", Severity.Success);
+                return;
+            }
+
+            var missing = attempt.Steps.Select((s, i) => (s, i)).FirstOrDefault(x => x.s.NeedsAnswer && !attempt.Answers.ContainsKey(x.s.Key));
+            ShowStep(missing.s is null ? index : missing.i);
+            stepError = "This step needs an answer before you can finish.";
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task SaveAndExitAsync()
+    {
+        busy = true;
+        try
+        {
+            if (await SaveAsync(null))
+            {
+                Navigation.NavigateTo("exercises");
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private Task EditAsync()
+    {
+        reviewing = false;
+        ShowStep(0);
+        return Task.CompletedTask;
+    }
+
+    private async Task DeleteAsync()
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync("Delete this exercise?", "Your answers will be erased. This can't be undone.", yesText: "Delete", cancelText: "Keep");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        await Exercises.DeleteAttemptAsync(userId, attempt!.Id);
+        Snackbar.Add("Deleted.", Severity.Success);
+        Navigation.NavigateTo("exercises");
+    }
+
+    private static string Display(ExerciseStep step, string answer) => step.Kind switch
+    {
+        ExerciseStepKind.Choice or ExerciseStepKind.MultiChoice => string.Join(", ",
+            answer.Split('\n').Select(k => step.Choices.FirstOrDefault(o => o.Key == k)?.Label ?? k)),
+        _ => answer,
+    };
+}

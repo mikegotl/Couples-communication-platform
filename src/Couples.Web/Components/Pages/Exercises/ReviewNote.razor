@@ -1,0 +1,15 @@
+@using Couples.Domain.Exercises
+
+@if (Status == ClinicianReviewStatus.ClinicianApproved)
+{
+    <MudText Typo="Typo.caption">Reviewed by a licensed clinician.</MudText>
+}
+else
+{
+    <MudText Typo="Typo.caption">Written by the BridgeTogether team and awaiting review by a licensed clinician.</MudText>
+}
+
+@code {
+    [Parameter]
+    public ClinicianReviewStatus Status { get; set; }
+}

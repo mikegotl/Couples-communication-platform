@@ -1,0 +1,142 @@
+@page "/exercises"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Exercises
+@using Couples.Domain.Exercises
+@inject IExerciseService Exercises
+@inject CurrentUser CurrentUser
+@inject NavigationManager Navigation
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<InteractiveProviders />
+<PageTitle>Exercises · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Exercises</MudText>
+    <MudText>
+        Short, guided exercises to help you think things through on your own before you talk.
+        Your answers are saved as you go, so you can stop and pick up where you left off.
+    </MudText>
+    <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock">
+        Only you can see your answers. Nothing here is sent to your partner.
+    </MudAlert>
+    <MudText Typo="Typo.body2">
+        These exercises are for reflection. They are not therapy or counselling and don't assess you or your relationship.
+    </MudText>
+
+    @if (exercises is null)
+    {
+        <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+    }
+    else
+    {
+        @foreach (var exercise in exercises)
+        {
+            <MudPaper Class="pa-4" Outlined="true" @key="exercise.Key">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">@exercise.Title</MudText>
+                    <MudText Typo="Typo.body2">@exercise.Summary</MudText>
+                    <MudText Typo="Typo.caption">
+                        About @exercise.EstimatedMinutes minutes · @exercise.StepCount steps
+                        @if (exercise.CompletedCount > 0)
+                        {
+                            <span> · done @Times(exercise.CompletedCount)</span>
+                        }
+                    </MudText>
+                    <ReviewNote Status="exercise.ReviewStatus" />
+                    <div>
+                        <MudButton Variant="@(exercise.InProgressAttemptId is null ? Variant.Outlined : Variant.Filled)" Color="Color.Primary"
+                                   Disabled="busy" OnClick="() => OpenAsync(exercise.Key)"
+                                   aria-label="@($"{(exercise.InProgressAttemptId is null ? "Start" : "Continue")} {exercise.Title}")">
+                            @(exercise.InProgressAttemptId is null ? "Start" : "Continue")
+                        </MudButton>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        }
+
+        @if (history is { Count: > 0 })
+        {
+            <MudText Typo="Typo.h5" HtmlTag="h2" Class="mt-4">Your past exercises</MudText>
+            <MudList T="string" Dense="true" aria-label="Your past exercises">
+                @foreach (var attempt in history.Where(h => h.Status == AttemptStatus.Completed))
+                {
+                    <MudListItem T="string" @key="attempt.Id">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Wrap="Wrap.Wrap">
+                            <MudLink Href="@($"exercises/attempt/{attempt.Id}")">@attempt.Title, @Format(attempt.CompletedAt)</MudLink>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" Disabled="busy"
+                                       OnClick="() => DeleteAsync(attempt)" aria-label="@($"Delete {attempt.Title} from {Format(attempt.CompletedAt)}")">Delete</MudButton>
+                        </MudStack>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+    }
+</MudStack>
+
+@code {
+    private Guid userId;
+    private bool busy;
+    private IReadOnlyList<ExerciseSummaryView>? exercises;
+    private IReadOnlyList<AttemptSummaryView>? history;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        exercises = await Exercises.ListAsync(userId);
+        history = await Exercises.ListAttemptsAsync(userId);
+    }
+
+    private async Task OpenAsync(string key)
+    {
+        busy = true;
+        try
+        {
+            var attempt = await Exercises.StartOrResumeAsync(userId, key);
+            if (attempt.Succeeded)
+            {
+                Navigation.NavigateTo($"exercises/attempt/{attempt.Value.Id}");
+            }
+            else
+            {
+                Snackbar.Add("This exercise isn't available right now.", Severity.Warning);
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task DeleteAsync(AttemptSummaryView attempt)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync("Delete this exercise?", "Your answers will be erased. This can't be undone.", yesText: "Delete", cancelText: "Keep");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            await Exercises.DeleteAttemptAsync(userId, attempt.Id);
+            await RefreshAsync();
+            Snackbar.Add("Deleted.", Severity.Success);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string Times(int count) => count == 1 ? "once" : $"{count} times";
+
+    private static string Format(DateTimeOffset? value) =>
+        value?.ToLocalTime().ToString("d MMMM yyyy", System.Globalization.CultureInfo.CurrentCulture) ?? "";
+}

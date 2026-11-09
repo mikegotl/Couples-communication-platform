@@ -63,6 +63,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
         options.Lockout.MaxFailedAccessAttempts = 5;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     })
+    .AddRoles<IdentityRole<Guid>>()
     .AddEntityFrameworkStores<CouplesDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
@@ -86,6 +87,8 @@ if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
     await using var scope = app.Services.CreateAsyncScope();
     await scope.ServiceProvider.GetRequiredService<CouplesDbContext>().Database.MigrateAsync();
 }
+
+await Couples.Web.Administration.AdminBootstrap.RunAsync(app.Services, app.Configuration, app.Logger);
 
 if (!app.Environment.IsDevelopment())
 {

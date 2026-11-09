@@ -13,6 +13,7 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0006](docs/adr/0006-identity-and-workspace-membership.md) | Identity and workspace membership | Accepted |
 | [0007](docs/adr/0007-consent-ledger-and-per-message-sharing.md) | Consent ledger and per-message sharing | Accepted |
 | [0008](docs/adr/0008-private-intake-outside-workspace-scope.md) | Private intake lives outside workspace scope | Accepted |
+| [0009](docs/adr/0009-versioned-exercises-and-clinician-review.md) | Versioned exercises with clinician review metadata | Accepted |
 
 ## Open decisions (owner)
 

@@ -7,8 +7,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | 01 | Repository and architecture | Done (PR #1) |
 | 02 | Identity and partner workspace | Done (PR #2) |
 | 03 | Privacy, consent and data boundaries | Done (PR #3) |
-| 04 | Intake and concern mapping | In review |
-| 05 | Guided private reflection exercises | Not started |
+| 04 | Intake and concern mapping | Done (PR #4) |
+| 05 | Guided private reflection exercises | In review |
 | 06 | AI coaching abstraction and safeguards | Not started |
 | 07 | Draft, preview, approve and deliver | Not started |
 | 08 | Asynchronous partner responses | Not started |
@@ -182,3 +182,47 @@ update or remove another partner's topic by id; the partner's workspace view con
 about intake; export contains only the requester's intake; logs contain no topic labels or notes;
 skip, start over and account deletion erase intake; concurrent first selections create one
 intake; unknown topics and unacknowledged warnings are rejected; `/intake` requires sign-in.
+
+## Milestone 05: Guided private reflection exercises
+
+**Delivered**
+
+- Versioned `ExerciseDefinition` (content, SHA-256 content hash, clinician review status, reviewer,
+  time, notes) and owner-only `ExerciseAttempt` + `ExerciseResponse`.
+- Four original exercises written for clinician review, with no diagnostic or assessment content:
+  "Hear it back" (reflective listening), "Name it: feelings and needs", "Pause before you reply"
+  and "Reach back after a rough moment" (repair). The repair and conflict-adjacent copy points to
+  emergency and domestic abuse support.
+- `IExerciseService`: list with own progress, start or resume, save a step and move in one call,
+  back, finish, history, delete. Required steps block moving forward; optional steps can be
+  skipped. Attempts stay on their version when a new one is published.
+- `/exercises` and `/exercises/attempt/{id}`: step counter and progress bar, focus moves to each
+  step's heading, choice questions grouped in fieldsets with legends, "Saved at" announced via
+  `aria-live`, "Save and exit", read-only summary with "Edit answers" and "Delete".
+- Admin: Identity roles enabled; `Admin` granted from `Administration:AdminEmails` at startup;
+  `/admin/exercises` shows every version's review status, reviewer, notes, step count, publish
+  time and whether the stored content hash matches code, and records reviews (audited).
+- `Exercises:RequireClinicianApproval` (default off) limits new attempts to approved versions.
+- Export and account deletion include exercises; data inventory updated. Migration
+  `GuidedExercises`; ADR-0009.
+
+**Verification** (2026-11-09, fresh clone of the branch)
+
+| Command | Result |
+|---------|--------|
+| `dotnet build -c Release` | Succeeded, 0 warnings, 0 errors |
+| `dotnet test -c Release` | UnitTests 45/45, IntegrationTests 65/65 passed |
+| `dotnet list package --vulnerable --include-transitive` | No vulnerable packages |
+| Browser check (Development, 390px wide) | Exercise list shows the "awaiting review" note. Starting "Hear it back" moves focus to the step heading; an empty required step is blocked with a message; "Save and exit" returns to the list, which shows "Continue". In a new browser session "Continue" resumes at step 3 with the partial answer; Back keeps earlier answers; finishing shows a summary with the skipped optional step. Another account opening the attempt URL sees "Exercise not found". A non-admin opening `/admin/exercises` gets Access denied. The configured admin sees four versions pending review, records "Clinician approved" with a reviewer name, and users then see "Reviewed by a licensed clinician". |
+
+Gate tests (database-backed): catalog publishes four versions pending review that match code;
+progress and current step survive across requests and resume; required steps cannot be skipped;
+finishing starts a fresh attempt next time; a partner cannot read, change, finish, delete or list
+another partner's attempt and gets their own attempt instead; export, logs and deletion keep
+answers private; attempts stay on their version when a new version is published; reviews are
+validated, recorded and audited and can gate new attempts; retired versions cannot be started
+but existing attempts resume; published content hashes are pinned; catalog copy avoids clinical
+and diagnostic terms.
+
+**Owner decisions**: engage a clinician reviewer, and decide whether to turn on
+`Exercises:RequireClinicianApproval` for the pilot.

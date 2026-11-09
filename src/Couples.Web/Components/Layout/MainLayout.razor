@@ -11,6 +11,10 @@
             <Authorized>
                 <MudLink Href="workspace" Color="Color.Inherit" Class="mx-1 mx-sm-2">Workspace</MudLink>
                 <MudLink Href="intake" Color="Color.Inherit" Class="mx-1 mx-sm-2">My topics</MudLink>
+                <MudLink Href="exercises" Color="Color.Inherit" Class="mx-1 mx-sm-2">Exercises</MudLink>
+                <AuthorizeView Roles="@Couples.Web.Administration.AdminBootstrap.AdminRole" Context="admin">
+                    <MudLink Href="admin/exercises" Color="Color.Inherit" Class="mx-1 mx-sm-2">Admin</MudLink>
+                </AuthorizeView>
                 <MudLink Href="Account/Manage" Color="Color.Inherit" Class="mx-1 mx-sm-2">Account</MudLink>
                 <form action="Account/Logout" method="post" class="d-inline">
                     <AntiforgeryToken />

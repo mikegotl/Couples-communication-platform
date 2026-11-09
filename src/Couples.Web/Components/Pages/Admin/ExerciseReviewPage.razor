@@ -1,0 +1,124 @@
+@page "/admin/exercises"
+@attribute [Authorize(Roles = Couples.Web.Administration.AdminBootstrap.AdminRole)]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Exercises
+@using Couples.Domain.Exercises
+@inject IExerciseAdminService Admin
+@inject CurrentUser CurrentUser
+@inject ISnackbar Snackbar
+
+<InteractiveProviders />
+<PageTitle>Exercise review · Admin · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Exercise review</MudText>
+    <MudText Typo="Typo.body2">
+        Content and clinician review metadata for every published exercise version. No user data is shown here.
+        Content is fixed per version: to change wording, publish a new version in code and review it separately.
+    </MudText>
+
+    @if (definitions is null)
+    {
+        <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+    }
+    else
+    {
+        @foreach (var d in definitions)
+        {
+            <MudPaper Class="pa-4" Outlined="true" @key="d.Id">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">@d.Title <MudText Typo="Typo.caption" HtmlTag="span">(@d.Key, version @d.Version)</MudText></MudText>
+                    <MudSimpleTable Dense="true" Elevation="0" Bordered="false">
+                        <tbody>
+                            <tr><th scope="row">Review status</th><td data-testid="status">@Label(d.ReviewStatus)</td></tr>
+                            <tr><th scope="row">Reviewed by</th><td>@(d.ReviewedBy ?? "Not yet reviewed")</td></tr>
+                            <tr><th scope="row">Reviewed at</th><td>@(d.ReviewedAt?.ToString("u", System.Globalization.CultureInfo.InvariantCulture) ?? "")</td></tr>
+                            <tr><th scope="row">Review notes</th><td style="white-space: pre-wrap">@d.ReviewNotes</td></tr>
+                            <tr><th scope="row">Steps</th><td>@d.StepCount</td></tr>
+                            <tr><th scope="row">Published</th><td>@d.PublishedAt.ToString("u", System.Globalization.CultureInfo.InvariantCulture)</td></tr>
+                            <tr><th scope="row">Content hash</th><td><code>@d.ContentHash[..12]</code> @(d.MatchesCatalog ? "matches code" : "DIFFERS FROM CODE")</td></tr>
+                        </tbody>
+                    </MudSimpleTable>
+
+                    @if (forms.TryGetValue(d.Id, out var form))
+                    {
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" AlignItems="AlignItems.Start">
+                            <MudSelect T="ClinicianReviewStatus" @bind-Value="form.Status" Label="New status" Dense="true" Style="min-width: 220px">
+                                @foreach (var status in Enum.GetValues<ClinicianReviewStatus>())
+                                {
+                                    <MudSelectItem T="ClinicianReviewStatus" Value="status">@Label(status)</MudSelectItem>
+                                }
+                            </MudSelect>
+                            <MudTextField @bind-Value="form.Reviewer" Label="Reviewer name and credential" MaxLength="@ExerciseDefinition.MaxReviewerLength" />
+                        </MudStack>
+                        <MudTextField @bind-Value="form.Notes" Label="Notes" Lines="2" MaxLength="@ExerciseDefinition.MaxReviewNotesLength" Variant="Variant.Outlined" />
+                        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="busy" OnClick="() => RecordAsync(d.Id, form)">Record review</MudButton></div>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    }
+</MudStack>
+
+@code {
+    private Guid userId;
+    private bool busy;
+    private IReadOnlyList<ExerciseDefinitionAdminView>? definitions;
+    private readonly Dictionary<Guid, ReviewForm> forms = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        definitions = await Admin.ListDefinitionsAsync();
+        forms.Clear();
+        foreach (var d in definitions)
+        {
+            forms[d.Id] = new ReviewForm { Status = d.ReviewStatus };
+        }
+    }
+
+    private async Task RecordAsync(Guid id, ReviewForm form)
+    {
+        busy = true;
+        try
+        {
+            var result = await Admin.RecordReviewAsync(userId, id, form.Status, form.Reviewer, form.Notes);
+            if (result.Succeeded)
+            {
+                Snackbar.Add("Review recorded.", Severity.Success);
+                await RefreshAsync();
+            }
+            else
+            {
+                Snackbar.Add("Enter the reviewer's name. Notes are limited to 2,000 characters.", Severity.Warning);
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string Label(ClinicianReviewStatus status) => status switch
+    {
+        ClinicianReviewStatus.PendingClinicianReview => "Pending clinician review",
+        ClinicianReviewStatus.ChangesRequested => "Changes requested",
+        ClinicianReviewStatus.ClinicianApproved => "Clinician approved",
+        ClinicianReviewStatus.Retired => "Retired",
+        _ => status.ToString(),
+    };
+
+    private sealed class ReviewForm
+    {
+        public ClinicianReviewStatus Status { get; set; }
+
+        public string? Reviewer { get; set; }
+
+        public string? Notes { get; set; }
+    }
+}
