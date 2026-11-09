@@ -59,7 +59,7 @@ classification, readers and retention, and ADR-0007 for sharing and consent.
 - Logs, telemetry, notifications, search and analytics never contain message bodies,
   reflections, AI transcripts or safety flags. A test captures all logs from a full flow and
   fails if any private text or invite token appears.
-- Services: `IPrivateReflectionService`, `IIntakeService` and `IMessagingService` (owner-scoped), `IPersonalDataService`
+- Services: `IPrivateReflectionService`, `IIntakeService`, `IExerciseService` and `IMessagingService` (owner-scoped), `IPersonalDataService`
   (export and deletion workflow), `IRetentionService` (purge by rule). The worker's
   `PrivacyMaintenanceWorker` retries pending deletions every 5 minutes and applies retention
   every 6 hours.
@@ -84,3 +84,14 @@ classification, readers and retention, and ADR-0007 for sharing and consent.
 The layout renders statically; pages that need interactivity opt in with
 `InteractiveServerRenderMode(prerender: false)` and render `<InteractiveProviders />` so MudBlazor
 dialogs, snackbars and popovers work in that page's circuit.
+
+## Exercises
+
+Exercise wording is code (`Couples.Domain.Exercises.ExerciseCatalog`); each version is published
+to `exercise_definitions` on first use and reviewed by an admin at `/admin/exercises`. Attempts
+pin the version they started on. See ADR-0009.
+
+## Roles
+
+Identity roles are enabled. The only role is `Admin`, granted from configuration at startup
+(`Administration:AdminEmails`). Admin pages show product content and metadata only.

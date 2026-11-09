@@ -47,4 +47,5 @@ public static class AuditActions
     public const string DataExported = "data.exported";
     public const string DeletionRequested = "data.deletion_requested";
     public const string DeletionCompleted = "data.deletion_completed";
+    public const string ExerciseReviewed = "exercise.reviewed";
 }

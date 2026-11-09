@@ -67,11 +67,29 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
                     .ToList()))
             .FirstOrDefaultAsync(cancellationToken);
 
+        var attemptRows = await (
+                from a in db.ExerciseAttempts.AsNoTracking().Include(a => a.Responses)
+                join d in db.ExerciseDefinitions.AsNoTracking() on a.DefinitionId equals d.Id
+                where a.OwnerUserId == userId
+                orderby a.CreatedAt
+                select new { Attempt = a, d.Key, d.Version })
+            .ToListAsync(cancellationToken);
+        var attempts = attemptRows
+            .Select(x => new ExportedExerciseAttempt(
+                x.Attempt.Id,
+                x.Key,
+                x.Version,
+                x.Attempt.Status.ToString(),
+                x.Attempt.CreatedAt,
+                x.Attempt.CompletedAt,
+                x.Attempt.Responses.ToDictionary(r => r.StepKey, r => r.Value, StringComparer.Ordinal)))
+            .ToList();
+
         var now = clock.UtcNow;
         db.AuditEvents.Add(AuditEvent.Record(userId, AuditActions.DataExported, null, null, now));
         await db.SaveChangesAsync(cancellationToken);
 
-        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake);
+        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts);
     }
 
     public async Task<Guid> RequestDeletionAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -131,6 +149,8 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
         await db.PrivateReflections.Where(r => r.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.ConcernSelections.Where(c => c.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.IntakeProfiles.Where(p => p.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.ExerciseResponses.Where(r => r.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.ExerciseAttempts.Where(a => a.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.SharedMessages.Where(m => m.SenderUserId == userId || m.RecipientUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.DraftMessages.Where(d => d.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.ConsentRecords.Where(c => c.UserId == userId).ExecuteDeleteAsync(cancellationToken);

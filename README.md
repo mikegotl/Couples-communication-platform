@@ -70,10 +70,18 @@ Never commit real credentials.
 | `/workspace` | Create a workspace, invite your partner, leave (signed in) |
 | `/invite/{token}` | Review and accept an invitation (signed in) |
 | `/intake` | Private intake: choose topics to work on and write private notes (signed in) |
+| `/exercises` | Guided private exercises; progress saves after every step (signed in) |
+| `/admin/exercises` | Exercise content and clinician review status (Admin role only) |
 | `/privacy` | Plain-language summary of what is private and what is shared |
 | `/Account/Manage/PersonalData` | Download your data, or delete your account and all your private data |
 | `/health` | Liveness (process up; no dependency checks) |
 | `/health/ready` | Readiness (includes PostgreSQL connectivity) |
+
+### Admin access
+
+There is no self-service admin. List confirmed accounts under `Administration:AdminEmails`
+(for example `Administration__AdminEmails__0=you@example.com` as an environment variable) and
+restart the web app; it grants them the `Admin` role at startup.
 
 ## Repository layout
 

@@ -29,6 +29,9 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `ConcernCategory` | `concern_categories` | Internal | Everyone (topic names and descriptions) | Reference data seeded by migrations. |
 | `IntakeProfile` | `intake_profiles` | Personal | Owner only (not even whether it exists or is complete) | Until the owner starts over or deletes their account. |
 | `ConcernSelection` | `concern_selections` | PrivateSensitive | Owner only | Until the owner removes the topic, starts over or deletes their account. |
+| `ExerciseDefinition` | `exercise_definitions` | Internal | Everyone (exercise content); admins (review metadata) | Kept while any attempt uses it. Content is immutable per version. |
+| `ExerciseAttempt` | `exercise_attempts` | Personal | Owner only | Until the owner deletes it or their account. |
+| `ExerciseResponse` | `exercise_responses` | PrivateSensitive | Owner only | With its attempt; erased with the attempt or the account. |
 | `DraftMessage` | `draft_messages` | PrivateSensitive | Owner only | While in use; discarded drafts purged after 30 days; deleted with the account. |
 | `SharedMessage` | `shared_messages` | SharedSensitive | Sender always; recipient only while both are active members and it is not revoked | Text erased on revoke; deleted when either party deletes their account or the workspace is purged. |
 | `ConsentRecord` | `consent_records` | Personal | The user who gave consent | Life of the account, as evidence; deleted with the account. Stores a SHA-256 fingerprint of approved text, never the text. |
@@ -37,7 +40,7 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 
 ## Access rules (enforced in services, not the UI)
 
-- Reflections, drafts and intake are queried only with `OwnerUserId == acting user`. Another user's id
+- Reflections, drafts, intake and exercise attempts are queried only with `OwnerUserId == acting user`. Another user's id
   returns the same "not found" as an id that does not exist.
 - Intake has no workspace scope: no workspace view, partner page or notification reads it, so a
   partner cannot learn which topics were chosen, whether intake was completed or skipped, or any notes.
@@ -55,7 +58,7 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 
 1. The user confirms on **Account › Personal data › Delete** (password required).
 2. A `DataDeletionRequest` is recorded and processed immediately: reflections, intake topics and
-   profile, shared messages
+   profile, exercise answers and attempts, shared messages
    sent or received, drafts, consent records, invitations they issued, memberships, then the
    account, in one transaction.
 3. If processing fails, the worker retries pending requests every 5 minutes.

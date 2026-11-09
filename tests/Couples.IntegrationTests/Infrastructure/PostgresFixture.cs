@@ -33,7 +33,7 @@ public sealed class PostgresFixture : IAsyncLifetime
     public Task DisposeAsync() => container.DisposeAsync().AsTask();
 
     /// <summary>Real infrastructure registrations against the test database with a controllable clock.</summary>
-    public ServiceProvider BuildServices(FakeClock? clock = null, ILoggerProvider? logs = null)
+    public ServiceProvider BuildServices(FakeClock? clock = null, ILoggerProvider? logs = null, Action<IServiceCollection>? configure = null)
     {
         var services = new ServiceCollection();
         services.AddLogging(builder =>
@@ -47,6 +47,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddInfrastructure(ConnectionString);
         services.AddSingleton<IClock>(clock ?? Clock);
+        configure?.Invoke(services);
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
     }
 
