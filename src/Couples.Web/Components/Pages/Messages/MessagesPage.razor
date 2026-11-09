@@ -10,6 +10,7 @@
 @inject IInboxService Inbox
 @inject INotificationService Notifications
 @inject IPaceService Pace
+@inject Couples.Application.Safety.ISafetyGate SafetyGate
 @inject IWorkspaceService Workspaces
 @inject CurrentUser CurrentUser
 @inject IDialogService Dialogs
@@ -37,6 +38,12 @@ else
         <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock">
             Drafts are private to you. Your partner sees a message only after you preview it and choose to send it.
         </MudAlert>
+        @if (safetyHold)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                @Couples.Application.Safety.SafetyCopy.SharingHeld <MudLink Href="safety">Your safety</MudLink> · <MudLink Href="support">Support</MudLink>
+            </MudAlert>
+        }
         @if (myPause is { } mine)
         {
             <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
@@ -79,7 +86,12 @@ else
         <section aria-labelledby="inbox-heading">
             <MudText Typo="Typo.h6" HtmlTag="h2" id="inbox-heading">From your partner</MudText>
             <MudText Typo="Typo.body2" Class="mb-2">There's no rush to reply, and your partner isn't told when you've read something.</MudText>
-            @if (inbox.Count == 0)
+            @if (safetyHold && !showPartnerMessages)
+            {
+                <MudText Typo="Typo.body2" Class="mb-2">Your partner's messages are hidden while safety mode is on.</MudText>
+                <div><MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => showPartnerMessages = true">Show them</MudButton></div>
+            }
+            else if (inbox.Count == 0)
             {
                 <MudText Typo="Typo.body2">Nothing yet.</MudText>
             }
@@ -157,6 +169,8 @@ else
     private IReadOnlyList<InboxItem> inbox = [];
     private DateTimeOffset? myPause;
     private DateTimeOffset? partnerPause;
+    private bool safetyHold;
+    private bool showPartnerMessages;
     private IReadOnlyList<SharedMessageView> sent = [];
 
     protected override async Task OnInitializedAsync()
@@ -174,6 +188,7 @@ else
         sent = await Messages.SentAsync(userId);
         myPause = (await Pace.GetAsync(userId)).PausedUntil;
         partnerPause = (await Pace.GetPartnerPaceAsync(userId))?.PausedUntil;
+        safetyHold = await SafetyGate.UserBlocksJointFlowsAsync(userId);
 
         // The list shows what's new, so the notices that pointed here are done.
         await Notifications.MarkAllReadAsync(userId);

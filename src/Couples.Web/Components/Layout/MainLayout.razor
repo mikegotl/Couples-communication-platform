@@ -7,6 +7,7 @@
     <MudAppBar Elevation="1" Color="Color.Primary">
         <MudLink Href="" Color="Color.Inherit" Underline="Underline.None" Typo="Typo.h6" Class="ml-2">BridgeTogether</MudLink>
         <MudSpacer />
+        <QuickExit />
         <AuthorizeView>
             <Authorized>
                 <MudLink Href="workspace" Color="Color.Inherit" Class="mx-1 mx-sm-2">Workspace</MudLink>
@@ -16,6 +17,7 @@
                 <AuthorizeView Roles="@Couples.Web.Administration.AdminBootstrap.AdminRole" Context="admin">
                     <MudLink Href="admin/exercises" Color="Color.Inherit" Class="mx-1 mx-sm-2">Admin</MudLink>
                 </AuthorizeView>
+                <MudLink Href="support" Color="Color.Inherit" Class="mx-1 mx-sm-2">Support</MudLink>
                 <MudLink Href="Account/Manage" Color="Color.Inherit" Class="mx-1 mx-sm-2">Account</MudLink>
                 <form action="Account/Logout" method="post" class="d-inline">
                     <AntiforgeryToken />
@@ -24,6 +26,7 @@
                 </form>
             </Authorized>
             <NotAuthorized>
+                <MudLink Href="support" Color="Color.Inherit" Class="mx-1 mx-sm-2">Support</MudLink>
                 <MudLink Href="Account/Login" Color="Color.Inherit" Class="mx-1 mx-sm-2">Log in</MudLink>
                 <MudLink Href="Account/Register" Color="Color.Inherit" Class="mx-1 mx-sm-2">Create account</MudLink>
             </NotAuthorized>

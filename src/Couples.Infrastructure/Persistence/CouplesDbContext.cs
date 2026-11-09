@@ -60,6 +60,8 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
 
     public DbSet<Couples.Domain.Notifications.Notification> Notifications => Set<Couples.Domain.Notifications.Notification>();
 
+    public DbSet<Couples.Domain.Safety.PersonalSafety> PersonalSafety => Set<Couples.Domain.Safety.PersonalSafety>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

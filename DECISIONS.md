@@ -16,12 +16,15 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0009](docs/adr/0009-versioned-exercises-and-clinician-review.md) | Versioned exercises with clinician review metadata | Accepted |
 | [0010](docs/adr/0010-coach-safeguards-and-gated-live-provider.md) | Coach safeguards and an owner-gated live provider | Accepted |
 | [0011](docs/adr/0011-pace-controls-and-content-free-notifications.md) | Pace controls and content-free notifications | Accepted |
+| [0012](docs/adr/0012-private-safety-check-and-silent-joint-flow-hold.md) | Private safety check and a silent hold on joint flows | Accepted |
 
 ## Open decisions (owner)
 
 - Working brand, jurisdiction, legal/privacy counsel and launch market.
 - Transactional email provider (needed before any non-development deployment; see ADR-0006).
 - AI provider and data-processing agreement (retention and training controls verified first).
-- Licensed clinician reviewers for exercises and high-risk flows.
+- Licensed clinician reviewers for exercises and high-risk flows, including the milestone 09
+  safety check (see docs/safety/clinical-review.md).
+- Jurisdiction-specific support resources for the launch market (`Safety:Resources`).
 - Whether a therapist portal is a separate later product (no therapist access by default).
 - Hosting target for staging (milestone 11); nothing is deployed before then.

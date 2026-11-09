@@ -716,6 +716,45 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.ToTable("private_reflections", "couples");
                 });
 
+            modelBuilder.Entity("Couples.Domain.Safety.PersonalSafety", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AnswersJson")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset?>("CheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ContentVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Level")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("SafetyMode")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("SelfHarmSupport")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("personal_safety", "couples");
+                });
+
             modelBuilder.Entity("Couples.Domain.Workspaces.Invitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1213,6 +1252,15 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Couples.Domain.Safety.PersonalSafety", b =>
+                {
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("Couples.Domain.Safety.PersonalSafety", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

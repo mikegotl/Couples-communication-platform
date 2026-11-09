@@ -1,0 +1,7 @@
+@using Couples.Web.Safety
+@using Microsoft.Extensions.Options
+@inject IOptions<SafetyOptions> Safety
+
+@* A plain link that works without JavaScript; quick-exit.js upgrades it to replace the history
+   entry so Back doesn't return here. *@
+<a href="@Safety.Value.ExitUrl" class="quick-exit" data-quick-exit rel="noreferrer noopener" title="Leave this site quickly">Leave quickly</a>

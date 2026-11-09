@@ -33,7 +33,8 @@ public sealed record PersonalDataExport(
     IReadOnlyList<ExportedExerciseAttempt> ExerciseAttempts,
     IReadOnlyList<ExportedCoachingUsage> CoachingUsage,
     ExportedPace? Pace,
-    IReadOnlyList<ExportedNotification> Notifications);
+    IReadOnlyList<ExportedNotification> Notifications,
+    ExportedSafety? Safety);
 
 public sealed record ExportedMembership(Guid WorkspaceId, string WorkspaceName, string Role, DateTimeOffset JoinedAt, DateTimeOffset? LeftAt);
 
@@ -56,3 +57,5 @@ public sealed record ExportedCoachingUsage(DateOnly Day, int Requests, long Inpu
 public sealed record ExportedPace(TimeOnly? QuietStart, TimeOnly? QuietEnd, string TimeZoneId, bool Muted, DateTimeOffset? PausedUntil);
 
 public sealed record ExportedNotification(string Kind, Guid MessageId, DateTimeOffset VisibleAt, DateTimeOffset? ReadAt);
+
+public sealed record ExportedSafety(IReadOnlyDictionary<string, string>? Answers, string? Level, int? ContentVersion, DateTimeOffset? CheckedAt, bool SafetyMode);

@@ -74,6 +74,8 @@ Never commit real credentials.
 | `/messages` | Private drafts, messages from your partner, sent messages and withdrawal (signed in) |
 | `/messages/new`, `/messages/draft/{id}` | Write a draft, get optional wording suggestions, preview exactly what your partner will see, confirm and send |
 | `/messages/received/{id}` | Read a message from your partner, keep private notes, start an optional reply |
+| `/safety` | Private safety check, support options, safety mode, delete answers (signed in) |
+| `/support` | Support resources and how quick exit works (public) |
 | `/settings/pace` | Pause new messages, quiet hours, mute notifications |
 | `/admin/exercises` | Exercise content and clinician review status (Admin role only) |
 | `/privacy` | Plain-language summary of what is private and what is shared |
@@ -88,6 +90,13 @@ provider, which sends nothing anywhere. A live model is used only through an own
 (`Coaching:Gateway:Endpoint`, `Model`, and `ApiKey` from user secrets or environment variables,
 never committed) and only once `Coaching:ApprovedForUserContent=true` is set after a provider and
 data processing agreement are chosen. Daily caps are under `Coaching:` (see ADR-0010).
+
+### Safety and support
+
+Every page has a "Leave quickly" link to `Safety:ExitUrl` (https only). Support resources come
+from `Safety:Resources` (name, description, optional contact and https link) plus two built-in,
+jurisdiction-neutral entries. The safety content is a placeholder pending licensed clinician
+review ([checklist](docs/safety/clinical-review.md)).
 
 ### Admin access
 
