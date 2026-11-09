@@ -5,8 +5,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | # | Milestone | Status |
 |---|-----------|--------|
 | 01 | Repository and architecture | Done (PR #1) |
-| 02 | Identity and partner workspace | In review |
-| 03 | Privacy, consent and data boundaries | Not started |
+| 02 | Identity and partner workspace | Done (PR #2) |
+| 03 | Privacy, consent and data boundaries | In review |
 | 04 | Intake and concern mapping | Not started |
 | 05 | Guided private reflection exercises | Not started |
 | 06 | AI coaching abstraction and safeguards | Not started |
@@ -102,3 +102,48 @@ an anonymous visitor to `/workspace` was redirected to `/Account/Login`.
 **Known limits / next**: invite links are bearer secrets until accepted (documented in the UI
 and ADR-0006); account pages use the template's layout rather than MudBlazor components; no email
 provider yet. Next: milestone 03 (privacy, consent and data boundaries).
+
+## Milestone 03: Privacy, consent and data boundaries
+
+**Delivered**
+
+- `[Privacy(classification, retention)]` on every persisted type and a data inventory
+  (`docs/privacy/data-inventory.md`); tests fail if either is missing for an entity.
+- Owner-only `PrivateReflection` and `DraftMessage` with `IPrivateReflectionService` and the
+  draft half of `IMessagingService`. Another user's id behaves like a nonexistent id.
+- Explicit per-message sharing: `ShareAsync` requires the SHA-256 fingerprint of the previewed
+  text, writes `SharedMessage` + `ConsentRecord` + `AuditEvent` in one transaction, once per draft
+  (unique index + `xmin`). Sender can revoke: recipient loses access, text is erased, consent
+  withdrawn. Recipients read only while both partners are active members.
+- `IPersonalDataService`: export of the user's own data (wired into Identity's download, now
+  without the authenticator key) and a deletion workflow (request, erase content rows, delete
+  account) used by the Delete page and retried by the worker.
+- `IRetentionService` and `PrivacyMaintenanceWorker`: purge closed invitations, discarded
+  drafts and empty workspaces after 30 days; audit events and completed deletion requests after
+  400 days.
+- Workspace creator no longer has a foreign key to the account, so a creator can delete their
+  account and the partner keeps the workspace.
+- `/privacy` page in plain language; home page links to sign-up and privacy.
+- Migration `PrivacyConsentAndContent`; ADR-0007.
+
+**Verification** (2026-11-09, fresh clone of the branch)
+
+| Command | Result |
+|---------|--------|
+| `dotnet build -c Release` | Succeeded, 0 warnings, 0 errors |
+| `dotnet test -c Release` | UnitTests 21/21, IntegrationTests 43/43 passed |
+| `dotnet list package --vulnerable --include-transitive` | No vulnerable packages |
+| Browser check (Development) | Export downloads `account` + `app` sections without the authenticator key; deleting A's account signs A out, A can no longer log in, B keeps the workspace with no partner |
+
+Gate tests (database-backed): partner cannot read, update, delete or list another partner's
+reflection; cannot read, edit, discard or share another partner's draft; sharing fails on a stale
+or missing fingerprint and before a partner joins; consent record and audit event written on
+share; concurrent shares of one draft deliver once; outsider cannot read a shared message by id;
+revoke hides and erases; recipient leaving or sender leaving ends access, including in export;
+a member who left cannot share old drafts; exports contain only the requester's private data;
+captured logs contain no reflection text, draft text, workspace name or invite token; deletion
+erases every content row and the account while the partner's data remains; retention purges only
+records past their rule.
+
+Notifications do not exist yet (milestone 08); the data inventory records the no-content rule
+they must follow.

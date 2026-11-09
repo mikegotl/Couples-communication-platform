@@ -1,4 +1,5 @@
 using Couples.Domain.Common;
+using Couples.Domain.Privacy;
 
 namespace Couples.Domain.Workspaces;
 
@@ -7,6 +8,7 @@ namespace Couples.Domain.Workspaces;
 /// private content. Retention: kept while the workspace exists so history stays attributable;
 /// removed with the workspace or the user's account deletion.
 /// </summary>
+[Privacy(DataClassification.Personal, "Kept with the workspace so history stays attributable; deleted with the member's account or the workspace.")]
 public sealed class WorkspaceMembership : Entity
 {
     private WorkspaceMembership()

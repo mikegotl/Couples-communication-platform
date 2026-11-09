@@ -9,12 +9,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using Couples.Web.Components.Account.Pages;
 using Couples.Web.Components.Account.Pages.Manage;
+using Couples.Application.Privacy;
 using Couples.Infrastructure.Identity;
 
 namespace Microsoft.AspNetCore.Routing;
 
 internal static class IdentityComponentsEndpointRouteBuilderExtensions
 {
+    private static readonly JsonSerializerOptions ExportJsonOptions = new() { WriteIndented = true };
+
     // These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
     public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -114,7 +117,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
         manageGroup.MapPost("/DownloadPersonalData", async (
             HttpContext context,
             [FromServices] UserManager<ApplicationUser> userManager,
-            [FromServices] AuthenticationStateProvider authenticationStateProvider) =>
+            [FromServices] IPersonalDataService personalDataService) =>
         {
             var user = await userManager.GetUserAsync(context.User);
             if (user is null)
@@ -140,8 +143,14 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
                 personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
             }
 
-            personalData.Add("Authenticator Key", (await userManager.GetAuthenticatorKeyAsync(user))!);
-            var fileBytes = JsonSerializer.SerializeToUtf8Bytes(personalData);
+            // The authenticator key is deliberately not exported: it is a second-factor secret, and a
+            // leaked export file must not let someone bypass two-factor sign-in.
+
+            // App data belonging to this user only (never a partner's private content).
+            var appData = await personalDataService.ExportAsync(user.Id, context.RequestAborted);
+            var fileBytes = JsonSerializer.SerializeToUtf8Bytes(
+                new { account = personalData, app = appData },
+                ExportJsonOptions);
 
             context.Response.Headers.TryAdd("Content-Disposition", "attachment; filename=PersonalData.json");
             return TypedResults.File(fileBytes, contentType: "application/json", fileDownloadName: "PersonalData.json");

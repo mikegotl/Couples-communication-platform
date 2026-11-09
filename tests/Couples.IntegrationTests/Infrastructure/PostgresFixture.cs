@@ -5,6 +5,7 @@ using Couples.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Testcontainers.PostgreSql;
 
 namespace Couples.IntegrationTests.Infrastructure;
@@ -32,10 +33,17 @@ public sealed class PostgresFixture : IAsyncLifetime
     public Task DisposeAsync() => container.DisposeAsync().AsTask();
 
     /// <summary>Real infrastructure registrations against the test database with a controllable clock.</summary>
-    public ServiceProvider BuildServices(FakeClock? clock = null)
+    public ServiceProvider BuildServices(FakeClock? clock = null, ILoggerProvider? logs = null)
     {
         var services = new ServiceCollection();
-        services.AddLogging();
+        services.AddLogging(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Trace);
+            if (logs is not null)
+            {
+                builder.AddProvider(logs);
+            }
+        });
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddInfrastructure(ConnectionString);
         services.AddSingleton<IClock>(clock ?? Clock);

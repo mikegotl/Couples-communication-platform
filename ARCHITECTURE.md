@@ -48,13 +48,21 @@ Each library exposes a single `AddXxx` extension for dependency injection; hosts
 
 ## Privacy boundaries (applies to every milestone)
 
+See [docs/privacy/data-inventory.md](docs/privacy/data-inventory.md) for every entity's
+classification, readers and retention, and ADR-0007 for sharing and consent.
+
 - Workspace membership never grants access to another partner's private reflections or drafts.
 - Authorization and consent are enforced in Application services and data queries, not only in
   the UI.
 - Every sensitive entity carries an owner or workspace scope, timestamps
   (`Entity.CreatedAt`/`UpdatedAt`) and a documented retention rule.
 - Logs, telemetry, notifications, search and analytics never contain message bodies,
-  reflections, AI transcripts or safety flags.
+  reflections, AI transcripts or safety flags. A test captures all logs from a full flow and
+  fails if any private text or invite token appears.
+- Services: `IPrivateReflectionService` and `IMessagingService` (owner-scoped), `IPersonalDataService`
+  (export and deletion workflow), `IRetentionService` (purge by rule). The worker's
+  `PrivacyMaintenanceWorker` retries pending deletions every 5 minutes and applies retention
+  every 6 hours.
 
 ## Configuration and secrets
 

@@ -1,4 +1,9 @@
+using Couples.Domain.Auditing;
 using Couples.Domain.Common;
+using Couples.Domain.Consent;
+using Couples.Domain.Messaging;
+using Couples.Domain.Privacy;
+using Couples.Domain.Reflections;
 using Couples.Domain.Workspaces;
 using Couples.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -21,6 +26,18 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
     public DbSet<WorkspaceMembership> WorkspaceMemberships => Set<WorkspaceMembership>();
 
     public DbSet<Invitation> Invitations => Set<Invitation>();
+
+    public DbSet<PrivateReflection> PrivateReflections => Set<PrivateReflection>();
+
+    public DbSet<DraftMessage> DraftMessages => Set<DraftMessage>();
+
+    public DbSet<SharedMessage> SharedMessages => Set<SharedMessage>();
+
+    public DbSet<ConsentRecord> ConsentRecords => Set<ConsentRecord>();
+
+    public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+
+    public DbSet<DataDeletionRequest> DataDeletionRequests => Set<DataDeletionRequest>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
