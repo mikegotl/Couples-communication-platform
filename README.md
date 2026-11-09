@@ -98,6 +98,17 @@ from `Safety:Resources` (name, description, optional contact and https link) plu
 jurisdiction-neutral entries. The safety content is a placeholder pending licensed clinician
 review ([checklist](docs/safety/clinical-review.md)).
 
+### Security configuration
+
+Outside Development the app and worker refuse to start unless the database connection uses TLS
+(`SSL Mode=VerifyFull` or `Require`) and `DataProtection:CertificatePath` (plus
+`CertificatePassword`, from a secret store) points at a certificate that encrypts the key ring.
+Rate limits are under `RateLimits:`. See ADR-0013, the
+[threat model](docs/security/threat-model.md), the
+[security test suite](docs/security/test-suite.md) and the
+[backup policy](docs/operations/backup-policy.md). `./eng/scan-secrets.sh` checks tracked files
+for credentials (CI runs it too).
+
 ### Admin access
 
 There is no self-service admin. List confirmed accounts under `Administration:AdminEmails`

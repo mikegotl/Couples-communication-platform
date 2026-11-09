@@ -1,7 +1,14 @@
 @inherits LayoutComponentBase
 @inject NavigationManager NavigationManager
 
-<MudThemeProvider />
+<MudThemeProvider Theme="AppTheme.Theme" />
+
+@* Interactive pages render without prerendering, so their own <PageTitle> can't reach the
+   statically rendered head. This gives every route a title (WCAG 2.4.2); static pages still
+   override it with their own. *@
+<PageTitle>@RouteTitles.For(NavigationManager.ToBaseRelativePath(NavigationManager.Uri))</PageTitle>
+
+<a class="skip-link" href="@SkipHref" data-skip-link>Skip to main content</a>
 
 <MudLayout>
     <MudAppBar Elevation="1" Color="Color.Primary">
@@ -33,9 +40,11 @@
         </AuthorizeView>
     </MudAppBar>
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
-            @Body
-        </MudContainer>
+        <main id="main-content" tabindex="-1">
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+                @Body
+            </MudContainer>
+        </main>
     </MudMainContent>
 </MudLayout>
 
@@ -44,3 +53,8 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    // The page has <base href="/">, so a bare "#main-content" would point at the home page.
+    private string SkipHref => NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Split('#')[0] + "#main-content";
+}

@@ -1,10 +1,10 @@
 @page "/intake"
+@inherits ScopedPage
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Intake
 @using Couples.Domain.Common
 @using Couples.Domain.Intake
-@inject IIntakeService Intake
 @inject CurrentUser CurrentUser
 @inject NavigationManager Navigation
 @inject IDialogService Dialogs
@@ -179,6 +179,8 @@ else
 }
 
 @code {
+    private IIntakeService Intake => Service<IIntakeService>();
+
     private bool loading = true;
     private bool busy;
     private bool editing;

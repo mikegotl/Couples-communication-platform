@@ -54,4 +54,5 @@ public enum DomainError
     WarningNotAcknowledged,
     PartnerPaused,
     SafetyHold,
+    RateLimited,
 }

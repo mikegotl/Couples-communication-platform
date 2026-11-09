@@ -97,6 +97,11 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
             return DomainError.SafetyHold;
         }
 
+        if (await OverShareLimitAsync(userId, cancellationToken))
+        {
+            return DomainError.RateLimited;
+        }
+
         var (isMember, recipient) = await RecipientAsync(userId, draft.WorkspaceId, cancellationToken);
         if (!isMember)
         {
@@ -136,6 +141,11 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         if (await BlocksJointFlowsAsync(userId, cancellationToken))
         {
             return DomainError.SafetyHold;
+        }
+
+        if (await OverShareLimitAsync(userId, cancellationToken))
+        {
+            return DomainError.RateLimited;
         }
 
         // The author must still be an active member of the draft's workspace, and a partner must be there to receive it.
@@ -269,6 +279,12 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         }
 
         return saved;
+    }
+
+    private async Task<bool> OverShareLimitAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var since = clock.UtcNow.AddHours(-1);
+        return await db.SharedMessages.CountAsync(m => m.SenderUserId == userId && m.SharedAt > since, cancellationToken) >= MessagingLimits.SharesPerHour;
     }
 
     private Task<bool> BlocksJointFlowsAsync(Guid userId, CancellationToken cancellationToken) =>

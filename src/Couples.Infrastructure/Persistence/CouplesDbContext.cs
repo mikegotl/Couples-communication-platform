@@ -9,6 +9,7 @@ using Couples.Domain.Privacy;
 using Couples.Domain.Reflections;
 using Couples.Domain.Workspaces;
 using Couples.Infrastructure.Identity;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +21,7 @@ namespace Couples.Infrastructure.Persistence;
 /// <c>couples</c> schema.
 /// </summary>
 public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
-    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
+    : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options), IDataProtectionKeyContext
 {
     public const string Schema = "couples";
 
@@ -62,6 +63,13 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
 
     public DbSet<Couples.Domain.Safety.PersonalSafety> PersonalSafety => Set<Couples.Domain.Safety.PersonalSafety>();
 
+    /// <summary>
+    /// ASP.NET Core Data Protection key ring (cookies, antiforgery and account tokens). Shared by
+    /// every web instance and kept across restarts; encrypted with a certificate outside
+    /// Development (see ADR-0013).
+    /// </summary>
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -69,6 +77,7 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
         builder.HasDefaultSchema(Schema);
 
         builder.ApplyConfigurationsFromAssembly(typeof(CouplesDbContext).Assembly);
+        builder.Entity<DataProtectionKey>().ToTable("data_protection_keys");
 
         // Domain entities create their own ids (UUIDv7). Telling EF the key is never generated
         // makes it insert children added through a navigation instead of treating them as

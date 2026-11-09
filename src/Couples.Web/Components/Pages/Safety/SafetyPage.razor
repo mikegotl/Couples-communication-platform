@@ -1,9 +1,9 @@
 @page "/safety"
+@inherits ScopedPage
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Safety
 @using Couples.Domain.Safety
-@inject ISafetyService Safety
 @inject CurrentUser CurrentUser
 @inject IDialogService Dialogs
 @inject ISnackbar Snackbar
@@ -115,6 +115,8 @@ else
 }
 
 @code {
+    private ISafetyService Safety => Service<ISafetyService>();
+
     private SafetyStatus? status;
     private Guid userId;
     private bool busy;

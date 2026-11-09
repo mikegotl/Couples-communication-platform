@@ -12,8 +12,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | 06 | AI coaching abstraction and safeguards | Done (PR #6) |
 | 07 | Draft, preview, approve and deliver | Done (PR #7) |
 | 08 | Asynchronous partner responses | Done (PR #8) |
-| 09 | Safety and support pathways | In review (clinical review pending) |
-| 10 | Accessibility, security and data lifecycle | Not started |
+| 09 | Safety and support pathways | Done (PR #9; clinical review pending) |
+| 10 | Accessibility, security and data lifecycle | In review |
 | 11 | Private pilot readiness and observability | Not started |
 | 12 | Phase 2 joint chat, flag OFF | Not started |
 
@@ -382,3 +382,38 @@ erasure. Unit tests cover scoring, completeness, the pinned content hash and cop
 
 **Not yet**: the manual clinical review part of the gate (needs the owner's clinician), and
 jurisdiction-specific resources (needs the launch market decision).
+
+## Milestone 10: Accessibility, security and data lifecycle
+
+**Delivered**
+
+- Security headers on every response: nonce-based CSP (no `unsafe-eval`, no framing), no
+  referrer, nosniff, Permissions-Policy, COOP/CORP, `no-store` on dynamic pages, no `Server`.
+- `__Host-` Secure HttpOnly cookies outside Development; antiforgery SameSite=Strict; security
+  stamp rechecked every 5 minutes.
+- Rate limits: 10 account form posts per minute and 600 requests per minute per client address;
+  10 messages per hour per person (`RateLimited`, the draft is kept). Body, header and SignalR
+  size limits.
+- Encryption configuration: TLS required to the database; Data Protection key ring stored in
+  PostgreSQL and certificate-encrypted outside Development (startup fails otherwise); platform
+  encryption at rest required of hosting. Migration `DataProtectionKeys`.
+- Deletion verified: a sweep over every user-id column in the model after deletion. It found two
+  leftovers (accepted invitations and the workspace creator link), both now erased. Accounts that
+  reappear after a backup restore are erased again by the worker.
+- Accessibility: axe-core audit of 17 pages to WCAG 2.2 AA, 0 violations after fixes (status
+  colour contrast, underlined links, a title on every page, danger button contrast); skip link,
+  visible focus, reduced motion. Audit and triage in `docs/accessibility/audit-2026-11.md`.
+- Fixed a server error on `/Account/Manage` for signed-in users (the "Messages (n)" link shared
+  the request's DbContext with the account page). Interactive pages now get their own scope.
+- Security scanning: secret scan in CI (`eng/scan-secrets.sh`), CodeQL (C#, JavaScript, Actions;
+  security-extended), Dependabot for NuGet and Actions, alongside the NuGet vulnerability audit.
+- Threat model, security test suite, backup policy, ADR-0013.
+
+**Verification**: see the PR description for the commands run on a fresh clone and their results.
+
+Gate tests (documented in `docs/security/test-suite.md`): HTTP hardening (headers, fresh nonce,
+cookies, antiforgery, rate limit with Retry-After, body limit), the message rate limit, the
+deletion sweep and restore re-erasure, plus every earlier privacy and safety test.
+
+**Not yet**: a screen reader pass and zoom/reflow checks (triaged in the audit), a penetration
+test before public launch, forwarded-header configuration for the chosen host.

@@ -114,6 +114,17 @@ partner can't tell. Future joint features must call `ISafetyGate.WorkspaceAllows
 The service has no logger and writes no audit events. `QuickExit` is in the static layout and
 works without the interactive circuit. See ADR-0012.
 
+## Security
+
+`SecurityHeaders` (middleware) adds a nonce-based CSP and the other headers to every response;
+`App.razor` puts the nonce on the import map. `WebSecurity.AddWebSecurity` sets Kestrel limits,
+the database TLS check, the Data Protection key ring (`DataProtectionKeys` in `CouplesDbContext`,
+certificate-encrypted outside Development), antiforgery cookie settings and the rate limiter.
+Interactive pages inherit `ScopedPage` so each has its own DI scope and DbContext; static
+components that query the database during server rendering (like `MessagesNavLink`) create their
+own scope because static rendering runs sibling components concurrently. See ADR-0013 and
+[the threat model](docs/security/threat-model.md).
+
 ## Exercises
 
 Exercise wording is code (`Couples.Domain.Exercises.ExerciseCatalog`); each version is published

@@ -27,4 +27,6 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
   safety check (see docs/safety/clinical-review.md).
 - Jurisdiction-specific support resources for the launch market (`Safety:Resources`).
 - Whether a therapist portal is a separate later product (no therapist access by default).
-- Hosting target for staging (milestone 11); nothing is deployed before then.
+- Hosting target for staging (milestone 11); nothing is deployed before then. It must provide a
+  TLS database connection, encrypted storage and backups (14-day retention), a secret store for
+  the key-ring certificate, and the real client address for rate limits (ADR-0013).

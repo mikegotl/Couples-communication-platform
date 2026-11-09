@@ -1,9 +1,9 @@
 @page "/exercises"
+@inherits ScopedPage
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Couples.Application.Exercises
 @using Couples.Domain.Exercises
-@inject IExerciseService Exercises
 @inject CurrentUser CurrentUser
 @inject NavigationManager Navigation
 @inject IDialogService Dialogs
@@ -76,6 +76,8 @@
 </MudStack>
 
 @code {
+    private IExerciseService Exercises => Service<IExerciseService>();
+
     private Guid userId;
     private bool busy;
     private IReadOnlyList<ExerciseSummaryView>? exercises;

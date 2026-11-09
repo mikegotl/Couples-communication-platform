@@ -7,6 +7,7 @@ using Couples.Web;
 using Couples.Web.Components;
 using Couples.Web.Components.Account;
 using Couples.Web.Email;
+using Couples.Web.Security;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
@@ -15,9 +16,11 @@ using Microsoft.FeatureManagement;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddWebSecurity();
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents(options => options.DetailedErrors = false);
+builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 64 * 1024);
 
 builder.Services.AddMudServices();
 builder.Services.AddFeatureManagement();
@@ -47,6 +50,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    options.Cookie.Name = builder.Environment.IsDevelopment() ? "bt-auth" : "__Host-bt-auth";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax;
@@ -101,6 +105,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseSecurityHeaders(upgradeInsecure: !app.Environment.IsDevelopment());
+app.UseRateLimiter();
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 app.UseAntiforgery();
