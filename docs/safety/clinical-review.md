@@ -14,7 +14,7 @@ The reviewer should check, and record their name, licence and date against each 
 | Immediate danger and self-harm copy | `SafetyCopy.ImmediateDanger`, `SafetyCopy.SelfHarm` | Accurate and safe signposting |
 | Support resources | `Safety:Resources` configuration, `SafetyOptions.BuiltIn` | Jurisdiction-specific services for the launch market (owner decision) |
 | Safety mode and the silent hold | ADR-0012 | Whether holding the user's own sharing, and not telling the partner, is the right default |
-| Quick exit | `QuickExit.razor`, `quick-exit.js`, `/support` | Behaviour and limits explained honestly |
+| Quick exit and device privacy | `QuickExit.razor`, `quick-exit.js`, `SafetyCopy.QuickExit`, `SafetyCopy.PrivacyTips` (`/support`) | Behaviour and limits explained honestly; whether the tips suit the launch market |
 | Coach safety handling | `CoachPrompt`, `DraftPage` support link | What the user sees when the coach flags a safety concern |
 | Exercise content | `/admin/exercises` | Already tracked per exercise (ADR-0009) |
 
