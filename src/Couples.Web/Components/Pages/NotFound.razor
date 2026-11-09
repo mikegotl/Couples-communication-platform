@@ -1,5 +1,10 @@
-﻿@page "/not-found"
+@page "/not-found"
 @layout MainLayout
 
-<h3>Not Found</h3>
-<p>Sorry, the content you are looking for does not exist.</p>
+<PageTitle>Page not found · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">We couldn't find that page</MudText>
+    <MudText>The link may be old, or the page may have moved. Nothing you've written has been affected.</MudText>
+    <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="">Go to the home page</MudButton></div>
+</MudStack>

@@ -91,7 +91,9 @@
         await SignInManager.SignOutAsync();
         Logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
 
-        RedirectManager.RedirectToCurrentPage();
+        // Not back to this page: it needs a signed-in user, so the person would land on the login
+        // form with no sign that the deletion happened.
+        RedirectManager.RedirectToWithStatus("Account/Login", "Your account and your data have been deleted.", HttpContext);
     }
 
     private sealed class InputModel
