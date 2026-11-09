@@ -1,5 +1,11 @@
 using Couples.Application.Abstractions;
+using Couples.Application.Messaging;
+using Couples.Application.Privacy;
+using Couples.Application.Reflections;
 using Couples.Application.Workspaces;
+using Couples.Infrastructure.Messaging;
+using Couples.Infrastructure.Privacy;
+using Couples.Infrastructure.Reflections;
 using Couples.Infrastructure.Persistence;
 using Couples.Infrastructure.Time;
 using Couples.Infrastructure.Workspaces;
@@ -36,6 +42,11 @@ public static class DependencyInjection
 
         services.AddOptions<WorkspaceOptions>().BindConfiguration(WorkspaceOptions.SectionName);
         services.AddScoped<IWorkspaceService, WorkspaceService>();
+        services.AddScoped<IPrivateReflectionService, PrivateReflectionService>();
+        services.AddScoped<IMessagingService, MessagingService>();
+        services.AddScoped<IPersonalDataService, PersonalDataService>();
+        services.AddOptions<RetentionOptions>().BindConfiguration(RetentionOptions.SectionName);
+        services.AddScoped<IRetentionService, RetentionService>();
 
         services.AddHealthChecks()
             .AddDbContextCheck<CouplesDbContext>("database", tags: [ReadyTag]);

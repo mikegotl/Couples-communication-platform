@@ -1,4 +1,5 @@
 using Couples.Domain.Common;
+using Couples.Domain.Privacy;
 
 namespace Couples.Domain.Workspaces;
 
@@ -7,6 +8,7 @@ namespace Couples.Domain.Workspaces;
 /// private content is owned by that partner, never by the workspace.
 /// Retention: deleted when the last member leaves and the deletion workflow runs (milestone 03).
 /// </summary>
+[Privacy(DataClassification.Personal, "Kept while it has members; purged by the retention job 30 days after the last member leaves.")]
 public sealed class RelationshipWorkspace : Entity
 {
     public const int MaxActiveMembers = 2;

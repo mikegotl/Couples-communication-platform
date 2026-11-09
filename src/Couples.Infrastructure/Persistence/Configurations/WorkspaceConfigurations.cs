@@ -23,7 +23,8 @@ internal sealed class RelationshipWorkspaceConfiguration : IEntityTypeConfigurat
         builder.Navigation(w => w.Memberships).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(w => w.Invitations).UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(w => w.CreatedByUserId).OnDelete(DeleteBehavior.Restrict);
+        // No foreign key on CreatedByUserId: the workspace (and the partner's place in it) must
+        // survive the creator deleting their account. The id left behind is an unlinkable random value.
     }
 }
 

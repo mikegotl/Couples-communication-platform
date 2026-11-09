@@ -1,4 +1,5 @@
 using Couples.Domain.Common;
+using Couples.Domain.Privacy;
 
 namespace Couples.Domain.Workspaces;
 
@@ -6,6 +7,7 @@ namespace Couples.Domain.Workspaces;
 /// Expiring, single-use invitation to join a workspace. Only the token hash is stored.
 /// Retention: kept with the workspace for audit; no personal content.
 /// </summary>
+[Privacy(DataClassification.Internal, "Token hash only. Purged by the retention job 30 days after it expires, is used or is revoked.")]
 public sealed class Invitation : Entity
 {
     private Invitation()

@@ -60,6 +60,7 @@ public sealed class SmokeTests(CouplesWebFactory factory) : IClassFixture<Couple
     [InlineData("/Account/Register")]
     [InlineData("/Account/Login")]
     [InlineData("/Account/ForgotPassword")]
+    [InlineData("/privacy")]
     public async Task AccountPagesLoadAnonymously(string path)
     {
         using var client = factory.CreateClient();

@@ -8,6 +8,7 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<DeletePersonalData> Logger
+@inject Couples.Application.Privacy.IPersonalDataService PersonalData
 
 <PageTitle>Delete Personal Data</PageTitle>
 
@@ -18,6 +19,11 @@
 <div class="alert alert-warning" role="alert">
     <p>
         <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
+    </p>
+    <p>
+        Your private reflections, drafts, consent history and the messages you shared or received are
+        erased. If you're in a workspace, you leave it; your partner keeps their own account and their
+        own private data.
     </p>
 </div>
 
@@ -75,15 +81,14 @@
             return;
         }
 
-        var result = await UserManager.DeleteAsync(user);
-        if (!result.Succeeded)
-        {
-            throw new InvalidOperationException("Unexpected error occurred deleting user.");
-        }
+        // Record the request, then run the deletion workflow now. It erases reflections, drafts,
+        // shared messages, consent records and memberships before the account. If this fails part
+        // way, the pending request is retried by the worker.
+        var userId = user.Id;
+        await PersonalData.RequestDeletionAsync(userId);
+        await PersonalData.ProcessPendingDeletionsAsync();
 
         await SignInManager.SignOutAsync();
-
-        var userId = await UserManager.GetUserIdAsync(user);
         Logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
 
         RedirectManager.RedirectToCurrentPage();

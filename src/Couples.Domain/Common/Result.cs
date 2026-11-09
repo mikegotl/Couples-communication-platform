@@ -49,4 +49,6 @@ public enum DomainError
     InvitationInvalid,
     CannotAcceptOwnInvitation,
     Conflict,
+    ConsentMismatch,
+    NoPartner,
 }

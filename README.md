@@ -22,7 +22,8 @@ is behind the `Phase2JointChat` server-side flag, which is **off** by default.
 - Microsoft.FeatureManagement for server-side flags
 - xUnit unit and integration tests, GitHub Actions CI
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) and [DECISIONS.md](DECISIONS.md).
+See [ARCHITECTURE.md](ARCHITECTURE.md), [DECISIONS.md](DECISIONS.md) and the
+[data inventory](docs/privacy/data-inventory.md).
 
 ## Prerequisites
 
@@ -68,6 +69,8 @@ Never commit real credentials.
 | `/Account/Register`, `/Account/Login`, `/Account/Manage` | Accounts: sign-up with email confirmation, sign-in, password reset, MFA, passkeys |
 | `/workspace` | Create a workspace, invite your partner, leave (signed in) |
 | `/invite/{token}` | Review and accept an invitation (signed in) |
+| `/privacy` | Plain-language summary of what is private and what is shared |
+| `/Account/Manage/PersonalData` | Download your data, or delete your account and all your private data |
 | `/health` | Liveness (process up; no dependency checks) |
 | `/health/ready` | Readiness (includes PostgreSQL connectivity) |
 
