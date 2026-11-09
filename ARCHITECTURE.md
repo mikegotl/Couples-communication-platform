@@ -18,7 +18,7 @@ Couples.Worker ──┬──> Couples.Application
 | Couples.Domain | Entities, value objects, domain rules | nothing |
 | Couples.Application | Use cases, ports (interfaces such as `IClock`), authorization and consent rules, flag names | Domain |
 | Couples.Infrastructure | EF Core `CouplesDbContext`, PostgreSQL, adapters for Application ports | Application, Domain |
-| Couples.AI | `ICommunicationCoach` and providers (milestone 06) | Application |
+| Couples.AI | Coach implementation: prompt, output validation, providers (fake, gateway) | Application |
 | Couples.Web | Blazor UI, HTTP endpoints, composition root | Application, Infrastructure, AI |
 | Couples.Worker | Scheduled/background jobs | Application, Infrastructure |
 
@@ -95,3 +95,12 @@ pin the version they started on. See ADR-0009.
 
 Identity roles are enabled. The only role is `Admin`, granted from configuration at startup
 (`Administration:AdminEmails`). Admin pages show product content and metadata only.
+
+## AI coach
+
+`ICommunicationCoach` (Application) is implemented by `CoachService` (Couples.AI): sanitize input,
+local safety screen, daily caps, prompt with nonce-delimited user text and a canary, model call
+with timeouts and bounded retries, strict output validation, fixed fallback messages. Providers:
+Disabled (default), Fake (Development, tests) and Gateway (owner-run HTTPS gateway, used only
+when approved for user content). Telemetry: meter `Couples.Coaching`, enum tags only; logs carry
+ids, outcome and timings. See ADR-0004 and ADR-0010.

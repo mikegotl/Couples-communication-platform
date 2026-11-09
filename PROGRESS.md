@@ -8,8 +8,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | 02 | Identity and partner workspace | Done (PR #2) |
 | 03 | Privacy, consent and data boundaries | Done (PR #3) |
 | 04 | Intake and concern mapping | Done (PR #4) |
-| 05 | Guided private reflection exercises | In review |
-| 06 | AI coaching abstraction and safeguards | Not started |
+| 05 | Guided private reflection exercises | Done (PR #5) |
+| 06 | AI coaching abstraction and safeguards | In review |
 | 07 | Draft, preview, approve and deliver | Not started |
 | 08 | Asynchronous partner responses | Not started |
 | 09 | Safety and support pathways | Not started |
@@ -226,3 +226,55 @@ and diagnostic terms.
 
 **Owner decisions**: engage a clinician reviewer, and decide whether to turn on
 `Exercises:RequireClinicianApproval` for the pilot.
+
+## Milestone 06: AI coaching abstraction and safeguards
+
+**Delivered**
+
+- `ICommunicationCoach` (Application/Coaching): rephrase a draft or suggest a reply, returning a
+  structured result (outcome, one to three suggestions with a short explanation, a fixed
+  user-facing message). The coach never sends anything; it has no access to messaging.
+- Providers behind `ICoachModelClient`: `Disabled` (default), `Fake` (deterministic, in-process,
+  used in Development and tests) and `Gateway`, a configurable HTTPS adapter for a model gateway
+  the owner runs. The gateway is used only when it is fully configured (https endpoint, model,
+  key from configuration or secrets) and `Coaching:ApprovedForUserContent` is true.
+- Prompt (`coach-v1`) follows the playbook's AI behavior specification: a writing assistant, not a
+  therapist, judge, mediator or crisis responder; no diagnosis, labels, blame, guessing motives,
+  pressure to forgive, or advice to stay or leave; safety concerns and off-topic requests are
+  flagged instead of answered.
+- Injection defences: input normalized and stripped of zero-width, bidi and other hidden
+  characters; user and partner text wrapped in markers carrying a fresh random nonce; a random
+  canary in the instructions; strict JSON schema validation of output with length limits, and
+  rejection of output that leaks the canary or markers, contains links, emails, phone numbers,
+  role or script tags, hidden characters, or diagnostic, blaming or therapy language.
+- Reliability: per-attempt and overall timeouts, up to three attempts with exponential backoff
+  and jitter for timeouts, throttling and server errors, one retry for invalid output, and no
+  retry for configuration errors. Every failure ends in a safe "Unavailable" result that leaves
+  the draft untouched; exceptions never reach the caller.
+- Cost caps: per-user daily requests (atomic conditional upsert), and service-wide daily request
+  and token caps. Usage (`coaching_usage`, counts only) is exported, erased with the account and
+  purged after 90 days.
+- Local safety screen before any provider call: text suggesting self-harm, violence or fear for
+  safety returns support information and is not sent. Milestone 09 replaces this with the full
+  safety pathway.
+- Privacy-safe telemetry: meter `Couples.Coaching` (requests by outcome, rejected outputs, tokens,
+  duration) tagged with enums only; logs carry request id, user id, task, prompt version,
+  provider, outcome, attempts and elapsed time, never text.
+- Migration `CoachingUsage`; ADR-0010. No UI yet: the coach is wired into drafting in milestone 07.
+
+**Verification**: see the PR description for the commands run on a fresh clone and their results.
+
+Gate tests: outages, slow providers, unexpected errors and invalid output all fall back to
+Unavailable with no suggestions and nothing sent; prompt injection in the draft or the partner
+message stays inside the nonce markers and spoofed end markers cannot close them; hidden
+characters are removed before the provider sees the text; output leaking the canary or
+instructions, or containing diagnoses, blame, links or markup, is rejected; refusals and safety
+flags map to Declined and SupportSuggested; the safety screen and daily caps stop calls before
+the provider; the gateway sends the expected request and is never used without approval and full
+configuration; per-user caps hold under 20 concurrent requests; logs never contain drafts or
+output; the repository contains no provider keys and committed settings keep the gateway
+unapproved.
+
+**Owner decisions**: choose the AI provider and data processing agreement, run or choose the
+gateway, then set `Coaching:Provider=Gateway`, the gateway settings (key via secrets, never
+committed) and `Coaching:ApprovedForUserContent=true`. Review the caps.

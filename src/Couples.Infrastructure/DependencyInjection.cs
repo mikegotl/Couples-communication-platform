@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<Couples.Application.Exercises.IExerciseService, Couples.Infrastructure.Exercises.ExerciseService>();
         services.AddScoped<Couples.Application.Exercises.IExerciseAdminService, Couples.Infrastructure.Exercises.ExerciseAdminService>();
         services.AddScoped<IPersonalDataService, PersonalDataService>();
+        services.AddScoped<Couples.Application.Coaching.ICoachUsageStore, Couples.Infrastructure.Coaching.CoachUsageStore>();
         services.AddOptions<RetentionOptions>().BindConfiguration(RetentionOptions.SectionName);
         services.AddScoped<IRetentionService, RetentionService>();
 

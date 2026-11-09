@@ -30,7 +30,8 @@ public sealed record PersonalDataExport(
     IReadOnlyList<ExportedMessage> MessagesReceived,
     IReadOnlyList<ExportedConsent> Consents,
     ExportedIntake? Intake,
-    IReadOnlyList<ExportedExerciseAttempt> ExerciseAttempts);
+    IReadOnlyList<ExportedExerciseAttempt> ExerciseAttempts,
+    IReadOnlyList<ExportedCoachingUsage> CoachingUsage);
 
 public sealed record ExportedMembership(Guid WorkspaceId, string WorkspaceName, string Role, DateTimeOffset JoinedAt, DateTimeOffset? LeftAt);
 
@@ -47,3 +48,5 @@ public sealed record ExportedIntake(string Status, DateTimeOffset? CompletedAt, 
 public sealed record ExportedConcern(Guid Id, string Category, string? CustomLabel, string Summary, DateTimeOffset? WarningAcknowledgedAt, DateTimeOffset UpdatedAt);
 
 public sealed record ExportedExerciseAttempt(Guid Id, string Exercise, int Version, string Status, DateTimeOffset StartedAt, DateTimeOffset? CompletedAt, IReadOnlyDictionary<string, string> Answers);
+
+public sealed record ExportedCoachingUsage(DateOnly Day, int Requests, long InputTokens, long OutputTokens);

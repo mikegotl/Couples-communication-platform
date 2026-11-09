@@ -48,11 +48,14 @@ internal sealed partial class RetentionService(
             .Where(r => r.Status == DeletionStatus.Completed && r.CompletedAt < requestCutoff)
             .ExecuteDeleteAsync(cancellationToken);
 
-        var report = new RetentionReport(invitations, drafts, workspaces, audits, requests);
-        LogApplied(logger, invitations, drafts, workspaces, audits, requests);
+        var usageCutoff = DateOnly.FromDateTime((now - o.CoachingUsage).UtcDateTime);
+        var usage = await db.CoachingUsage.Where(u => u.Day < usageCutoff).ExecuteDeleteAsync(cancellationToken);
+
+        var report = new RetentionReport(invitations, drafts, workspaces, audits, requests, usage);
+        LogApplied(logger, invitations, drafts, workspaces, audits, requests, usage);
         return report;
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Retention purged {Invitations} invitations, {Drafts} discarded drafts, {Workspaces} empty workspaces, {Audits} audit events, {Requests} deletion requests")]
-    private static partial void LogApplied(ILogger logger, int invitations, int drafts, int workspaces, int audits, int requests);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Retention purged {Invitations} invitations, {Drafts} discarded drafts, {Workspaces} empty workspaces, {Audits} audit events, {Requests} deletion requests, {UsageDays} coaching usage days")]
+    private static partial void LogApplied(ILogger logger, int invitations, int drafts, int workspaces, int audits, int requests, int usageDays);
 }

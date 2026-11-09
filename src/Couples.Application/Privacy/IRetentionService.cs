@@ -6,7 +6,7 @@ public interface IRetentionService
     Task<RetentionReport> ApplyAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed record RetentionReport(int Invitations, int DiscardedDrafts, int EmptyWorkspaces, int AuditEvents, int DeletionRequests);
+public sealed record RetentionReport(int Invitations, int DiscardedDrafts, int EmptyWorkspaces, int AuditEvents, int DeletionRequests, int CoachingUsageDays = 0);
 
 public sealed class RetentionOptions
 {
@@ -21,4 +21,6 @@ public sealed class RetentionOptions
     public TimeSpan AuditEvents { get; set; } = TimeSpan.FromDays(400);
 
     public TimeSpan CompletedDeletionRequests { get; set; } = TimeSpan.FromDays(400);
+
+    public TimeSpan CoachingUsage { get; set; } = TimeSpan.FromDays(90);
 }
