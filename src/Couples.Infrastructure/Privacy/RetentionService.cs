@@ -57,11 +57,17 @@ internal sealed partial class RetentionService(
         var feedbackCutoff = now - o.Feedback;
         var feedback = await db.Feedback.Where(f => f.CreatedAt < feedbackCutoff).ExecuteDeleteAsync(cancellationToken);
 
-        var report = new RetentionReport(invitations, drafts, workspaces, audits, requests, usage, notifications, feedback);
-        LogApplied(logger, invitations, drafts, workspaces, audits, requests, usage, notifications, feedback);
+        // Ended joint chats are readable for a short time, then deleted with their transcript.
+        var chatCutoff = now - Couples.Domain.JointChat.JointChatPolicy.TranscriptKeptAfterEnd;
+        var endedChats = db.JointChatSessions.Where(c => c.Status == Couples.Domain.JointChat.JointChatStatus.Ended && c.EndedAt < chatCutoff);
+        await db.JointChatMessages.Where(m => endedChats.Any(c => c.Id == m.SessionId)).ExecuteDeleteAsync(cancellationToken);
+        var jointChats = await endedChats.ExecuteDeleteAsync(cancellationToken);
+
+        var report = new RetentionReport(invitations, drafts, workspaces, audits, requests, usage, notifications, feedback, jointChats);
+        LogApplied(logger, invitations, drafts, workspaces, audits, requests, usage, notifications, feedback, jointChats);
         return report;
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Retention purged {Invitations} invitations, {Drafts} discarded drafts, {Workspaces} empty workspaces, {Audits} audit events, {Requests} deletion requests, {UsageDays} coaching usage days, {Notifications} notifications, {Feedback} feedback entries")]
-    private static partial void LogApplied(ILogger logger, int invitations, int drafts, int workspaces, int audits, int requests, int usageDays, int notifications, int feedback);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Retention purged {Invitations} invitations, {Drafts} discarded drafts, {Workspaces} empty workspaces, {Audits} audit events, {Requests} deletion requests, {UsageDays} coaching usage days, {Notifications} notifications, {Feedback} feedback entries, {JointChats} ended joint chats")]
+    private static partial void LogApplied(ILogger logger, int invitations, int drafts, int workspaces, int audits, int requests, int usageDays, int notifications, int feedback, int jointChats);
 }

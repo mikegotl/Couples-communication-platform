@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Couples.Application.Abstractions;
 using Couples.Application.Messaging;
 using Couples.Application.Privacy;
@@ -64,6 +65,13 @@ public static class DependencyInjection
         services.AddScoped<Couples.Application.Coaching.ICoachUsageStore, Couples.Infrastructure.Coaching.CoachUsageStore>();
         services.AddOptions<RetentionOptions>().BindConfiguration(RetentionOptions.SectionName);
         services.AddScoped<IRetentionService, RetentionService>();
+
+        // Phase 2 joint chat: closed unless the Phase2JointChat flag is on and both sign-offs are set.
+        services.TryAddSingleton<IFeatureFlags, ConfigurationFeatureFlags>();
+        services.AddOptions<Couples.Application.JointChat.JointChatOptions>().BindConfiguration(Couples.Application.JointChat.JointChatOptions.SectionName);
+        services.AddSingleton<Couples.Application.JointChat.IJointChatNotifier, Couples.Infrastructure.JointChat.JointChatNotifier>();
+        services.AddScoped<Couples.Application.JointChat.IJointChatService, Couples.Infrastructure.JointChat.JointChatService>();
+        services.AddScoped<Couples.Application.JointChat.IJointChatAdminService, Couples.Infrastructure.JointChat.JointChatAdminService>();
 
         services.AddHealthChecks()
             .AddDbContextCheck<CouplesDbContext>("database", tags: [ReadyTag]);

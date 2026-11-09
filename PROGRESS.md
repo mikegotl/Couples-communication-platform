@@ -14,8 +14,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | 08 | Asynchronous partner responses | Done (PR #8) |
 | 09 | Safety and support pathways | Done (PR #9; clinical review pending) |
 | 10 | Accessibility, security and data lifecycle | Done (PR #10) |
-| 11 | Private pilot readiness and observability | In review (legal and clinical review, email provider and apply approval pending) |
-| 12 | Phase 2 joint chat, flag OFF | Not started |
+| 11 | Private pilot readiness and observability | Done (PR #17; legal and clinical review, email provider and apply approval pending) |
+| 12 | Phase 2 joint chat, flag OFF | In review (built, flag off; clinical and security sign-off pending) |
 
 ## Milestone 01: Repository and architecture
 
@@ -457,4 +457,33 @@ test before public launch, forwarded-header configuration for the chosen host.
 (nobody can confirm an account on a deployed instance without one), approval to apply the
 Terraform and to make it public, named incident roles, a screen reader pass, restore and
 rollback drills. See `docs/operations/pilot-readiness.md`.
+
+## Milestone 12: Phase 2 joint chat, flag OFF
+
+**Delivered**
+
+- A guided joint chat between partners (`/joint-chat`), isolated behind four locks checked in the
+  service layer on every call: the `Phase2JointChat` flag (off by default and in every shipped
+  configuration), clinical and security sign-off references in configuration, per-workspace
+  eligibility granted by an administrator (`/admin/joint-chat`), and two current members.
+  With the flag off the pages answer 404 before authentication and nothing is written.
+- Fresh consent from both partners for each chat (consent ledger, fingerprinted policy version);
+  declining needs no reason. Either partner can leave at any moment, ending it for both.
+- Turn-taking (one message per turn, opens to either after 5 minutes), pauses of 5/10/20 minutes
+  that only the pauser can end early, idle (20 min) and total (60 min) limits, invitations that
+  lapse after 30 minutes.
+- Local moderation: contempt held for rephrasing and never stored; risk phrases end the chat,
+  with support shown only to the writer. Safety gating via `ISafetyGate` with no disclosure: the
+  other partner sees the same neutral ending, and invitations to a held partner simply lapse.
+- Audit of eligibility, invitations, joins and chosen endings (ids only). Transcripts readable
+  by both for 7 days after a chat ends, then deleted; included in export; deleted with either
+  account. Migration `JointChat`.
+- Fixed during the browser check: an open page kept a stale copy of the chat after the partner
+  acted (the service now starts every call from the database; a test reproduces it).
+- ADR-0015 and the sign-off checklist (`docs/safety/joint-chat-review.md`).
+
+**Verification**: see the PR description for the commands run on a fresh clone and their results.
+
+**Not yet (owner)**: independent clinical and security sign-off; until then the flag stays off
+and no workspace can be made eligible.
 

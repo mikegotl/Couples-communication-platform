@@ -56,4 +56,7 @@ public enum ConsentPurpose
 {
     /// <summary>Share one specific message with one specific partner.</summary>
     ShareMessage = 1,
+
+    /// <summary>Take part in one specific joint chat (subject: the session), under the policy version fingerprinted.</summary>
+    JointChatSession = 2,
 }

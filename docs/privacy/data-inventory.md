@@ -42,6 +42,9 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `PersonalSafety` | `personal_safety` | PrivateSensitive | Owner only (the partner can't tell whether it exists) | Until the owner deletes their answers or account. Never logged, audited, sent to the coach or used in analytics. |
 | `PilotEnrollment` | `pilot_enrollments` | Personal | The user | Which pilot terms and privacy notice versions they agreed to, when, and whether they withdrew. Kept as evidence of consent while the account exists; deleted with the account. |
 | `FeedbackEntry` | `feedback` | Personal | Admins (pilot overview); the author, if linked, in their export | Anonymous unless the author allows contact, then linked to their account. Purged after 365 days; linked entries deleted with the account. |
+| `JointChatEligibility` | `joint_chat_eligibility` | Internal | Admins (`/admin/joint-chat`) | Which workspaces may use the joint chat pilot: workspace id, a short pilot reference (never a name), who granted it and when. Removed with the workspace; the granting admin's id is unlinked if that admin deletes their account. |
+| `JointChatSession` | `joint_chat_sessions` | Personal | The two partners in it | Ids, times, turn and pause state, how it ended. Deleted with its transcript 7 days after it ends, or at once when either partner deletes their account. |
+| `JointChatMessage` | `joint_chat_messages` | SharedSensitive | Both partners in the chat, while both are members | Text both partners agreed to exchange in a joint chat. Readable during the chat and for 7 days after it ends, then deleted; deleted at once if either partner deletes their account. Held (moderated) text is never stored. |
 | `DataDeletionRequest` | `data_deletion_requests` | Internal | Operators (no UI yet) | 400 days after completion. |
 | `DataProtectionKey` | `data_protection_keys` | Internal (secret) | The app only | ASP.NET Core Data Protection key ring for cookies, antiforgery and account tokens. Encrypted with a certificate outside Development (ADR-0013); a new key is created every 90 days. |
 
@@ -71,7 +74,8 @@ to a live provider unless `Coaching:Provider` is `Gateway` and the owner has set
 - A recipient can read a shared message only while both partners are active members and the
   sender has not revoked it. Leaving the workspace ends access for both directions.
 - Personal data export contains the requester's own rows plus messages currently visible to
-  them as a recipient, their pilot enrollment and any feedback linked to them. It never
+  them as a recipient, their pilot enrollment, any feedback linked to them, and joint chats they
+  took part in (the partner's lines only while both are still in the workspace). It never
   includes a partner's reflections, drafts or consent records, and it excludes the
   authenticator key.
 - Telemetry and logs leave the app scrubbed: no URLs, query strings, client addresses, user
@@ -83,7 +87,7 @@ to a live provider unless `Coaching:Provider` is `Gateway` and the owner has set
 1. The user confirms on **Account › Personal data › Delete** (password required).
 2. A `DataDeletionRequest` is recorded and processed immediately: reflections, intake topics and
    profile, exercise answers and attempts, coaching usage, pace settings, safety answers,
-   pilot enrollment, feedback linked to them (anonymous feedback has no link and ages out after
+   pilot enrollment, joint chats they took part in (with both partners' lines), feedback linked to them (anonymous feedback has no link and ages out after
    365 days), notifications, shared messages sent or received, drafts, consent records, invitations they
    issued or accepted, memberships, then the account, in one transaction. Workspaces they created
    lose the link to them.

@@ -26,6 +26,7 @@ builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 64 * 
 
 builder.Services.AddMudServices();
 builder.Services.AddFeatureManagement();
+builder.Services.AddScoped<Couples.Application.Abstractions.IFeatureFlags, Couples.Web.Security.FeatureManagerFlags>();
 
 builder.Services
     .AddApplication()
@@ -115,6 +116,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseSecurityHeaders(upgradeInsecure: !app.Environment.IsDevelopment());
 app.UseRateLimiter();
+
+// Before authentication, so a switched-off pilot answers 404 even to anonymous requests
+// rather than a sign-in redirect that would show the page exists.
+app.UseJointChatGate();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UsePilotGate();

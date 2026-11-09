@@ -46,6 +46,10 @@
                 }
             </tbody>
         </MudSimpleTable>
+        @if (flags.Any(f => f.Name == FeatureFlags.Phase2JointChat && f.On))
+        {
+            <MudText Typo="Typo.body2">Joint chat eligibility and sign-offs are on <MudLink Href="admin/joint-chat">Joint chat pilot</MudLink>.</MudText>
+        }
 
         <MudText Typo="Typo.h6" HtmlTag="h2">Recent feedback</MudText>
         @if (feedback.Count == 0)

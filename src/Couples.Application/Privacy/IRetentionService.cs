@@ -6,7 +6,7 @@ public interface IRetentionService
     Task<RetentionReport> ApplyAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed record RetentionReport(int Invitations, int DiscardedDrafts, int EmptyWorkspaces, int AuditEvents, int DeletionRequests, int CoachingUsageDays = 0, int Notifications = 0, int Feedback = 0);
+public sealed record RetentionReport(int Invitations, int DiscardedDrafts, int EmptyWorkspaces, int AuditEvents, int DeletionRequests, int CoachingUsageDays = 0, int Notifications = 0, int Feedback = 0, int JointChats = 0);
 
 public sealed class RetentionOptions
 {

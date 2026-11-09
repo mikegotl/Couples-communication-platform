@@ -1,0 +1,13 @@
+@using Couples.Domain.JointChat
+<MudPaper Class="pa-4" Outlined="true">
+    <MudText Typo="Typo.h6" HtmlTag="h2">How joint chat works</MudText>
+    <ul class="mud-typography mud-typography-body2">
+        <li>It's a short, written conversation with your partner, in turns. It isn't therapy, counselling or mediation, and nobody else reads it live.</li>
+        <li>Both of you agree to each chat. Either of you can leave at any moment, which ends it for both, without giving a reason.</li>
+        <li>You take turns. If the person whose turn it is hasn't replied after @((int)JointChatPolicy.TurnTimeout.TotalMinutes) minutes, either of you can write.</li>
+        <li>Either of you can pause for a break of @string.Join(", ", JointChatPolicy.PauseMinutes) minutes. Nobody can write during a break.</li>
+        <li>A chat ends after @((int)JointChatPolicy.IdleTimeout.TotalMinutes) quiet minutes or @((int)JointChatPolicy.MaxDuration.TotalMinutes) minutes in all.</li>
+        <li>Messages are checked before they're sent. Words that read as contempt are held so you can rephrase. If a message suggests someone may not be safe, it isn't sent, the chat ends, and the writer is shown support.</li>
+        <li>You can both read the conversation for @((int)JointChatPolicy.TranscriptKeptAfterEnd.TotalDays) days after it ends; then it is deleted. Your private reflections and drafts are never part of it.</li>
+    </ul>
+</MudPaper>

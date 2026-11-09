@@ -25,5 +25,9 @@ public static class CouplesMetrics
 
     public static readonly Counter<long> FeedbackSubmitted = Meter.CreateCounter<long>("bt.feedback.submitted", description: "Feedback entries by area");
 
+    public static readonly Counter<long> JointChatSessions = Meter.CreateCounter<long>("bt.jointchat.sessions", description: "Joint chats started and joined, by action");
+
+    public static readonly Counter<long> JointChatMessages = Meter.CreateCounter<long>("bt.jointchat.messages", description: "Joint chat messages, by outcome (delivered, not_delivered)");
+
     public static readonly Counter<long> AccountsDeleted = Meter.CreateCounter<long>("bt.accounts.deleted", description: "Completed account deletions");
 }

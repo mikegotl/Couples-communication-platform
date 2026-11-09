@@ -17,6 +17,7 @@ same suite on every push and pull request, plus the vulnerability audit, secret 
 | Deletion | `Privacy/DeletionSweepTests` | After deletion no column in the model holds the user's id except documented evidence; an account restored from a backup is erased again |
 | Pilot | `Pilot/PilotAndFeedbackTests`, `Pilot/PilotGateTests` | Enrollment needs current consent and the code; cap; withdrawal; the gate redirects, blocks interactive connections and posts, and keeps support reachable; feedback anonymity and limits |
 | Telemetry and legal | `Pilot/TelemetryAndLegalTests` | Spans and logs are scrubbed before export; published legal pages match the reviewed files |
+| Joint chat (Phase 2) | `JointChat/JointChatHttpTests`, `JointChat/JointChatPilotTests`, unit `JointChat/JointChatRulesTests` | Flag off (the default) or sign-offs missing: pages 404 and every service call fails with nothing written. With the pilot on: eligibility, fresh consent from both per chat, decline, one chat at a time, turns, pauses only the pauser can end, leaving ends it for both, time limits, moderation, silent safety hold, outsiders refused, admin-only eligibility, export, retention, no text in logs |
 | Forms | `Security/FormMarkupTests` | No form posts its antiforgery token twice; every plain post form has one |
 | Smoke | `SmokeTests` | Private pages require sign-in; health endpoints |
 

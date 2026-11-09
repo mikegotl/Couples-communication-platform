@@ -1,0 +1,26 @@
+@* Shown only when joint chat is offered to this user's workspace (flag on, signed off, eligible,
+   two members). Nothing renders for everyone else, so the pilot isn't visible to ordinary users. *@
+@using Couples.Application.JointChat
+@inject IServiceScopeFactory ScopeFactory
+@inject CurrentUser CurrentUser
+
+@if (offered)
+{
+    <MudLink Href="joint-chat" Color="Color.Inherit" Class="mx-1 mx-sm-2">Joint chat</MudLink>
+}
+
+@code {
+    private bool offered;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await CurrentUser.GetIdAsync() is not { } id)
+        {
+            return;
+        }
+
+        // Own scope: static rendering runs this alongside the page (see MessagesNavLink).
+        await using var scope = ScopeFactory.CreateAsyncScope();
+        offered = await scope.ServiceProvider.GetRequiredService<IJointChatService>().IsOfferedAsync(id);
+    }
+}
