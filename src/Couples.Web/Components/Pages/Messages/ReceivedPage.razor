@@ -1,0 +1,121 @@
+@page "/messages/received/{MessageId:guid}"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Inbox
+@inject IInboxService Inbox
+@inject CurrentUser CurrentUser
+@inject ISnackbar Snackbar
+
+<InteractiveProviders />
+<PageTitle>Message from your partner · BridgeTogether</PageTitle>
+
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else if (message is null)
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Message not available</MudText>
+        <MudText>It may have been withdrawn, or one of you has left the workspace.</MudText>
+        <div><MudButton Variant="Variant.Outlined" Href="messages">Back to messages</MudButton></div>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">From your partner</MudText>
+
+        @if (message.MyEarlierMessage is { } earlier)
+        {
+            <MessageCard Heading="What you sent" Body="@earlier" />
+        }
+        <MessageCard Heading="@(message.MyEarlierMessage is null ? "Their message" : "Their reply")" Body="@message.Body" Timestamp="message.SharedAt" />
+
+        <MudText Typo="Typo.body2">
+            Take your time. Your partner isn't told that you've opened this, and you don't have to reply.
+        </MudText>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Your private thoughts</MudText>
+                <MudText Typo="Typo.body2">
+                    Only you can see this. You might note what you heard, how it left you feeling, and what you'd need before replying, if anything.
+                </MudText>
+                <MudTextField @bind-Value="reflection" Label="Private notes" Lines="4" Sizing="InputSizing.Auto" MaxLines="16"
+                              MaxLength="20000" Variant="Variant.Outlined" Immediate="true" />
+                <div>
+                    <MudButton Variant="Variant.Outlined" OnClick="SaveReflectionAsync" Disabled="busy">Save notes</MudButton>
+                </div>
+                <p class="mud-typography mud-typography-caption" aria-live="polite">@status</p>
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Reply</MudText>
+                @if (message.IReplied)
+                {
+                    <MudText Typo="Typo.body2">You've replied to this message.</MudText>
+                }
+                else if (message.MyReplyDraftId is { } draftId)
+                {
+                    <MudText Typo="Typo.body2">You have a private reply draft. Nothing is sent until you preview and confirm it.</MudText>
+                    <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@($"messages/draft/{draftId}")">Continue your reply</MudButton></div>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">If and when you want to, start a private reply. Nothing is sent until you preview and confirm it.</MudText>
+                    <div><MudButton Variant="Variant.Outlined" Href="@($"messages/new?replyTo={message.MessageId}")">Start a reply</MudButton></div>
+                }
+            </MudStack>
+        </MudPaper>
+
+        <div><MudButton Variant="Variant.Text" Href="messages">Back to messages</MudButton></div>
+    </MudStack>
+}
+
+@code {
+    [Parameter]
+    public Guid MessageId { get; set; }
+
+    private bool loading = true;
+    private bool busy;
+    private Guid userId;
+    private ReceivedMessage? message;
+    private string? reflection;
+    private string? status;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        var opened = await Inbox.OpenAsync(userId, MessageId);
+        if (opened.Succeeded)
+        {
+            message = opened.Value;
+            reflection = message.MyReflection;
+        }
+
+        loading = false;
+    }
+
+    private async Task SaveReflectionAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = await Inbox.SaveReflectionAsync(userId, MessageId, reflection);
+            status = result.Succeeded
+                ? (string.IsNullOrWhiteSpace(reflection) ? "Notes removed." : $"Saved at {DateTimeOffset.Now:HH:mm}. Only you can see these notes.")
+                : null;
+            if (!result.Succeeded)
+            {
+                Snackbar.Add("We couldn't save your notes. Please try again.", Severity.Warning);
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

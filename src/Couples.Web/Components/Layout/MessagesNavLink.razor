@@ -1,0 +1,25 @@
+@* Statically rendered with the layout. Shows only a count of notices that are past the user's
+   quiet hours; no message text. *@
+@using Couples.Application.Notifications
+@inject INotificationService Notifications
+@inject CurrentUser CurrentUser
+
+<MudLink Href="messages" Color="Color.Inherit" Class="mx-1 mx-sm-2">
+    Messages<span aria-hidden="true">@(unread > 0 ? $" ({unread})" : "")</span>
+    @if (unread > 0)
+    {
+        <span class="visually-hidden">, @unread new</span>
+    }
+</MudLink>
+
+@code {
+    private int unread;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await CurrentUser.GetIdAsync() is { } id)
+        {
+            unread = await Notifications.UnreadCountAsync(id);
+        }
+    }
+}

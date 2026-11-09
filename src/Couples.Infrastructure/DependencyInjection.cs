@@ -45,6 +45,9 @@ public static class DependencyInjection
         services.AddScoped<IPrivateReflectionService, PrivateReflectionService>();
         services.AddScoped<Couples.Application.Intake.IIntakeService, Couples.Infrastructure.Intake.IntakeService>();
         services.AddScoped<IMessagingService, MessagingService>();
+        services.AddScoped<Couples.Application.Inbox.IInboxService, Couples.Infrastructure.Inbox.InboxService>();
+        services.AddScoped<Couples.Application.Pace.IPaceService, Couples.Infrastructure.Pace.PaceService>();
+        services.AddScoped<Couples.Application.Notifications.INotificationService, Couples.Infrastructure.Pace.NotificationService>();
         services.AddOptions<Couples.Application.Exercises.ExerciseOptions>().BindConfiguration(Couples.Application.Exercises.ExerciseOptions.SectionName);
         services.AddScoped<Couples.Infrastructure.Exercises.ExerciseCatalogSync>();
         services.AddScoped<Couples.Application.Exercises.IExerciseService, Couples.Infrastructure.Exercises.ExerciseService>();

@@ -52,4 +52,5 @@ public enum DomainError
     ConsentMismatch,
     NoPartner,
     WarningNotAcknowledged,
+    PartnerPaused,
 }

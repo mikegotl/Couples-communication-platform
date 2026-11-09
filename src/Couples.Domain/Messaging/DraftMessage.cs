@@ -22,6 +22,9 @@ public sealed class DraftMessage : Entity
 
     public Guid WorkspaceId { get; private set; }
 
+    /// <summary>The received message this draft answers, if it is a reply.</summary>
+    public Guid? InReplyToMessageId { get; private set; }
+
     public string Body { get; private set; } = string.Empty;
 
     public DraftStatus Status { get; private set; }
@@ -30,14 +33,14 @@ public sealed class DraftMessage : Entity
 
     public string Fingerprint => ContentFingerprint.Of(Body);
 
-    public static Result<DraftMessage> Create(Guid ownerUserId, Guid workspaceId, string? body, DateTimeOffset now)
+    public static Result<DraftMessage> Create(Guid ownerUserId, Guid workspaceId, string? body, DateTimeOffset now, Guid? inReplyToMessageId = null)
     {
-        if (ownerUserId == Guid.Empty || workspaceId == Guid.Empty)
+        if (ownerUserId == Guid.Empty || workspaceId == Guid.Empty || inReplyToMessageId == Guid.Empty)
         {
             return DomainError.Validation;
         }
 
-        var draft = new DraftMessage { OwnerUserId = ownerUserId, WorkspaceId = workspaceId, Status = DraftStatus.Draft };
+        var draft = new DraftMessage { OwnerUserId = ownerUserId, WorkspaceId = workspaceId, Status = DraftStatus.Draft, InReplyToMessageId = inReplyToMessageId };
         var edited = draft.Edit(body, now);
         return edited.Succeeded ? Result.Ok(draft) : edited.Error!.Value;
     }

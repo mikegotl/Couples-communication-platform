@@ -25,7 +25,7 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `RelationshipWorkspace` | `workspaces` | Personal | Active members | While it has members; purged 30 days after the last member leaves. |
 | `WorkspaceMembership` | `workspace_memberships` | Personal | Members of that workspace (own row and partner's joined date only) | With the workspace; deleted with the member's account. |
 | `Invitation` | `invitations` | Internal | Active members (status only); holder of the token (workspace name only) | Token hash only. Purged 30 days after it expires, is used or is revoked. |
-| `PrivateReflection` | `private_reflections` | PrivateSensitive | Owner only | Until the owner deletes it or their account. |
+| `PrivateReflection` | `private_reflections` | PrivateSensitive | Owner only (including notes on a received message; the sender is never told they exist) | Until the owner deletes it or their account. A link to a deleted message is cleared, the notes stay. |
 | `ConcernCategory` | `concern_categories` | Internal | Everyone (topic names and descriptions) | Reference data seeded by migrations. |
 | `IntakeProfile` | `intake_profiles` | Personal | Owner only (not even whether it exists or is complete) | Until the owner starts over or deletes their account. |
 | `ConcernSelection` | `concern_selections` | PrivateSensitive | Owner only | Until the owner removes the topic, starts over or deletes their account. |
@@ -37,6 +37,8 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `ConsentRecord` | `consent_records` | Personal | The user who gave consent | Life of the account, as evidence; deleted with the account. Stores a SHA-256 fingerprint of approved text, never the text. |
 | `AuditEvent` | `audit_events` | Internal | Operators (no UI yet) | 400 days. Ids only; ids of deleted users remain as unlinkable random values. |
 | `CoachingUsage` | `coaching_usage` | Personal | The user (in their export); operators see totals only | Daily request and token counts, no text. Purged after 90 days; deleted with the account. |
+| `PacePreferences` | `pace_preferences` | Personal | The user; the partner sees only whether a pause is active and when it ends | Until changed; deleted with the account. |
+| `Notification` | `notifications` | Personal | The recipient | Kind and message id only, never text. Removed when the message is withdrawn or deleted; purged after 90 days; deleted with the account. |
 | `DataDeletionRequest` | `data_deletion_requests` | Internal | Operators (no UI yet) | 400 days after completion. |
 
 ## AI coach
@@ -47,6 +49,12 @@ to a live provider unless `Coaching:Provider` is `Gateway` and the owner has set
 `Coaching:ApprovedForUserContent` after agreeing data processing terms (ADR-0010).
 
 ## Access rules (enforced in services, not the UI)
+
+- No read receipts or typing indicators. `SharedMessage.RecipientOpenedAt` exists only for the
+  recipient's own "New" marker; no sender-facing view, export of the sender, or notification
+  exposes it.
+- The inbox, notes on a message and replies are available only to the message's recipient while
+  the message is readable (see below). The sender and outsiders get "not found".
 
 - Reflections, drafts, intake and exercise attempts are queried only with `OwnerUserId == acting user`. Another user's id
   returns the same "not found" as an id that does not exist.

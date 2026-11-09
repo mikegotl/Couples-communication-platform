@@ -1,9 +1,15 @@
 @page "/messages"
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Inbox
 @using Couples.Application.Messaging
+@using Couples.Application.Notifications
+@using Couples.Application.Pace
 @using Couples.Application.Workspaces
 @inject IMessagingService Messages
+@inject IInboxService Inbox
+@inject INotificationService Notifications
+@inject IPaceService Pace
 @inject IWorkspaceService Workspaces
 @inject CurrentUser CurrentUser
 @inject IDialogService Dialogs
@@ -31,7 +37,23 @@ else
         <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock">
             Drafts are private to you. Your partner sees a message only after you preview it and choose to send it.
         </MudAlert>
-        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="messages/new">Write a message</MudButton></div>
+        @if (myPause is { } mine)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                You've paused new messages until @Format(mine). Your partner can see that, but nothing else about your settings.
+                <MudLink Href="settings/pace">Change</MudLink>
+            </MudAlert>
+        }
+        @if (partnerPause is { } theirs)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                Your partner has paused new messages until @Format(theirs). You can still write and save drafts; send them after the pause ends.
+            </MudAlert>
+        }
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="messages/new">Write a message</MudButton>
+            <MudButton Variant="Variant.Text" Href="settings/pace">Pace and notifications</MudButton>
+        </MudStack>
 
         <section aria-labelledby="drafts-heading">
             <MudText Typo="Typo.h6" HtmlTag="h2" id="drafts-heading">Your private drafts</MudText>
@@ -45,7 +67,7 @@ else
                     @foreach (var draft in drafts)
                     {
                         <MudPaper Class="pa-3" Outlined="true" @key="draft.Id">
-                            <MudText Typo="Typo.caption">Private draft · edited @Format(draft.UpdatedAt)</MudText>
+                            <MudText Typo="Typo.caption">@(draft.InReplyToMessageId is null ? "Private draft" : "Private reply draft") · edited @Format(draft.UpdatedAt)</MudText>
                             <MudText Class="mb-2" Style="overflow-wrap: anywhere">@Snippet(draft.Body)</MudText>
                             <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="@($"messages/draft/{draft.Id}")">Continue</MudButton>
                         </MudPaper>
@@ -56,6 +78,7 @@ else
 
         <section aria-labelledby="inbox-heading">
             <MudText Typo="Typo.h6" HtmlTag="h2" id="inbox-heading">From your partner</MudText>
+            <MudText Typo="Typo.body2" Class="mb-2">There's no rush to reply, and your partner isn't told when you've read something.</MudText>
             @if (inbox.Count == 0)
             {
                 <MudText Typo="Typo.body2">Nothing yet.</MudText>
@@ -63,9 +86,33 @@ else
             else
             {
                 <MudStack Spacing="2">
-                    @foreach (var message in inbox)
+                    @foreach (var item in inbox)
                     {
-                        <MessageCard @key="message.Id" Heading="From your partner" Body="@message.Body" Timestamp="message.SharedAt" />
+                        <MudPaper Class="pa-3" Outlined="true" @key="item.MessageId">
+                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.caption">@(item.IsReplyToMe ? "Reply from your partner" : "From your partner") · @Format(item.SharedAt)</MudText>
+                                @if (item.IsNew)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Primary">New</MudChip>
+                                }
+                            </MudStack>
+                            <MudText Class="mb-2" Style="overflow-wrap: anywhere">@item.Preview</MudText>
+                            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" AlignItems="AlignItems.Center">
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="@($"messages/received/{item.MessageId}")">Open</MudButton>
+                                @if (item.HasMyReflection)
+                                {
+                                    <MudText Typo="Typo.caption">You have private notes</MudText>
+                                }
+                                @if (item.IReplied)
+                                {
+                                    <MudText Typo="Typo.caption">You replied</MudText>
+                                }
+                                else if (item.MyReplyDraftId is not null)
+                                {
+                                    <MudText Typo="Typo.caption">Reply in progress</MudText>
+                                }
+                            </MudStack>
+                        </MudPaper>
                     }
                 </MudStack>
             }
@@ -107,7 +154,9 @@ else
     private Guid userId;
     private WorkspaceSummary? workspace;
     private IReadOnlyList<DraftView> drafts = [];
-    private IReadOnlyList<SharedMessageView> inbox = [];
+    private IReadOnlyList<InboxItem> inbox = [];
+    private DateTimeOffset? myPause;
+    private DateTimeOffset? partnerPause;
     private IReadOnlyList<SharedMessageView> sent = [];
 
     protected override async Task OnInitializedAsync()
@@ -121,8 +170,13 @@ else
     private async Task LoadAsync()
     {
         drafts = await Messages.ListDraftsAsync(userId);
-        inbox = await Messages.InboxAsync(userId);
+        inbox = await Inbox.ListAsync(userId);
         sent = await Messages.SentAsync(userId);
+        myPause = (await Pace.GetAsync(userId)).PausedUntil;
+        partnerPause = (await Pace.GetPartnerPaceAsync(userId))?.PausedUntil;
+
+        // The list shows what's new, so the notices that pointed here are done.
+        await Notifications.MarkAllReadAsync(userId);
     }
 
     private async Task WithdrawAsync(Guid messageId)

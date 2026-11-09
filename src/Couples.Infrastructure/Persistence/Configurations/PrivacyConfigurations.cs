@@ -19,7 +19,9 @@ internal sealed class PrivateReflectionConfiguration : IEntityTypeConfiguration<
         builder.Property(r => r.Title).HasMaxLength(PrivateReflection.MaxTitleLength).IsRequired();
         builder.Property(r => r.Body).HasMaxLength(PrivateReflection.MaxBodyLength).IsRequired();
         builder.HasIndex(r => r.OwnerUserId);
+        builder.HasIndex(r => new { r.OwnerUserId, r.AboutMessageId }).IsUnique().HasFilter("\"AboutMessageId\" IS NOT NULL");
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(r => r.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<SharedMessage>().WithMany().HasForeignKey(r => r.AboutMessageId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -36,6 +38,7 @@ internal sealed class DraftMessageConfiguration : IEntityTypeConfiguration<Draft
         builder.HasIndex(d => d.OwnerUserId);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(d => d.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<RelationshipWorkspace>().WithMany().HasForeignKey(d => d.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<SharedMessage>().WithMany().HasForeignKey(d => d.InReplyToMessageId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -58,6 +61,7 @@ internal sealed class SharedMessageConfiguration : IEntityTypeConfiguration<Shar
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(m => m.SenderUserId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(m => m.RecipientUserId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<DraftMessage>().WithMany().HasForeignKey(m => m.SourceDraftId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasOne<SharedMessage>().WithMany().HasForeignKey(m => m.InReplyToMessageId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 

@@ -4,6 +4,8 @@ using Couples.Domain.Auditing;
 using Couples.Domain.Common;
 using Couples.Domain.Consent;
 using Couples.Domain.Messaging;
+using Couples.Domain.Notifications;
+using Couples.Domain.Pace;
 using Couples.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -101,6 +103,11 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
             return DomainError.NoPartner;
         }
 
+        if (await RecipientPrefsAsync(recipient.Value, cancellationToken) is { } prefs && prefs.IsPaused(clock.UtcNow))
+        {
+            return DomainError.PartnerPaused;
+        }
+
         var name = await db.Workspaces.Where(w => w.Id == draft.WorkspaceId).Select(w => w.Name).FirstAsync(cancellationToken);
         return Result.Ok(new SharePreview(draft.Id, draft.Body, draft.Fingerprint, name));
     }
@@ -133,6 +140,13 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         }
 
         var now = clock.UtcNow;
+        var recipientPrefs = await RecipientPrefsAsync(recipient.Value, cancellationToken);
+        if (recipientPrefs is not null && recipientPrefs.IsPaused(now))
+        {
+            // The partner asked for a break. The draft is kept; nothing is delivered or recorded.
+            return DomainError.PartnerPaused;
+        }
+
         var fingerprint = draft.Fingerprint;
         var consent = ConsentRecord.Grant(userId, draft.WorkspaceId, ConsentPurpose.ShareMessage, draft.Id, approvedFingerprint, now);
         var shared = draft.Share(recipient.Value, approvedFingerprint ?? string.Empty, consent.Id, now);
@@ -144,6 +158,15 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         db.ConsentRecords.Add(consent);
         db.SharedMessages.Add(shared.Value);
         db.AuditEvents.Add(AuditEvent.Record(userId, AuditActions.MessageShared, draft.WorkspaceId, shared.Value.Id, now));
+
+        // Metadata-only notice for the recipient, unless they muted notifications; held until
+        // their quiet hours end. The message itself arrives either way.
+        if (recipientPrefs is not { Muted: true })
+        {
+            var kind = draft.InReplyToMessageId is null ? NotificationKind.NewMessage : NotificationKind.Reply;
+            var visibleAt = recipientPrefs?.NotificationVisibleAt(now) ?? now;
+            db.Notifications.Add(Notification.Create(recipient.Value, kind, shared.Value.Id, visibleAt, now));
+        }
 
         var saved = await SaveAsync(cancellationToken);
         if (!saved.Succeeded)
@@ -223,6 +246,7 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         var consent = await db.ConsentRecords.FirstOrDefaultAsync(c => c.Id == message.ConsentRecordId && c.UserId == userId, cancellationToken);
         consent?.Withdraw(now);
         db.AuditEvents.Add(AuditEvent.Record(userId, AuditActions.MessageRevoked, message.WorkspaceId, message.Id, now));
+        await db.Notifications.Where(n => n.SubjectId == message.Id).ExecuteDeleteAsync(cancellationToken);
 
         var saved = await SaveAsync(cancellationToken);
         if (saved.Succeeded)
@@ -233,18 +257,12 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         return saved;
     }
 
+    private Task<PacePreferences?> RecipientPrefsAsync(Guid recipientId, CancellationToken cancellationToken) =>
+        db.PacePreferences.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == recipientId, cancellationToken);
+
     private IQueryable<DraftMessage> OwnedDrafts(Guid userId) => db.DraftMessages.Where(d => d.OwnerUserId == userId);
 
-    /// <summary>
-    /// What a recipient may read: addressed to them, not revoked, and both they and the sender
-    /// are still active members of the workspace. Leaving (by either partner) ends access.
-    /// </summary>
-    private IQueryable<SharedMessage> ReadableByRecipient(Guid userId) =>
-        db.SharedMessages.Where(m =>
-            m.RecipientUserId == userId
-            && m.RevokedAt == null
-            && db.WorkspaceMemberships.Any(r => r.WorkspaceId == m.WorkspaceId && r.UserId == userId && r.LeftAt == null)
-            && db.WorkspaceMemberships.Any(s => s.WorkspaceId == m.WorkspaceId && s.UserId == m.SenderUserId && s.LeftAt == null));
+    private IQueryable<SharedMessage> ReadableByRecipient(Guid userId) => MessageAccess.ReadableByRecipient(db, userId);
 
     private Task<Guid?> ActiveWorkspaceIdAsync(Guid userId, CancellationToken cancellationToken) =>
         db.WorkspaceMemberships
@@ -269,7 +287,7 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         }
     }
 
-    private static DraftView ToView(DraftMessage d) => new(d.Id, d.Body, d.Status.ToString(), d.Fingerprint, d.UpdatedAt);
+    private static DraftView ToView(DraftMessage d) => new(d.Id, d.Body, d.Status.ToString(), d.Fingerprint, d.UpdatedAt, d.InReplyToMessageId);
 
     private static SharedMessageView ToView(SharedMessage m, Guid viewer) =>
         new(m.Id, m.SenderUserId == viewer, m.Body, m.SharedAt, m.IsRevoked);

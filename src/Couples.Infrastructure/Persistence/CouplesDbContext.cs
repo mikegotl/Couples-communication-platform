@@ -56,6 +56,10 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
 
     public DbSet<CoachingUsage> CoachingUsage => Set<CoachingUsage>();
 
+    public DbSet<Couples.Domain.Pace.PacePreferences> PacePreferences => Set<Couples.Domain.Pace.PacePreferences>();
+
+    public DbSet<Couples.Domain.Notifications.Notification> Notifications => Set<Couples.Domain.Notifications.Notification>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

@@ -1,0 +1,167 @@
+@page "/settings/pace"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Pace
+@using Couples.Domain.Common
+@inject IPaceService Pace
+@inject CurrentUser CurrentUser
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<InteractiveProviders />
+<PageTitle>Pace and notifications · BridgeTogether</PageTitle>
+
+@if (settings is null)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Pace and notifications</MudText>
+        <MudText>
+            Go at a pace that works for you. There are no typing indicators or read receipts, and your partner
+            only ever sees whether you've paused messages.
+        </MudText>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Take a break</MudText>
+                @if (settings.PausedUntil is { } until)
+                {
+                    <MudText>New messages are paused until @Format(until). Your partner can see this and can still write drafts.</MudText>
+                    <div><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ResumeAsync" Disabled="busy">Resume now</MudButton></div>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">
+                        Pausing stops new messages reaching you for a while. Your partner is told you've paused and until when, nothing more.
+                        You can resume at any time.
+                    </MudText>
+                    <MudSelect T="int" @bind-Value="pauseHours" Label="Pause for" Variant="Variant.Outlined" Style="max-width: 20rem">
+                        <MudSelectItem T="int" Value="24">1 day</MudSelectItem>
+                        <MudSelectItem T="int" Value="72">3 days</MudSelectItem>
+                        <MudSelectItem T="int" Value="168">1 week</MudSelectItem>
+                        <MudSelectItem T="int" Value="336">2 weeks</MudSelectItem>
+                    </MudSelect>
+                    <div><MudButton Variant="Variant.Outlined" OnClick="PauseAsync" Disabled="busy">Pause new messages</MudButton></div>
+                }
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Quiet hours</MudText>
+                <MudText Typo="Typo.body2">
+                    During quiet hours, messages still arrive but you won't see a notice until they end. Your partner isn't told.
+                </MudText>
+                <MudSwitch T="bool" @bind-Value="quietOn" Color="Color.Primary" Label="Use quiet hours" />
+                @if (quietOn)
+                {
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                        <MudSelect T="int" @bind-Value="quietStartHour" Label="From" Variant="Variant.Outlined" Style="min-width: 9rem">
+                            @foreach (var h in Enumerable.Range(0, 24))
+                            {
+                                <MudSelectItem T="int" Value="h">@HourLabel(h)</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect T="int" @bind-Value="quietEndHour" Label="Until" Variant="Variant.Outlined" Style="min-width: 9rem">
+                            @foreach (var h in Enumerable.Range(0, 24))
+                            {
+                                <MudSelectItem T="int" Value="h">@HourLabel(h)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudStack>
+                    <MudText Typo="Typo.caption">Time zone: @timeZone</MudText>
+                }
+                <div><MudButton Variant="Variant.Outlined" OnClick="SaveQuietHoursAsync" Disabled="busy">Save quiet hours</MudButton></div>
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Notifications</MudText>
+                <MudText Typo="Typo.body2">
+                    Notices only ever say that something arrived, never what it says. Muting turns them off; messages still
+                    arrive on your messages page.
+                </MudText>
+                <MudSwitch T="bool" Value="settings.Muted" ValueChanged="SetMutedAsync" Color="Color.Primary" Label="Mute notifications" Disabled="busy" />
+            </MudStack>
+        </MudPaper>
+
+        <div><MudButton Variant="Variant.Text" Href="messages">Back to messages</MudButton></div>
+    </MudStack>
+}
+
+@code {
+    private PaceSettings? settings;
+    private Guid userId;
+    private bool busy;
+    private int pauseHours = 24;
+    private bool quietOn;
+    private int quietStartHour = 22;
+    private int quietEndHour = 7;
+    private string timeZone = "UTC";
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        settings = await Pace.GetAsync(userId);
+        quietOn = settings.QuietStart is not null;
+        quietStartHour = settings.QuietStart?.Hour ?? 22;
+        quietEndHour = settings.QuietEnd?.Hour ?? 7;
+        timeZone = settings.TimeZoneId;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Default to the browser's time zone until the user has saved quiet hours.
+        if (firstRender && settings is { QuietStart: null })
+        {
+            await using var module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/timezone.js");
+            var browserZone = await module.InvokeAsync<string>("browserTimeZone");
+            if (!string.IsNullOrWhiteSpace(browserZone))
+            {
+                timeZone = browserZone;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private Task PauseAsync() => ApplyAsync(Pace.PauseAsync(userId, DateTimeOffset.UtcNow.AddHours(pauseHours)), "Paused. Your partner will see that you've taken a break.");
+
+    private Task ResumeAsync() => ApplyAsync(Pace.ResumeAsync(userId), "Resumed.");
+
+    private Task SetMutedAsync(bool muted) => ApplyAsync(Pace.SetMutedAsync(userId, muted), muted ? "Notifications muted." : "Notifications on.");
+
+    private Task SaveQuietHoursAsync() =>
+        quietOn
+            ? ApplyAsync(Pace.SetQuietHoursAsync(userId, new TimeOnly(quietStartHour, 0), new TimeOnly(quietEndHour, 0), timeZone), "Quiet hours saved.")
+            : ApplyAsync(Pace.SetQuietHoursAsync(userId, null, null, timeZone), "Quiet hours turned off.");
+
+    private async Task ApplyAsync(Task<Result<PaceSettings>> change, string success)
+    {
+        busy = true;
+        try
+        {
+            var result = await change;
+            if (result.Succeeded)
+            {
+                settings = result.Value;
+                Snackbar.Add(success, Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("That didn't work. Check the times are different and try again.", Severity.Warning);
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string HourLabel(int hour) => new TimeOnly(hour, 0).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string Format(DateTimeOffset at) => at.ToLocalTime().ToString("d MMMM, HH:mm", System.Globalization.CultureInfo.CurrentCulture);
+}
