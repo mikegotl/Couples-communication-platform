@@ -85,6 +85,18 @@ The layout renders statically; pages that need interactivity opt in with
 `InteractiveServerRenderMode(prerender: false)` and render `<InteractiveProviders />` so MudBlazor
 dialogs, snackbars and popovers work in that page's circuit.
 
+## Messaging lifecycle
+
+Private draft → optional coach suggestions (`IDraftAssistant`, author only, never stored) → author
+edits → preview (`PreviewShareAsync`: exact text plus fingerprint, writes nothing) → explicit
+confirmation (`ShareAsync` with the previewed fingerprint) → `SharedMessage` + `ConsentRecord` +
+`message.shared` audit event in one transaction. Delivery is idempotent per draft: a unique index
+on `SourceDraftId` and the draft's row version stop a second delivery, and repeats return the
+original. Withdrawal erases the shared text and marks the consent withdrawn; it is never undone by
+a repeated confirmation. Blazor Server pages share one scoped `DbContext` per circuit, so a page
+must not start a second database call (or a navigation that re-creates the page) while one is
+running.
+
 ## Exercises
 
 Exercise wording is code (`Couples.Domain.Exercises.ExerciseCatalog`); each version is published

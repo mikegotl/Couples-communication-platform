@@ -71,6 +71,8 @@ Never commit real credentials.
 | `/invite/{token}` | Review and accept an invitation (signed in) |
 | `/intake` | Private intake: choose topics to work on and write private notes (signed in) |
 | `/exercises` | Guided private exercises; progress saves after every step (signed in) |
+| `/messages` | Private drafts, messages from your partner, sent messages and withdrawal (signed in) |
+| `/messages/new`, `/messages/draft/{id}` | Write a draft, get optional wording suggestions, preview exactly what your partner will see, confirm and send |
 | `/admin/exercises` | Exercise content and clinician review status (Admin role only) |
 | `/privacy` | Plain-language summary of what is private and what is shared |
 | `/Account/Manage/PersonalData` | Download your data, or delete your account and all your private data |

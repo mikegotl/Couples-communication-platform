@@ -7,6 +7,9 @@ namespace Couples.Application.Coaching;
 /// </summary>
 public interface ICommunicationCoach
 {
+    /// <summary>False when no provider is enabled; callers can hide the option instead of offering a dead end.</summary>
+    bool IsAvailable { get; }
+
     Task<CoachResult> SuggestAsync(CoachRequest request, CancellationToken cancellationToken = default);
 }
 

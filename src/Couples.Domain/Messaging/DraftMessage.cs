@@ -5,8 +5,9 @@ namespace Couples.Domain.Messaging;
 
 /// <summary>
 /// A message being prepared for a partner. Private to its author until they explicitly share it;
-/// sharing copies the approved text into a <see cref="SharedMessage"/>. The full preview, AI
-/// rewrite and delivery lifecycle arrives in milestone 07.
+/// sharing copies the approved text into a <see cref="SharedMessage"/>. Lifecycle: Draft (edit,
+/// optional AI suggestions the author may copy in and edit) → preview of exactly what the partner
+/// will see → explicit confirmation → Shared. A shared or discarded draft can't change.
 /// </summary>
 [Privacy(DataClassification.PrivateSensitive, "Kept while in use; discarded drafts are purged 30 days after discard; erased by the deletion workflow.")]
 public sealed class DraftMessage : Entity

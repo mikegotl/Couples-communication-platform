@@ -50,6 +50,7 @@ public static partial class DependencyInjection
                 logger);
         });
 
+        services.AddScoped<Couples.Application.Messaging.IDraftAssistant, DraftAssistant>();
         return services;
     }
 

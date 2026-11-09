@@ -43,6 +43,10 @@ internal sealed class ScriptedModel(params Func<ModelPrompt, CancellationToken, 
 
 internal sealed class MemoryUsageStore : ICoachUsageStore
 {
+    public Exception? FailReserve { get; set; }
+
+    public Exception? FailRecord { get; set; }
+
     private readonly ConcurrentDictionary<(Guid, DateOnly), int> requests = new();
 
     public int Reservations { get; private set; }
@@ -51,6 +55,11 @@ internal sealed class MemoryUsageStore : ICoachUsageStore
 
     public Task<bool> TryReserveAsync(Guid userId, DateOnly day, int perUserLimit, int globalRequestLimit, long globalTokenLimit, CancellationToken cancellationToken = default)
     {
+        if (FailReserve is not null)
+        {
+            return Task.FromException<bool>(FailReserve);
+        }
+
         var count = requests.GetOrAdd((userId, day), 0);
         if (count >= perUserLimit || Tokens >= globalTokenLimit)
         {
@@ -64,6 +73,11 @@ internal sealed class MemoryUsageStore : ICoachUsageStore
 
     public Task RecordTokensAsync(Guid userId, DateOnly day, int inputTokens, int outputTokens, CancellationToken cancellationToken = default)
     {
+        if (FailRecord is not null)
+        {
+            return Task.FromException(FailRecord);
+        }
+
         Tokens += inputTokens + outputTokens;
         return Task.CompletedTask;
     }

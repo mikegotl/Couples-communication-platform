@@ -1,0 +1,155 @@
+@page "/messages"
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Messaging
+@using Couples.Application.Workspaces
+@inject IMessagingService Messages
+@inject IWorkspaceService Workspaces
+@inject CurrentUser CurrentUser
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<InteractiveProviders />
+<PageTitle>Messages · BridgeTogether</PageTitle>
+
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else if (workspace is null)
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Messages</MudText>
+        <MudText>Messages are shared within your workspace. Create one or join your partner's first.</MudText>
+        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="workspace">Go to workspace</MudButton></div>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Messages</MudText>
+        <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lock">
+            Drafts are private to you. Your partner sees a message only after you preview it and choose to send it.
+        </MudAlert>
+        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="messages/new">Write a message</MudButton></div>
+
+        <section aria-labelledby="drafts-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="drafts-heading">Your private drafts</MudText>
+            @if (drafts.Count == 0)
+            {
+                <MudText Typo="Typo.body2">No drafts.</MudText>
+            }
+            else
+            {
+                <MudStack Spacing="2">
+                    @foreach (var draft in drafts)
+                    {
+                        <MudPaper Class="pa-3" Outlined="true" @key="draft.Id">
+                            <MudText Typo="Typo.caption">Private draft · edited @Format(draft.UpdatedAt)</MudText>
+                            <MudText Class="mb-2" Style="overflow-wrap: anywhere">@Snippet(draft.Body)</MudText>
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" Href="@($"messages/draft/{draft.Id}")">Continue</MudButton>
+                        </MudPaper>
+                    }
+                </MudStack>
+            }
+        </section>
+
+        <section aria-labelledby="inbox-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="inbox-heading">From your partner</MudText>
+            @if (inbox.Count == 0)
+            {
+                <MudText Typo="Typo.body2">Nothing yet.</MudText>
+            }
+            else
+            {
+                <MudStack Spacing="2">
+                    @foreach (var message in inbox)
+                    {
+                        <MessageCard @key="message.Id" Heading="From your partner" Body="@message.Body" Timestamp="message.SharedAt" />
+                    }
+                </MudStack>
+            }
+        </section>
+
+        <section aria-labelledby="sent-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="sent-heading">Sent by you</MudText>
+            @if (sent.Count == 0)
+            {
+                <MudText Typo="Typo.body2">Nothing sent yet.</MudText>
+            }
+            else
+            {
+                <MudStack Spacing="2">
+                    @foreach (var message in sent)
+                    {
+                        <MessageCard @key="message.Id" Heading="@(message.Revoked ? "Withdrawn" : "Sent to your partner")"
+                                     Body="@(message.Revoked ? null : message.Body)" Timestamp="message.SharedAt">
+                            @if (message.Revoked)
+                            {
+                                <MudText Typo="Typo.body2"><em>You withdrew this message. Its text has been erased.</em></MudText>
+                            }
+                            else
+                            {
+                                <div><MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Error" Disabled="busy"
+                                                OnClick="() => WithdrawAsync(message.Id)">Withdraw</MudButton></div>
+                            }
+                        </MessageCard>
+                    }
+                </MudStack>
+            }
+        </section>
+    </MudStack>
+}
+
+@code {
+    private bool loading = true;
+    private bool busy;
+    private Guid userId;
+    private WorkspaceSummary? workspace;
+    private IReadOnlyList<DraftView> drafts = [];
+    private IReadOnlyList<SharedMessageView> inbox = [];
+    private IReadOnlyList<SharedMessageView> sent = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        workspace = await Workspaces.GetMyWorkspaceAsync(userId);
+        await LoadAsync();
+        loading = false;
+    }
+
+    private async Task LoadAsync()
+    {
+        drafts = await Messages.ListDraftsAsync(userId);
+        inbox = await Messages.InboxAsync(userId);
+        sent = await Messages.SentAsync(userId);
+    }
+
+    private async Task WithdrawAsync(Guid messageId)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            "Withdraw this message?",
+            "Your partner won't be able to see it any more and its text will be erased. If they've already read it, that can't be undone.",
+            yesText: "Withdraw", cancelText: "Keep");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var result = await Messages.RevokeAsync(userId, messageId);
+            Snackbar.Add(result.Succeeded ? "Withdrawn." : "We couldn't withdraw that. Please try again.", result.Succeeded ? Severity.Success : Severity.Warning);
+            await LoadAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string Snippet(string body) => body.Length <= 160 ? body : body[..160] + "…";
+
+    private static string Format(DateTimeOffset at) => at.ToLocalTime().ToString("d MMM, HH:mm", System.Globalization.CultureInfo.CurrentCulture);
+}

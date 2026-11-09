@@ -9,8 +9,8 @@ Milestones follow the build playbook, one feature branch and PR each. `main` is 
 | 03 | Privacy, consent and data boundaries | Done (PR #3) |
 | 04 | Intake and concern mapping | Done (PR #4) |
 | 05 | Guided private reflection exercises | Done (PR #5) |
-| 06 | AI coaching abstraction and safeguards | In review |
-| 07 | Draft, preview, approve and deliver | Not started |
+| 06 | AI coaching abstraction and safeguards | Done (PR #6) |
+| 07 | Draft, preview, approve and deliver | In review |
 | 08 | Asynchronous partner responses | Not started |
 | 09 | Safety and support pathways | Not started |
 | 10 | Accessibility, security and data lifecycle | Not started |
@@ -278,3 +278,37 @@ unapproved.
 **Owner decisions**: choose the AI provider and data processing agreement, run or choose the
 gateway, then set `Coaching:Provider=Gateway`, the gateway settings (key via secrets, never
 committed) and `Coaching:ApprovedForUserContent=true`. Review the caps.
+
+## Milestone 07: Draft, preview, approve and deliver
+
+**Delivered**
+
+- `/messages`: the author's private drafts, messages from the partner, and messages sent (with
+  Withdraw, which hides the message and erases its text after a confirmation that says a read
+  copy can't be recalled). "Messages" is in the top navigation and on the workspace page.
+- `/messages/new` and `/messages/draft/{id}`: write a private draft; optionally "Suggest kinder
+  wording" (shown only when a coach provider is enabled), which saves the draft, asks the coach,
+  and lists suggestions with explanations. "Use this wording" copies one into the editor for the
+  author to edit, with Undo. Suggestions are never stored, applied automatically or shared.
+- Preview: `IMessagingService.PreviewShareAsync` returns exactly the text the partner will see,
+  the workspace name and the fingerprint to approve; it needs a partner and writes nothing. The
+  page renders it with the same card the partner sees. Sending needs a ticked confirmation and
+  sends the previewed fingerprint; if the draft changed since the preview nothing is sent.
+- Idempotent delivery: a repeated or concurrent confirmation of the same draft returns the
+  original message and records no second message, consent record or audit event. Confirming again
+  after a withdrawal returns the withdrawn message and never re-delivers it.
+- `IDraftAssistant` (Couples.AI) reads the draft through the messaging service, so only the
+  owner can get suggestions, and only for an unsent draft.
+- The coach now fails closed if the usage store is unreachable (no provider call) and still
+  returns suggestions if recording tokens fails.
+- Fixed in the browser check: creating a draft no longer triggers a Blazor navigation, which had
+  re-created the page and used the circuit's database context concurrently.
+
+**Verification**: see the PR description for the commands run on a fresh clone and their results.
+
+Gate tests (database-backed): preview shows exact text and creates no message, consent or audit
+rows; preview is owner-only and needs a partner; editing after preview blocks delivery until a new
+preview; repeated and concurrent confirmations return one delivery with one consent record and one
+audit event; a wrong approval is rejected; confirming after withdrawal never re-delivers;
+suggestions are owner-only, change nothing, share nothing and stay out of logs; a disabled coach
+reports itself unavailable.

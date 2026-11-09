@@ -77,6 +77,34 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         return discarded.Succeeded ? await SaveAsync(cancellationToken) : discarded;
     }
 
+    public async Task<Result<SharePreview>> PreviewShareAsync(Guid userId, Guid draftId, CancellationToken cancellationToken = default)
+    {
+        var draft = await OwnedDrafts(userId).AsNoTracking().FirstOrDefaultAsync(d => d.Id == draftId, cancellationToken);
+        if (draft is null)
+        {
+            return DomainError.NotFound;
+        }
+
+        if (draft.Status != DraftStatus.Draft)
+        {
+            return DomainError.Conflict;
+        }
+
+        var (isMember, recipient) = await RecipientAsync(userId, draft.WorkspaceId, cancellationToken);
+        if (!isMember)
+        {
+            return DomainError.NotFound;
+        }
+
+        if (recipient is null)
+        {
+            return DomainError.NoPartner;
+        }
+
+        var name = await db.Workspaces.Where(w => w.Id == draft.WorkspaceId).Select(w => w.Name).FirstAsync(cancellationToken);
+        return Result.Ok(new SharePreview(draft.Id, draft.Body, draft.Fingerprint, name));
+    }
+
     public async Task<Result<SharedMessageView>> ShareAsync(Guid userId, Guid draftId, string approvedFingerprint, CancellationToken cancellationToken = default)
     {
         var draft = await OwnedDrafts(userId).FirstOrDefaultAsync(d => d.Id == draftId, cancellationToken);
@@ -85,23 +113,27 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
             return DomainError.NotFound;
         }
 
+        // A repeated confirmation (double click, retry after a lost response) returns the original
+        // delivery instead of failing or sharing twice.
+        if (draft.Status == DraftStatus.Shared)
+        {
+            return await ExistingDeliveryAsync(userId, draft.Id, approvedFingerprint, draft.Fingerprint, cancellationToken);
+        }
+
         // The author must still be an active member of the draft's workspace, and a partner must be there to receive it.
-        var members = await db.WorkspaceMemberships
-            .Where(m => m.WorkspaceId == draft.WorkspaceId && m.LeftAt == null)
-            .Select(m => m.UserId)
-            .ToListAsync(cancellationToken);
-        if (!members.Contains(userId))
+        var (isMember, recipient) = await RecipientAsync(userId, draft.WorkspaceId, cancellationToken);
+        if (!isMember)
         {
             return DomainError.NotFound;
         }
 
-        var recipient = members.Where(m => m != userId).Cast<Guid?>().FirstOrDefault();
         if (recipient is null)
         {
             return DomainError.NoPartner;
         }
 
         var now = clock.UtcNow;
+        var fingerprint = draft.Fingerprint;
         var consent = ConsentRecord.Grant(userId, draft.WorkspaceId, ConsentPurpose.ShareMessage, draft.Id, approvedFingerprint, now);
         var shared = draft.Share(recipient.Value, approvedFingerprint ?? string.Empty, consent.Id, now);
         if (!shared.Succeeded)
@@ -116,11 +148,36 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         var saved = await SaveAsync(cancellationToken);
         if (!saved.Succeeded)
         {
-            return saved.Error!.Value;
+            // Lost a race with a concurrent confirmation of the same draft: nothing from this
+            // request was written; return the delivery the other request made.
+            db.ChangeTracker.Clear();
+            return await ExistingDeliveryAsync(userId, draft.Id, approvedFingerprint, fingerprint, cancellationToken);
         }
 
         LogShared(logger, shared.Value.Id, draft.WorkspaceId);
         return Result.Ok(ToView(shared.Value, userId));
+    }
+
+    private async Task<Result<SharedMessageView>> ExistingDeliveryAsync(Guid userId, Guid draftId, string? approvedFingerprint, string draftFingerprint, CancellationToken cancellationToken)
+    {
+        var existing = await db.SharedMessages.AsNoTracking()
+            .FirstOrDefaultAsync(m => m.SourceDraftId == draftId && m.SenderUserId == userId, cancellationToken);
+        if (existing is null || !string.Equals(approvedFingerprint, draftFingerprint, StringComparison.Ordinal))
+        {
+            return DomainError.Conflict;
+        }
+
+        LogDuplicateShare(logger, existing.Id);
+        return Result.Ok(ToView(existing, userId));
+    }
+
+    private async Task<(bool IsMember, Guid? Recipient)> RecipientAsync(Guid userId, Guid workspaceId, CancellationToken cancellationToken)
+    {
+        var members = await db.WorkspaceMemberships
+            .Where(m => m.WorkspaceId == workspaceId && m.LeftAt == null)
+            .Select(m => m.UserId)
+            .ToListAsync(cancellationToken);
+        return (members.Contains(userId), members.Where(m => m != userId).Cast<Guid?>().FirstOrDefault());
     }
 
     public async Task<IReadOnlyList<SharedMessageView>> InboxAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -220,6 +277,9 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
     // Ids only. Message text never reaches logs.
     [LoggerMessage(Level = LogLevel.Information, Message = "Message {MessageId} shared in workspace {WorkspaceId}")]
     private static partial void LogShared(ILogger logger, Guid messageId, Guid workspaceId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Repeated share confirmation returned existing message {MessageId}")]
+    private static partial void LogDuplicateShare(ILogger logger, Guid messageId);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Message {MessageId} revoked by sender")]
     private static partial void LogRevoked(ILogger logger, Guid messageId);
