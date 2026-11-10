@@ -25,26 +25,31 @@ public static class SecurityHeaders
         return nonce;
     }
 
-    public static string ContentSecurityPolicy(string nonce, bool upgradeInsecure) =>
+    /// <param name="formTargets">Extra origins a form post may be redirected to: the configured external sign-in pages.</param>
+    public static string ContentSecurityPolicy(string nonce, bool upgradeInsecure, IEnumerable<string>? formTargets = null) =>
         "default-src 'self'; " +
         $"script-src 'self' 'nonce-{nonce}'; " +
         // MudBlazor sets inline style attributes; no inline <style> or script is needed beyond that.
         "style-src 'self' 'unsafe-inline'; " +
         "img-src 'self' data:; font-src 'self'; connect-src 'self'; " +
-        "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; " +
+        "object-src 'none'; base-uri 'self'; " +
+        // Browsers apply form-action to the redirect after a post too, so "Continue with Google"
+        // (a post that redirects to Google) needs the provider's sign-in origin listed.
+        $"form-action {string.Join(' ', formTargets is null ? ["'self'"] : formTargets.Prepend("'self'"))}; frame-ancestors 'none'; " +
         "manifest-src 'self'; worker-src 'self'" +
         (upgradeInsecure ? "; upgrade-insecure-requests" : string.Empty);
 
     public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder app, bool upgradeInsecure)
     {
         ArgumentNullException.ThrowIfNull(app);
+        var formTargets = app.ApplicationServices.GetService<ExternalSignInOrigins>()?.Origins ?? [];
         return app.Use(async (context, next) =>
         {
             var nonce = context.GetCspNonce();
             context.Response.OnStarting(() =>
             {
                 var headers = context.Response.Headers;
-                headers.ContentSecurityPolicy = ContentSecurityPolicy(nonce, upgradeInsecure);
+                headers.ContentSecurityPolicy = ContentSecurityPolicy(nonce, upgradeInsecure, formTargets);
                 headers.XContentTypeOptions = "nosniff";
                 headers.XFrameOptions = "DENY";
                 headers["Referrer-Policy"] = "no-referrer";

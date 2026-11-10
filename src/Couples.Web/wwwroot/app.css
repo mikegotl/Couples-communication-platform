@@ -193,3 +193,16 @@ main { overflow-wrap: break-word; }
 main h1, main h2, main h3 { overflow-wrap: anywhere; }
 
 .privacy-tips { margin: 0 0 .75rem; padding-left: 1.25rem; font-size: .875rem; line-height: 1.6; }
+/* Google and Apple sign-in. Neutral white buttons with each provider's own mark, as both
+   providers' branding guidelines allow, shaped like the rest of the warm theme. */
+.external-logins { display: flex; flex-direction: column; gap: .75rem; margin: 0 0 1.25rem; }
+.btn-external {
+    display: flex; align-items: center; justify-content: center; gap: .75rem; width: 100%;
+    background: #fff; color: #1f1f1f; border: 1px solid #8C7D72; padding: .7rem 1.25rem;
+}
+.btn-external:hover { background: #f6efe8; }
+.external-logo { width: 1.25rem; height: 1.25rem; flex: none; }
+.external-divider { display: flex; align-items: center; gap: .75rem; color: var(--mud-palette-text-secondary); font-size: .875rem; margin: 0 0 1rem; }
+.external-divider::before, .external-divider::after { content: ""; flex: 1; border-top: 1px solid #e0e0e0; }
+.text-break { overflow-wrap: anywhere; }
+.mt-3 { margin-top: 1rem; }

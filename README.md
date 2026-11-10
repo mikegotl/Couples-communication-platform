@@ -66,7 +66,7 @@ Never commit real credentials.
 | Path | Purpose |
 |------|---------|
 | `/` | Anonymous home page |
-| `/Account/Register`, `/Account/Login`, `/Account/Manage` | Accounts: sign-up with email confirmation, sign-in, password reset, MFA, passkeys |
+| `/Account/Register`, `/Account/Login`, `/Account/Manage` | Accounts: sign-up with email confirmation, sign-in, password reset, MFA, passkeys, optional Google and Apple sign-in ([setup](docs/operations/external-sign-in.md)) |
 | `/workspace` | Create a workspace, invite your partner, leave (signed in) |
 | `/invite/{token}` | Review and accept an invitation (signed in) |
 | `/intake` | Private intake: choose topics to work on and write private notes (signed in) |
