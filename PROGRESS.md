@@ -507,3 +507,13 @@ partner's safety settings hold joint features. Design and safeguards: ADR-0017. 
 
 **Not yet (owner)**: real reward partners or a gift-card provider, the value of a credit and a budget.
 
+## After milestone 12: Reward partners and date ideas (2026-11-10)
+
+Public "Partner with us" application (`/partners`), admin approval that creates the partner's
+offer (`/admin/partners`), a private check link where the business confirms and uses up voucher
+codes, and "Date ideas near you" on the rewards page (suggestions only, managed at
+`/admin/rewards`). ADR-0018; recruiting playbook in `docs/operations/reward-partners.md`.
+Migration `RewardPartnersAndDateIdeas`.
+
+**Not yet (owner)**: sign up the first partners, a lawyer's review of the partner agreement,
+and an email provider so applicants can be answered from the app.

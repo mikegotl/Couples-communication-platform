@@ -17,6 +17,7 @@ public static class RouteTitles
         ("admin/pilot", "Pilot overview · Admin"),
         ("admin/joint-chat", "Joint chat pilot · Admin"),
         ("admin/rewards", "Date rewards · Admin"),
+        ("admin/partners", "Reward partners · Admin"),
         ("progress", "Your progress together"),
         ("joint-chat", "Joint chat (pilot)"),
         ("feedback", "Send feedback"),

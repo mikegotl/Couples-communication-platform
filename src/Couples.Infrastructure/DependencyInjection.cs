@@ -79,6 +79,13 @@ public static class DependencyInjection
         services.AddScoped<Couples.Application.Rewards.IConnectionProgressService, Couples.Infrastructure.Rewards.ConnectionProgressService>();
         services.AddScoped<Couples.Application.Rewards.IRewardCatalogAdminService, Couples.Infrastructure.Rewards.RewardCatalogAdminService>();
 
+        // Reward partners and date ideas (ADR-0018).
+        services.AddScoped<Couples.Application.Rewards.IPartnerService, Couples.Infrastructure.Rewards.PartnerService>();
+        services.AddScoped<Couples.Infrastructure.Rewards.PartnerAdminService>();
+        services.AddScoped<Couples.Application.Rewards.IPartnerAdminService>(sp => sp.GetRequiredService<Couples.Infrastructure.Rewards.PartnerAdminService>());
+        services.AddScoped<Couples.Application.Rewards.IDateIdeaAdminService>(sp => sp.GetRequiredService<Couples.Infrastructure.Rewards.PartnerAdminService>());
+        services.AddScoped<Couples.Application.Rewards.IDateIdeaProvider>(sp => sp.GetRequiredService<Couples.Infrastructure.Rewards.PartnerAdminService>());
+
         services.AddHealthChecks()
             .AddDbContextCheck<CouplesDbContext>("database", tags: [ReadyTag]);
 

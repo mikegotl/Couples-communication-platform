@@ -143,6 +143,11 @@ finished weeks earn shared credits they can cash in for date rewards from the ca
 (`Rewards:SeedSampleCatalog`); Production leaves it off until real reward partners or a gift-card
 provider are signed up. How the score works and where a provider plugs in: ADR-0017.
 
+Local businesses apply at `/partners`; an admin approves them at `/admin/partners`, which creates
+their offer and a private check link (`/partner/check/...`) where the business confirms a couple's
+code and marks it used. "Date ideas near you" (managed at `/admin/rewards`) are suggestions with no
+voucher (ADR-0018). Recruiting partners: [playbook](docs/operations/reward-partners.md).
+
 ### Observability
 
 Metrics (counts only, meter `BridgeTogether`), traces and logs are exported over OTLP when

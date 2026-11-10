@@ -15,7 +15,7 @@ public static class PilotGate
 {
     private static readonly string[] OpenPrefixes =
     [
-        "/pilot", "/Account", "/support", "/privacy", "/privacy-notice", "/terms", "/health",
+        "/pilot", "/Account", "/support", "/partners", "/partner", "/privacy", "/privacy-notice", "/terms", "/health",
         "/not-found", "/Error", "/_framework", "/_content", "/js", "/favicon",
     ];
 

@@ -63,6 +63,12 @@ internal sealed partial class RetentionService(
         await db.JointChatMessages.Where(m => endedChats.Any(c => c.Id == m.SessionId)).ExecuteDeleteAsync(cancellationToken);
         var jointChats = await endedChats.ExecuteDeleteAsync(cancellationToken);
 
+        // Businesses that applied to offer date rewards and were declined.
+        var partnerCutoff = now - TimeSpan.FromDays(180);
+        await db.RewardPartners
+            .Where(p => p.Status == Couples.Domain.Rewards.PartnerStatus.Declined && p.DecidedAt < partnerCutoff)
+            .ExecuteDeleteAsync(cancellationToken);
+
         var report = new RetentionReport(invitations, drafts, workspaces, audits, requests, usage, notifications, feedback, jointChats);
         LogApplied(logger, invitations, drafts, workspaces, audits, requests, usage, notifications, feedback, jointChats);
         return report;

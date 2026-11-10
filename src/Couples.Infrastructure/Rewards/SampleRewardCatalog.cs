@@ -24,6 +24,17 @@ public static class SampleRewardCatalog
         new("Pottery class for two", "Sample craft studio", "A two-hour beginners' wheel class. Make something together.", null, RewardKind.Experience, 70, true),
     ];
 
+    /// <summary>Starter date ideas that work anywhere and name no business. Admins add local ones.</summary>
+    public static IReadOnlyList<DateIdeaDetails> Ideas { get; } =
+    [
+        new("Sunset walk and a flask", "Pick a route neither of you has walked, take something warm to drink, and leave your phones in your pockets.", null, DateIdeaKind.Outdoors, null),
+        new("Cook something new together", "Choose a recipe neither of you has made. One of you chops, one of you stirs, then swap.", null, DateIdeaKind.AtHome, null),
+        new("Dessert-only night out", "Skip dinner and go straight to somewhere that does great puddings. Order two and share.", null, DateIdeaKind.FoodAndDrink, null),
+        new("Be tourists in your own town", "Visit the one local museum, viewpoint or landmark you've both never got round to.", null, DateIdeaKind.Culture, null),
+        new("Board game rematch", "Dig out a game, or borrow one from a board game café, and play best of three.", null, DateIdeaKind.Activity, null),
+        new("Morning market and coffee", "Wander a weekend market with a small budget each, and buy the other a surprise.", null, DateIdeaKind.FoodAndDrink, null),
+    ];
+
     public static async Task SeedIfEmptyAsync(IServiceProvider services, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -34,15 +45,21 @@ public static class SampleRewardCatalog
         }
 
         var db = scope.ServiceProvider.GetRequiredService<CouplesDbContext>();
-        if (await db.RewardOffers.AnyAsync(cancellationToken))
+        var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
+        if (!await db.RewardOffers.AnyAsync(cancellationToken))
         {
-            return;
+            foreach (var details in Offers)
+            {
+                db.RewardOffers.Add(RewardOffer.Create(details, now).Value);
+            }
         }
 
-        var now = scope.ServiceProvider.GetRequiredService<IClock>().UtcNow;
-        foreach (var details in Offers)
+        if (!await db.DateIdeas.AnyAsync(cancellationToken))
         {
-            db.RewardOffers.Add(RewardOffer.Create(details, now).Value);
+            foreach (var details in Ideas)
+            {
+                db.DateIdeas.Add(DateIdea.Create(details, now).Value);
+            }
         }
 
         await db.SaveChangesAsync(cancellationToken);

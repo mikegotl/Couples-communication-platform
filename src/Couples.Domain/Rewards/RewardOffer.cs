@@ -40,6 +40,21 @@ public sealed class RewardOffer : Entity
 
     public bool IsActive { get; private set; }
 
+    /// <summary>The approved business honouring it, if it came from a partner application. Their check link can confirm its codes.</summary>
+    public Guid? PartnerId { get; private set; }
+
+    public static Result<RewardOffer> CreateFor(RewardPartner partner, string? title, string? description, int costCredits, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(partner);
+        var created = Create(new RewardOfferDetails(title, partner.BusinessName, description, partner.Area, partner.Kind, costCredits, IsSample: false), now);
+        if (created.Succeeded)
+        {
+            created.Value.PartnerId = partner.Id;
+        }
+
+        return created;
+    }
+
     public static Result<RewardOffer> Create(RewardOfferDetails details, DateTimeOffset now)
     {
         var offer = new RewardOffer { IsActive = true };

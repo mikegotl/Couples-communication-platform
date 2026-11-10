@@ -20,10 +20,12 @@ internal sealed class ConnectionProgressService(
     IClock clock,
     IFeatureFlags flags,
     ISafetyGate safety,
-    IRewardCatalogProvider provider) : IConnectionProgressService
+    IRewardCatalogProvider provider,
+    IDateIdeaProvider ideas) : IConnectionProgressService
 {
     private const int RecentWeekCount = 8;
     private const int MaxCatchUpWeeks = 26;
+    private const int IdeasShown = 6;
 
     public async Task<ConnectionProgress?> GetAsync(Guid userId, CancellationToken cancellationToken = default)
     {
@@ -192,7 +194,7 @@ internal sealed class ConnectionProgressService(
     private static DateTimeOffset Max(DateTimeOffset a, DateTimeOffset b) => a > b ? a : b;
 
     private static RedemptionView ToView(RewardRedemption r, Guid userId) =>
-        new(r.Id, r.OfferTitle, r.PartnerName, r.CostCredits, r.VoucherCode, r.Instructions, r.IsSample, r.RedeemedByUserId == userId, r.CreatedAt, r.ExpiresAt);
+        new(r.Id, r.OfferTitle, r.PartnerName, r.CostCredits, r.VoucherCode, r.Instructions, r.IsSample, r.RedeemedByUserId == userId, r.CreatedAt, r.ExpiresAt, r.UsedAt);
 
     private static RewardOfferView ToView(RewardOffer o) =>
         new(o.Id, o.Title, o.PartnerName, o.Description, o.Area, o.Kind, o.CostCredits, o.IsSample);
@@ -312,7 +314,8 @@ internal sealed class ConnectionProgressService(
             .Select(e => new CreditHistoryLine(e.CreatedAt, e.Amount, e.WeekStart, e.WeekScore, e.RedemptionId is { } id && titles.TryGetValue(id, out var t) ? t : null))
             .ToList();
 
-        return new RewardsView(account.Balance, account.Area, offers, suggestion, nextGoal, history, [.. redemptions.Select(r => ToView(r, userId))]);
+        var dateIdeas = await ideas.ListAsync(account.Area, IdeasShown, cancellationToken);
+        return new RewardsView(account.Balance, account.Area, offers, suggestion, nextGoal, history, [.. redemptions.Select(r => ToView(r, userId))], dateIdeas);
     }
 
     private sealed record Pair(Guid WorkspaceId, Guid Me, Guid Partner, DateTimeOffset Since);

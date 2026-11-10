@@ -1,0 +1,109 @@
+@page "/partner/check/{Key}"
+@using System.Globalization
+@using Couples.Application.Rewards
+@inject IPartnerService Partners
+
+<PageTitle>Check a voucher · BridgeTogether</PageTitle>
+
+@if (partnerName is null)
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">This link isn't active</MudText>
+        <MudText>Check links are private to each partner business. If yours has stopped working, ask the BridgeTogether team for a new one.</MudText>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Check a voucher</MudText>
+        <MudText>
+            <strong>@partnerName</strong>: type the code your guests show you. Keep this page's address private; anyone
+            with it can mark your vouchers as used.
+        </MudText>
+
+        <div class="partner-form">
+            @* One form for both steps: a form that only appears after the first post can't receive the second. *@
+            <EditForm Model="Input" method="post" OnSubmit="SubmitAsync" FormName="voucher-check">
+                <div class="form-floating mb-3">
+                    <InputText @bind-Value="Input.Code" id="Input.Code" class="form-control voucher-input" maxlength="120" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-required="true" />
+                    <label for="Input.Code">Voucher code</label>
+                </div>
+                <button type="submit" class="btn btn-lg @(check?.State == VoucherState.Valid ? "btn-secondary" : "btn-primary")">Check code</button>
+
+                @if (check is not null)
+                {
+                    <div role="status" class="mt-3">
+                        @switch (check.State)
+                        {
+                            case VoucherState.Valid:
+                                <div class="alert alert-success">
+                                    <strong>Valid.</strong> @check.OfferTitle@(check.ExpiresAt is { } e ? $", use by {Format(e)}" : "").
+                                </div>
+                                <button type="submit" name="Input.Use" value="true" class="btn btn-lg btn-primary">Mark as used</button>
+                                break;
+                            case VoucherState.Used:
+                                <div class="alert @(justUsed ? "alert-success" : "alert-warning")">
+                                    @if (justUsed)
+                                    {
+                                        <span><strong>Done.</strong> @check.OfferTitle is now marked as used. Enjoy hosting them!</span>
+                                    }
+                                    else
+                                    {
+                                        <span><strong>Already used</strong>@(check.UsedAt is { } u ? $" on {Format(u)}" : ""). @check.OfferTitle can't be used again.</span>
+                                    }
+                                </div>
+                                break;
+                            case VoucherState.Expired:
+                                <div class="alert alert-warning"><strong>Expired</strong>@(check.ExpiresAt is { } x ? $" on {Format(x)}" : ""). It's up to you whether to honour it.</div>
+                                break;
+                            default:
+                                <div class="alert alert-danger"><strong>Not found.</strong> Check the code and try again. Codes for other businesses won't work here.</div>
+                                break;
+                        }
+                    </div>
+                }
+            </EditForm>
+        </div>
+    </MudStack>
+}
+
+@code {
+    private string? partnerName;
+    private VoucherCheck? check;
+    private bool justUsed;
+
+    [Parameter]
+    public string? Key { get; set; }
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+        partnerName = await Partners.PartnerNameAsync(Key);
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (!Input.Use)
+        {
+            check = await Partners.CheckVoucherAsync(Key, Input.Code);
+            return;
+        }
+
+        var before = await Partners.CheckVoucherAsync(Key, Input.Code);
+        check = await Partners.MarkUsedAsync(Key, Input.Code);
+        justUsed = before.State == VoucherState.Valid && check.State == VoucherState.Used;
+    }
+
+    private static string Format(DateTimeOffset at) => at.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+
+    private sealed class InputModel
+    {
+        public string? Code { get; set; }
+
+        /// <summary>Set by the "Mark as used" button.</summary>
+        public bool Use { get; set; }
+    }
+}
