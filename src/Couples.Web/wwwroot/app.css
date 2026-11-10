@@ -227,3 +227,48 @@ main h1, main h2, main h3 { overflow-wrap: anywhere; }
 .home-hero-art { flex: 1 1 18rem; max-width: 30rem; margin: 0 auto; }
 .home-hero-art img { display: block; width: 100%; height: auto; }
 @media (max-width: 599.98px) { .home-hero-art { max-width: 20rem; } }
+
+/* Progress and date rewards (ProgressPage.razor, ADR-0017) */
+.progress-hero { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem 2rem; }
+.progress-hero-text { flex: 1 1 18rem; }
+.score-ring {
+    --score: 0; flex: none; width: 8.5rem; height: 8.5rem; border-radius: 50%; display: grid; place-content: center; text-align: center;
+    background: radial-gradient(closest-side, #fff 78%, transparent 79% 100%), conic-gradient(var(--mud-palette-primary) calc(var(--score) * 1%), #F1E6DB 0);
+}
+.score-ring-value { font-family: Fraunces, Georgia, serif; font-size: 2.6rem; line-height: 1; color: var(--mud-palette-text-primary); }
+.score-ring-max { font-size: .8rem; color: var(--mud-palette-text-secondary); }
+.score-parts { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+.score-part { display: flex; flex-direction: column; gap: .4rem; }
+.score-part-head { display: flex; justify-content: space-between; gap: .5rem; font-weight: 600; font-size: .95rem; }
+.score-part-head span:last-child { color: var(--mud-palette-text-secondary); font-weight: 400; white-space: nowrap; }
+.week-bars { list-style: none; padding: 0; margin: .75rem 0 0; display: flex; align-items: flex-end; gap: .5rem; height: 9rem; }
+.week-bars li { flex: 1 1 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: .25rem; min-width: 0; }
+.week-bar { display: block; width: 100%; max-width: 2.75rem; height: calc(var(--h) * .7); border-radius: 8px 8px 3px 3px; background: linear-gradient(#C76B53, #A94A33); }
+.week-bars li:last-child .week-bar { background: linear-gradient(#5E7C69, #4F6B5A); }
+.week-bar-value { font-size: .8rem; font-weight: 700; color: var(--mud-palette-text-primary); }
+.week-bar-label { font-size: .75rem; color: var(--mud-palette-text-secondary); white-space: nowrap; }
+.credits-card { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 2rem; background: linear-gradient(135deg, #FFF7F0, #F8EBDF) !important; }
+.credits-balance { display: flex; flex-direction: column; align-items: center; min-width: 7rem; }
+.credits-number { font-family: Fraunces, Georgia, serif; font-size: 3rem; line-height: 1; color: var(--mud-palette-primary); }
+.credits-label { font-size: .85rem; font-weight: 600; color: var(--mud-palette-text-secondary); }
+.credits-next { flex: 1 1 18rem; }
+.mud-main-content .credits-next p.mud-typography-h6 { margin: 0 0 .25rem; }
+.reward-grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); }
+.reward-card { display: flex; flex-direction: column; gap: .35rem; background: #fff; border-radius: 14px; padding: 1rem 1.1rem; border: 1px solid var(--mud-palette-lines-default); box-shadow: 0 1px 2px rgba(80, 50, 30, .04); }
+.reward-card-top { display: flex; justify-content: space-between; align-items: center; }
+.reward-icon { color: var(--mud-palette-primary); }
+.reward-cost { font-size: .85rem; font-weight: 700; color: #33473B; background: #EEF3EE; border-radius: 999px; padding: .15rem .6rem; }
+.mud-main-content h3.reward-title { font-family: Fraunces, Georgia, serif; font-size: 1.15rem; margin: .25rem 0 0; }
+.mud-main-content .reward-partner { font-size: .875rem; color: var(--mud-palette-text-secondary); margin: 0; }
+.mud-main-content .reward-description { font-size: .9rem; margin: 0; }
+.mud-main-content .reward-sample { font-size: .8rem; font-style: italic; color: #8a4b00; margin: 0; }
+.reward-action { margin-top: auto; padding-top: .5rem; }
+.voucher-list { list-style: none; padding: 0; margin: .5rem 0 0; display: flex; flex-direction: column; gap: .75rem; }
+.voucher { border: 1px dashed #C76B53; border-radius: 12px; padding: .75rem 1rem; display: flex; flex-direction: column; gap: .35rem; background: #FFFBF7; }
+.voucher-code { font-size: 1.1rem; font-weight: 700; letter-spacing: .05em; color: var(--mud-palette-primary); }
+.voucher-meta { font-size: .85rem; color: var(--mud-palette-text-secondary); }
+.credits-amount { text-align: right; font-weight: 700; white-space: nowrap; }
+.progress-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; }
+.progress-summary .score-ring { width: 5.5rem; height: 5.5rem; }
+.progress-summary .score-ring-value { font-size: 1.8rem; }
+.progress-summary-text { flex: 1 1 16rem; }

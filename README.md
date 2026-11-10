@@ -134,6 +134,15 @@ needs all of: `FeatureManagement:Phase2JointChat=true`, `JointChat:ClinicalSignO
 workspace eligible at `/admin/joint-chat`. Do not turn it on for real participants before both
 reviews are signed (ADR-0015).
 
+### Progress and date rewards
+
+`/progress` (and a card on the workspace page) shows a couple's shared "connection rhythm" score,
+built only from messages they've shared with each other. With `FeatureManagement:DateRewards` on,
+finished weeks earn shared credits they can cash in for date rewards from the catalog at
+`/admin/rewards`. Development turns the flag on and seeds clearly marked sample offers
+(`Rewards:SeedSampleCatalog`); Production leaves it off until real reward partners or a gift-card
+provider are signed up. How the score works and where a provider plugs in: ADR-0017.
+
 ### Observability
 
 Metrics (counts only, meter `BridgeTogether`), traces and logs are exported over OTLP when

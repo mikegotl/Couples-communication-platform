@@ -75,6 +75,42 @@ else
                 <MudText Typo="Typo.body2">They joined on @Format(workspace.PartnerJoinedAt).</MudText>
                 <div class="mt-2"><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="messages">Messages</MudButton></div>
             </MudPaper>
+
+            @if (progress is { ShowProgress: true } p)
+            {
+                <MudPaper Class="pa-4" Outlined="true">
+                    <MudText Typo="Typo.h6" HtmlTag="h2">Your progress together</MudText>
+                    <div class="progress-summary mt-2">
+                        <div class="score-ring" style="--score: @p.Score" role="img" aria-label="@($"Connection rhythm {p.Score} out of 100")">
+                            <span class="score-ring-value" aria-hidden="true">@p.Score</span>
+                        </div>
+                        <div class="progress-summary-text">
+                            <MudText Typo="Typo.body1">
+                                @(p.PreviousScore is { } before && p.Score - before >= 5 ? $"Connection rhythm {p.Score}, up {p.Score - before} on the weeks before." : $"Connection rhythm {p.Score} out of 100.")
+                            </MudText>
+                            @if (p.Rewards is { } rewards)
+                            {
+                                <MudText Typo="Typo.body2" Class="mt-1">
+                                    <strong>@rewards.Balance shared credits.</strong>
+                                    @if (rewards.Suggestion is { } suggested)
+                                    {
+                                        <span> That's enough for @suggested.Title. Time to plan a date?</span>
+                                    }
+                                    else if (rewards.NextGoal is { } goal)
+                                    {
+                                        <span> @(goal.CostCredits - rewards.Balance) more to @goal.Title.</span>
+                                    }
+                                </MudText>
+                            }
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <MudButton Variant="@(p.Rewards?.Suggestion is null ? Variant.Outlined : Variant.Filled)" Color="Color.Primary" Href="progress">
+                            @(p.Rewards?.Suggestion is null ? "See your progress" : "Cash in for a date")
+                        </MudButton>
+                    </div>
+                </MudPaper>
+            }
         }
         else
         {
@@ -175,6 +211,7 @@ else
     private DateTimeOffset? createdExpiresAt;
     private bool jointChatPilotOn;
     private bool jointChatOffered;
+    private Couples.Application.Rewards.ConnectionProgress? progress;
 
     protected override async Task OnInitializedAsync()
     {
@@ -183,6 +220,7 @@ else
         intakeStatus = (await Intake.GetAsync(userId))?.Status;
         jointChatPilotOn = await Service<Couples.Application.Abstractions.IFeatureFlags>().IsEnabledAsync(Couples.Application.FeatureFlags.Phase2JointChat);
         jointChatOffered = jointChatPilotOn && await Service<Couples.Application.JointChat.IJointChatService>().IsOfferedAsync(userId);
+        progress = workspace is { PartnerJoined: true } ? await Service<Couples.Application.Rewards.IConnectionProgressService>().GetAsync(userId) : null;
         loading = false;
     }
 

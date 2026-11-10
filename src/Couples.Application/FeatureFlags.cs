@@ -21,6 +21,13 @@ public static class FeatureFlags
     /// <summary>The in-app feedback form. On for the pilot.</summary>
     public const string FeedbackForm = "FeedbackForm";
 
+    /// <summary>
+    /// Credits from the shared connection score and date rewards (ADR-0017). On in Development with
+    /// a sample catalog; off in Production until real reward partners or a gift-card provider exist.
+    /// The score itself is always shown.
+    /// </summary>
+    public const string DateRewards = "DateRewards";
+
     /// <summary>Every flag, for the admin overview.</summary>
-    public static IReadOnlyList<string> All { get; } = [Phase2JointChat, PilotEnrollmentRequired, FeedbackForm];
+    public static IReadOnlyList<string> All { get; } = [Phase2JointChat, PilotEnrollmentRequired, FeedbackForm, DateRewards];
 }

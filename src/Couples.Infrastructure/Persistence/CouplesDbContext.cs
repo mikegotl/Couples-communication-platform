@@ -73,6 +73,14 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
 
     public DbSet<Couples.Domain.JointChat.JointChatMessage> JointChatMessages => Set<Couples.Domain.JointChat.JointChatMessage>();
 
+    public DbSet<Couples.Domain.Rewards.CoupleRewardAccount> RewardAccounts => Set<Couples.Domain.Rewards.CoupleRewardAccount>();
+
+    public DbSet<Couples.Domain.Rewards.CreditEntry> CreditEntries => Set<Couples.Domain.Rewards.CreditEntry>();
+
+    public DbSet<Couples.Domain.Rewards.RewardOffer> RewardOffers => Set<Couples.Domain.Rewards.RewardOffer>();
+
+    public DbSet<Couples.Domain.Rewards.RewardRedemption> RewardRedemptions => Set<Couples.Domain.Rewards.RewardRedemption>();
+
     /// <summary>
     /// ASP.NET Core Data Protection key ring (cookies, antiforgery and account tokens). Shared by
     /// every web instance and kept across restarts; encrypted with a certificate outside

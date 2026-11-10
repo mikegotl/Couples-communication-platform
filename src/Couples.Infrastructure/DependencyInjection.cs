@@ -73,6 +73,12 @@ public static class DependencyInjection
         services.AddScoped<Couples.Application.JointChat.IJointChatService, Couples.Infrastructure.JointChat.JointChatService>();
         services.AddScoped<Couples.Application.JointChat.IJointChatAdminService, Couples.Infrastructure.JointChat.JointChatAdminService>();
 
+        // Shared connection score and date rewards (ADR-0017). Credits and rewards are closed unless DateRewards is on.
+        services.AddOptions<Couples.Application.Rewards.RewardsOptions>().BindConfiguration(Couples.Application.Rewards.RewardsOptions.SectionName);
+        services.AddScoped<Couples.Application.Rewards.IRewardCatalogProvider, Couples.Infrastructure.Rewards.LocalRewardCatalogProvider>();
+        services.AddScoped<Couples.Application.Rewards.IConnectionProgressService, Couples.Infrastructure.Rewards.ConnectionProgressService>();
+        services.AddScoped<Couples.Application.Rewards.IRewardCatalogAdminService, Couples.Infrastructure.Rewards.RewardCatalogAdminService>();
+
         services.AddHealthChecks()
             .AddDbContextCheck<CouplesDbContext>("database", tags: [ReadyTag]);
 

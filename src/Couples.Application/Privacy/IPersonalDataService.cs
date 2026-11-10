@@ -37,7 +37,11 @@ public sealed record PersonalDataExport(
     ExportedSafety? Safety,
     ExportedPilot? Pilot = null,
     IReadOnlyList<ExportedFeedback>? Feedback = null,
-    IReadOnlyList<ExportedJointChat>? JointChats = null);
+    IReadOnlyList<ExportedJointChat>? JointChats = null,
+    IReadOnlyList<ExportedRewardRedemption>? RewardsRedeemed = null);
+
+/// <summary>A date reward the user cashed their couple's credits in for.</summary>
+public sealed record ExportedRewardRedemption(Guid WorkspaceId, string OfferTitle, string PartnerName, int CostCredits, string VoucherCode, DateTimeOffset RedeemedAt);
 
 /// <summary>A joint chat the user took part in. The partner's lines are included only while both are still in the workspace, as for received messages.</summary>
 public sealed record ExportedJointChat(Guid Id, DateTimeOffset InvitedAt, DateTimeOffset? StartedAt, DateTimeOffset? EndedAt, IReadOnlyList<ExportedJointChatLine> Lines);

@@ -1,0 +1,377 @@
+@page "/progress"
+@inherits ScopedPage
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.Globalization
+@using Couples.Application.Rewards
+@using Couples.Domain.Common
+@using Couples.Domain.Rewards
+@inject CurrentUser CurrentUser
+@inject IDialogService Dialogs
+@inject ISnackbar Snackbar
+
+<InteractiveProviders />
+<PageTitle>Your progress together · BridgeTogether</PageTitle>
+
+@if (loading)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else if (progress is null)
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Your progress together</MudText>
+        <MudText>Your shared progress appears here once your partner has joined your workspace.</MudText>
+        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Href="workspace">Go to your workspace</MudButton></div>
+    </MudStack>
+}
+else if (!progress.ShowProgress)
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Your progress together</MudText>
+        <MudText>
+            Progress and rewards are turned off while your own safety settings keep shared features off.
+            Your partner isn't told. You can change this at any time.
+        </MudText>
+        <div><MudButton Variant="Variant.Outlined" Href="safety">Your safety</MudButton></div>
+    </MudStack>
+}
+else
+{
+    <MudStack Spacing="4">
+        <div>
+            <MudText Typo="Typo.h4" HtmlTag="h1">Your progress together</MudText>
+            <MudText>
+                A shared picture of how you two have been connecting, from the messages you've chosen to share with each
+                other. Drafts, private notes, topics and check-ins never count, and you both see exactly the same thing.
+            </MudText>
+        </div>
+
+        <MudPaper Class="pa-4 progress-hero" Outlined="true">
+            <div class="score-ring" style="--score: @progress.Score" role="img" aria-label="@($"Connection rhythm {progress.Score} out of 100")">
+                <span class="score-ring-value" aria-hidden="true">@progress.Score</span>
+                <span class="score-ring-max" aria-hidden="true">of 100</span>
+            </div>
+            <div class="progress-hero-text">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Connection rhythm</MudText>
+                <MudText Typo="Typo.body1">@TrendText()</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">@QuietText()</MudText>
+            </div>
+        </MudPaper>
+
+        <section aria-labelledby="week-heading">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h6" HtmlTag="h2" id="week-heading">This week so far</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3">Weeks run Monday to Sunday. A finished week turns into credits.</MudText>
+                <div class="score-parts">
+                    <div class="score-part">
+                        <div class="score-part-head"><span>Staying in touch</span><span>@progress.ThisWeekSoFar.StayingInTouch of @ConnectionScore.StayingInTouchMax</span></div>
+                        <MudProgressLinear Color="Color.Primary" Rounded="true" Size="Size.Medium" Value="@Pct(progress.ThisWeekSoFar.StayingInTouch, ConnectionScore.StayingInTouchMax)" aria-label="Staying in touch" />
+                        <MudText Typo="Typo.caption">@DaysText(progress.ThisWeekSoFar.ConnectedDays). A few days a week is plenty; every day earns nothing extra.</MudText>
+                    </div>
+                    <div class="score-part">
+                        <div class="score-part-head"><span>Both voices</span><span>@progress.ThisWeekSoFar.BothVoices of @ConnectionScore.BothVoicesMax</span></div>
+                        <MudProgressLinear Color="Color.Secondary" Rounded="true" Size="Size.Medium" Value="@Pct(progress.ThisWeekSoFar.BothVoices, ConnectionScore.BothVoicesMax)" aria-label="Both voices" />
+                        <MudText Typo="Typo.caption">@(progress.ThisWeekSoFar.BackAndForth ? "You've heard from each other this week." : "A reply, or a message from each of you, fills this in.")</MudText>
+                    </div>
+                    <div class="score-part">
+                        <div class="score-part-head"><span>Kind words</span><span>@progress.ThisWeekSoFar.KindWords of @ConnectionScore.KindWordsMax</span></div>
+                        <MudProgressLinear Color="Color.Primary" Rounded="true" Size="Size.Medium" Value="@Pct(progress.ThisWeekSoFar.KindWords, ConnectionScore.KindWordsMax)" aria-label="Kind words" />
+                        <MudText Typo="Typo.caption">The share of messages with thanks, appreciation, warmth or an apology. Sending more doesn't change it.</MudText>
+                    </div>
+                </div>
+            </MudPaper>
+        </section>
+
+        @if (progress.RecentWeeks.Count > 0)
+        {
+            <section aria-labelledby="weeks-heading">
+                <MudPaper Class="pa-4" Outlined="true">
+                    <MudText Typo="Typo.h6" HtmlTag="h2" id="weeks-heading">Recent weeks</MudText>
+                    <ol class="week-bars">
+                        @foreach (var week in progress.RecentWeeks)
+                        {
+                            <li>
+                                <span class="week-bar-value">@week.Total</span>
+                                <span class="week-bar" style="--h: @Math.Max(4, week.Total)%" aria-hidden="true"></span>
+                                <span class="week-bar-label"><span class="visually-hidden">Week of </span>@WeekLabel(week.WeekStart)</span>
+                            </li>
+                        }
+                    </ol>
+                </MudPaper>
+            </section>
+        }
+
+        <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Icon="@Icons.Material.Outlined.Lightbulb">
+            <strong>@TipTitle().</strong> @TipText() Taking a break is healthy too: quiet weeks never take credits away.
+        </MudAlert>
+
+        @if (progress.Rewards is { } rewards)
+        {
+            <section aria-labelledby="rewards-heading">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h5" HtmlTag="h2" id="rewards-heading">Date rewards</MudText>
+
+                    <MudPaper Class="pa-4 credits-card" Outlined="true">
+                        <div class="credits-balance">
+                            <span class="credits-number">@rewards.Balance</span>
+                            <span class="credits-label">shared credits</span>
+                        </div>
+                        <div class="credits-next">
+                            @if (rewards.Suggestion is { } suggested)
+                            {
+                                <MudText Typo="Typo.h6" HtmlTag="p">You've earned a date night!</MudText>
+                                <MudText Typo="Typo.body2">
+                                    You have enough for <strong>@suggested.Title</strong> from @suggested.PartnerName.
+                                    Why not cash in and plan some time together?
+                                </MudText>
+                                <div class="mt-2">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => RedeemAsync(suggested)" Disabled="busy">Cash in for this date</MudButton>
+                                </div>
+                            }
+                            else if (rewards.NextGoal is { } goal)
+                            {
+                                <MudText Typo="Typo.body1"><strong>@(goal.CostCredits - rewards.Balance) more</strong> to @goal.Title.</MudText>
+                                <MudProgressLinear Color="Color.Primary" Rounded="true" Size="Size.Medium" Class="mt-2" Value="@Pct(rewards.Balance, goal.CostCredits)" aria-label="@($"Progress towards {goal.Title}")" />
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">There are no rewards to choose from near you yet. Check back soon.</MudText>
+                            }
+                        </div>
+                    </MudPaper>
+
+                    <MudPaper Class="pa-4" Outlined="true">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.h6" HtmlTag="h3">Rewards near you</MudText>
+                            <MudText Typo="Typo.body2">
+                                Add your town or area to see local offers as well as ones you can use anywhere. It's used only to choose
+                                which rewards to show, and either of you can change it.
+                            </MudText>
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+                                <MudTextField @bind-Value="area" Label="Town or area" Variant="Variant.Outlined" MaxLength="80" Style="min-width: 16rem" Immediate="true" />
+                                <MudButton Variant="Variant.Outlined" OnClick="SaveAreaAsync" Disabled="busy">Save</MudButton>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+
+                    @if (rewards.Offers.Count > 0)
+                    {
+                        <ul class="reward-grid">
+                            @foreach (var offer in rewards.Offers)
+                            {
+                                var affordable = offer.CostCredits <= rewards.Balance;
+                                <li class="reward-card">
+                                    <div class="reward-card-top">
+                                        <MudIcon Icon="@KindIcon(offer.Kind)" Class="reward-icon" aria-hidden="true" />
+                                        <span class="reward-cost">@offer.CostCredits credits</span>
+                                    </div>
+                                    <h3 class="reward-title">@offer.Title</h3>
+                                    <p class="reward-partner">@offer.PartnerName · @(offer.Area ?? "Anywhere")</p>
+                                    @if (!string.IsNullOrEmpty(offer.Description))
+                                    {
+                                        <p class="reward-description">@offer.Description</p>
+                                    }
+                                    @if (offer.IsSample)
+                                    {
+                                        <p class="reward-sample">Sample offer for trying the app</p>
+                                    }
+                                    <div class="reward-action">
+                                        <MudButton Variant="@(affordable ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" Disabled="@(busy || !affordable)"
+                                                   OnClick="() => RedeemAsync(offer)" aria-label="@($"Cash in {offer.CostCredits} credits for {offer.Title}")">
+                                            @(affordable ? "Cash in" : $"{offer.CostCredits - rewards.Balance} more to go")
+                                        </MudButton>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    @if (rewards.Redemptions.Count > 0)
+                    {
+                        <MudPaper Class="pa-4" Outlined="true">
+                            <MudText Typo="Typo.h6" HtmlTag="h3">Your rewards</MudText>
+                            <ul class="voucher-list">
+                                @foreach (var r in rewards.Redemptions)
+                                {
+                                    <li class="voucher">
+                                        <div>
+                                            <strong>@r.OfferTitle</strong> · @r.PartnerName
+                                            <div class="voucher-meta">@(r.RedeemedByMe ? "You" : "Your partner") cashed in @r.CostCredits credits on @Format(r.RedeemedAt)@(r.ExpiresAt is { } e ? $". Use by {Format(e)}" : "").</div>
+                                        </div>
+                                        <code class="voucher-code breakable">@r.VoucherCode</code>
+                                        <div class="voucher-meta">@r.Instructions</div>
+                                    </li>
+                                }
+                            </ul>
+                        </MudPaper>
+                    }
+
+                    <MudExpansionPanels Outlined="true" Elevation="0">
+                        <MudExpansionPanel Text="How credits work">
+                            <ul class="privacy-tips">
+                                <li>Each finished week earns one credit for every 10 points of your connection rhythm, plus @ConnectionScore.GrowthBonus bonus credits when it grows by 10 or more.</li>
+                                <li>Credits are shared. Either of you can cash them in, and you'll both see the voucher.</li>
+                                <li>Quiet weeks or breaks never take credits away.</li>
+                                <li>The score looks only at messages you've shared with each other. It never reads drafts, private notes, topics or your safety check-in, and it is never split into who did what.</li>
+                            </ul>
+                            @if (rewards.History.Count > 0)
+                            {
+                                <MudText Typo="Typo.subtitle2" HtmlTag="h3" Class="mt-3">Recent credits</MudText>
+                                <MudSimpleTable Dense="true" Elevation="0">
+                                    <tbody>
+                                        @foreach (var line in rewards.History)
+                                        {
+                                            <tr>
+                                                <th scope="row">@HistoryLabel(line)</th>
+                                                <td class="credits-amount">@(line.Amount > 0 ? "+" : "")@line.Amount</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </MudSimpleTable>
+                            }
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                </MudStack>
+            </section>
+        }
+
+        <div><MudButton Variant="Variant.Text" Href="workspace">Back to your workspace</MudButton></div>
+    </MudStack>
+}
+
+@code {
+    private IConnectionProgressService Progress => Service<IConnectionProgressService>();
+
+    private bool loading = true;
+    private bool busy;
+    private Guid userId;
+    private ConnectionProgress? progress;
+    private string? area;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        await RefreshAsync();
+        loading = false;
+    }
+
+    private async Task RefreshAsync()
+    {
+        progress = await Progress.GetAsync(userId);
+        area = progress?.Rewards?.Area;
+    }
+
+    private async Task RedeemAsync(RewardOfferView offer)
+    {
+        var confirmed = await Dialogs.ShowMessageBoxAsync(
+            $"Cash in {offer.CostCredits} credits?",
+            $"This uses {offer.CostCredits} of your shared credits on {offer.Title} from {offer.PartnerName}. You'll get a voucher code, and your partner will see it too.",
+            yesText: "Cash in", cancelText: "Not yet");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var result = await Progress.RedeemAsync(userId, offer.Id);
+            if (result.Succeeded)
+            {
+                Snackbar.Add($"Enjoy your date! Your code is {result.Value.VoucherCode}.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(result.Error switch
+                {
+                    DomainError.Conflict => "Your credits changed a moment ago. Please check and try again.",
+                    DomainError.Validation => "You don't have enough credits for that yet.",
+                    _ => "That reward isn't available right now.",
+                }, Severity.Warning);
+            }
+
+            await RefreshAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task SaveAreaAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = await Progress.SetAreaAsync(userId, area);
+            Snackbar.Add(result.Succeeded ? "Saved. Showing rewards for your area." : "Couldn't save that. Use up to 80 characters.", result.Succeeded ? Severity.Success : Severity.Warning);
+            await RefreshAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static double Pct(int value, int max) => max <= 0 ? 0 : Math.Clamp(100.0 * value / max, 0, 100);
+
+    private string TrendText()
+    {
+        if (progress!.PreviousScore is not { } before)
+        {
+            return progress.RecentWeeks.Count == 0
+                ? "Your first week together here. The score grows as you share messages over the coming weeks."
+                : "Your average over the last few weeks. Keep going to see how it changes.";
+        }
+
+        var change = progress.Score - before;
+        return change switch
+        {
+            >= 5 => $"Up {change} on the four weeks before. Lovely to see.",
+            <= -5 => "A little lower than the four weeks before. That's okay; every week is a fresh start.",
+            _ => "About the same as the four weeks before. Steady is good.",
+        };
+    }
+
+    private string QuietText() => progress!.LongestQuietStretchDays switch
+    {
+        0 => "You've been in touch every day lately.",
+        <= 3 => $"Your longest quiet stretch in the last four weeks was {DaysWord(progress.LongestQuietStretchDays)}. You've stayed in touch steadily.",
+        _ => $"Your longest quiet stretch in the last four weeks was {DaysWord(progress.LongestQuietStretchDays)}. Breaks happen; a short check-in is a gentle way back.",
+    };
+
+    private string TipTitle() => progress!.Tip == ProgressTip.KeepItUp ? "You're doing well" : "A small idea";
+
+    private string TipText() => progress!.Tip switch
+    {
+        ProgressTip.StayInTouch => "A short check-in on a few days of the week is plenty. Even \"thinking of you\" counts.",
+        ProgressTip.BothVoices => "Try replying to something your partner shared, even with a line or two.",
+        ProgressTip.KindWords => "Try naming one thing you appreciated about each other this week. The coach can help you find the words.",
+        _ => "Keep doing what's working for you both.",
+    };
+
+    private static string DaysText(int days) => days switch
+    {
+        0 => "No messages yet this week",
+        1 => "In touch on 1 day",
+        _ => $"In touch on {days} days",
+    };
+
+    private static string DaysWord(int days) => days == 1 ? "1 day" : $"{days} days";
+
+    private static string WeekLabel(DateOnly week) => week.ToString("d MMM", CultureInfo.InvariantCulture);
+
+    private static string Format(DateTimeOffset at) => at.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+
+    private static string HistoryLabel(CreditHistoryLine line) => line.WeekStart is { } week
+        ? $"Week of {WeekLabel(week)}: rhythm {line.WeekScore}"
+        : $"Cashed in for {line.RewardTitle ?? "a reward"}";
+
+    private static string KindIcon(RewardKind kind) => kind switch
+    {
+        RewardKind.Restaurant => Icons.Material.Outlined.Restaurant,
+        RewardKind.Experience => Icons.Material.Outlined.LocalActivity,
+        _ => Icons.Material.Outlined.CardGiftcard,
+    };
+}
