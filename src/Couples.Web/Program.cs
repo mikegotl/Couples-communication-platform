@@ -44,12 +44,14 @@ builder.Services.AddOptions<Couples.Web.Safety.SafetyOptions>()
     .Validate(o => o.Resources.All(r => !string.IsNullOrWhiteSpace(r.Name) && (r.Url is null || r.Url.Scheme == Uri.UriSchemeHttps)), "Safety:Resources need a name, and links must be https.")
     .ValidateOnStart();
 
-builder.Services.AddAuthentication(options =>
+var authentication = builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
-    .AddIdentityCookies();
+    });
+authentication.AddIdentityCookies();
+// Google and Apple sign-in, each only when its settings are present (ADR-0016).
+authentication.AddExternalSignIn(builder.Configuration);
 
 builder.Services.ConfigureApplicationCookie(options =>
 {

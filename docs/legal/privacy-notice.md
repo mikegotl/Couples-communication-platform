@@ -19,6 +19,7 @@ therapy, counselling, diagnosis, a crisis service or an emergency service.
 | What | Why | Legal basis (to confirm) |
 |------|-----|--------------------------|
 | Email address and password (stored as a salted hash), sign-in and security settings | To run your account and keep it secure | Contract |
+| If you sign in with Google or Apple: the email address and account id they send us (Google may also send your name, which we don't keep). Google or Apple learns that you use BridgeTogether | To let you sign in without a password | Contract |
 | What you write: reflections, topics, exercise answers, drafts | To let you use the private features | Contract; explicit consent for special-category data you choose to write |
 | Messages you choose to share, and a record of your approval | To deliver them to your partner and prove what you agreed to send | Contract |
 | Your safety check answers and safety mode | To hold shared features and show support options | Explicit consent; you can delete them at any time |
