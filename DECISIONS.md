@@ -21,6 +21,7 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0014](docs/adr/0014-private-pilot-observability-and-staging.md) | Private pilot enrollment, scrubbed observability, Azure UK staging | Accepted |
 | [0015](docs/adr/0015-phase-2-joint-chat-behind-flag-and-sign-off.md) | Phase 2 joint chat behind a flag, two sign-offs and per-workspace eligibility | Accepted (not activated) |
 | [0016](docs/adr/0016-google-and-apple-sign-in.md) | Google and Apple sign-in, linked by verified email only | Accepted |
+| [0017](docs/adr/0017-connection-score-and-date-rewards.md) | Shared connection score, credits and date rewards behind `DateRewards` | Accepted |
 
 ## Open decisions (owner)
 
@@ -37,6 +38,8 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
   (`docs/operations/pilot-readiness.md`).
 - Google OAuth client and Apple Services ID and key, if sign-in with them is wanted
   (`docs/operations/external-sign-in.md`); Apple needs a paid developer membership.
+- Real date-reward partners or a gift-card provider, what a credit is worth and a budget, before
+  `DateRewards` is turned on outside Development (ADR-0017).
 - The pilot invitation code, and the named incident roles (`docs/operations/incident-response.md`).
 - Independent clinical and security sign-off of joint chat before any workspace is made eligible
   (`docs/safety/joint-chat-review.md`); until then `Phase2JointChat` stays off everywhere.

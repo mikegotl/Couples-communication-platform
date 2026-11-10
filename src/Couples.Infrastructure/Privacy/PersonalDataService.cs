@@ -147,11 +147,17 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
             [.. chatLines.Where(l => l.SessionId == c.Id && (l.AuthorUserId == userId || c.PartnerVisible))
                 .Select(l => new ExportedJointChatLine(l.AuthorUserId == userId, l.Body, l.SentAt))])).ToList();
 
+        var rewards = await db.RewardRedemptions.AsNoTracking()
+            .Where(r => r.RedeemedByUserId == userId)
+            .OrderBy(r => r.CreatedAt)
+            .Select(r => new ExportedRewardRedemption(r.WorkspaceId, r.OfferTitle, r.PartnerName, r.CostCredits, r.VoucherCode, r.CreatedAt))
+            .ToListAsync(cancellationToken);
+
         var now = clock.UtcNow;
         db.AuditEvents.Add(AuditEvent.Record(userId, AuditActions.DataExported, null, null, now));
         await db.SaveChangesAsync(cancellationToken);
 
-        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts, coaching, pace, notifications, safety, pilot, feedback, jointChats);
+        return new PersonalDataExport(now, userId, memberships, reflections, drafts, sent, received, consents, intake, attempts, coaching, pace, notifications, safety, pilot, feedback, jointChats, rewards);
     }
 
     public async Task<Guid> RequestDeletionAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -246,6 +252,9 @@ internal sealed partial class PersonalDataService(CouplesDbContext db, IClock cl
         await db.JointChatSessions.Where(c => c.InitiatorUserId == userId || c.InviteeUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.JointChatEligibility.Where(e => e.GrantedByUserId == userId)
             .ExecuteUpdateAsync(set => set.SetProperty(e => e.GrantedByUserId, Guid.Empty), cancellationToken);
+        // Rewards belong to the couple; the partner keeps them, without the link to who chose each one.
+        await db.RewardRedemptions.Where(r => r.RedeemedByUserId == userId)
+            .ExecuteUpdateAsync(set => set.SetProperty(r => r.RedeemedByUserId, Guid.Empty), cancellationToken);
         await db.DraftMessages.Where(d => d.OwnerUserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.ConsentRecords.Where(c => c.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.Invitations.Where(i => i.CreatedByUserId == userId).ExecuteDeleteAsync(cancellationToken);

@@ -103,6 +103,7 @@ if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 }
 
 await Couples.Web.Administration.AdminBootstrap.RunAsync(app.Services, app.Configuration, app.Logger);
+await Couples.Infrastructure.Rewards.SampleRewardCatalog.SeedIfEmptyAsync(app.Services);
 
 // First, so HTTPS redirection, HSTS, cookies and rate limits see the real scheme and client.
 if (app.Configuration.GetValue<bool>("ForwardedHeaders:Enabled"))

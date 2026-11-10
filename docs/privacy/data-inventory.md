@@ -45,6 +45,10 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `JointChatEligibility` | `joint_chat_eligibility` | Internal | Admins (`/admin/joint-chat`) | Which workspaces may use the joint chat pilot: workspace id, a short pilot reference (never a name), who granted it and when. Removed with the workspace; the granting admin's id is unlinked if that admin deletes their account. |
 | `JointChatSession` | `joint_chat_sessions` | Personal | The two partners in it | Ids, times, turn and pause state, how it ended. Deleted with its transcript 7 days after it ends, or at once when either partner deletes their account. |
 | `JointChatMessage` | `joint_chat_messages` | SharedSensitive | Both partners in the chat, while both are members | Text both partners agreed to exchange in a joint chat. Readable during the chat and for 7 days after it ends, then deleted; deleted at once if either partner deletes their account. Held (moderated) text is never stored. |
+| `CoupleRewardAccount` | `reward_accounts` | Personal | Both partners | Shared credit balance, the town or area typed for local rewards, and scoring progress. No per-person figures or text. Deleted with the workspace; reset to zero when the pair changes. |
+| `CreditEntry` | `credit_entries` | Personal | Both partners | Weekly couple-level score and credits earned, or credits spent. Deleted with the workspace. |
+| `RewardOffer` | `reward_offers` | Internal | Everyone signed in (active offers); admins (`/admin/rewards`) | Reward catalog managed by admins. Hidden rather than deleted while redemptions refer to it. |
+| `RewardRedemption` | `reward_redemptions` | Personal | Both partners | Which reward the couple chose, its voucher code and who chose it. Admins see counts only. Deleted with the workspace; the redeeming partner's id is unlinked if they delete their account. |
 | `DataDeletionRequest` | `data_deletion_requests` | Internal | Operators (no UI yet) | 400 days after completion. |
 | `DataProtectionKey` | `data_protection_keys` | Internal (secret) | The app only | ASP.NET Core Data Protection key ring for cookies, antiforgery and account tokens. Encrypted with a certificate outside Development (ADR-0013); a new key is created every 90 days. |
 
@@ -90,7 +94,7 @@ to a live provider unless `Coaching:Provider` is `Gateway` and the owner has set
    pilot enrollment, joint chats they took part in (with both partners' lines), feedback linked to them (anonymous feedback has no link and ages out after
    365 days), notifications, shared messages sent or received, drafts, consent records, invitations they
    issued or accepted, memberships, then the account, in one transaction. Workspaces they created
-   lose the link to them.
+   lose the link to them, and date rewards they chose stay with the couple's workspace without it.
 3. If processing fails, the worker retries pending requests every 5 minutes.
 4. The partner keeps their account, their private data and the workspace.
 5. Afterwards no column holding a user id contains theirs, except the audit events (ids only)

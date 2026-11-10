@@ -1,0 +1,185 @@
+@page "/admin/rewards"
+@inherits ScopedPage
+@attribute [Authorize(Roles = Couples.Web.Administration.AdminBootstrap.AdminRole)]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Rewards
+@using Couples.Domain.Rewards
+@inject CurrentUser CurrentUser
+
+<InteractiveProviders />
+<PageTitle>Date rewards · Admin · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Date rewards</MudText>
+    <MudText Typo="Typo.body2">
+        Offers couples can cash their shared credits in for. Only list a real business once it has agreed in writing to
+        honour the codes, and mark anything else as a sample. Couples see offers with no area everywhere, and offers with an
+        area only if they typed the same town or area. Which couple redeemed what is never shown here.
+    </MudText>
+
+    @if (view is null)
+    {
+        <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Outlined="true">
+            <tbody>
+                <tr><th scope="row">DateRewards flag</th><td>@(view.FlagOn ? "On: couples earn credits and can cash them in" : "Off: couples see their score only")</td></tr>
+                <tr><th scope="row">Provider</th><td>@view.Provider</td></tr>
+            </tbody>
+        </MudSimpleTable>
+
+        <section aria-labelledby="offers-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="offers-heading">Offers</MudText>
+            @if (view.Offers.Count == 0)
+            {
+                <MudText Typo="Typo.body2">None yet.</MudText>
+            }
+            else
+            {
+                <div class="table-scroll" tabindex="0" role="region" aria-labelledby="offers-heading">
+                    <MudSimpleTable Dense="true" Outlined="true">
+                        <thead><tr><th scope="col">Offer</th><th scope="col">Area</th><th scope="col">Credits</th><th scope="col">Redeemed</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                        <tbody>
+                            @foreach (var o in view.Offers)
+                            {
+                                <tr>
+                                    <td><strong>@o.Details.Title</strong><br /><span class="voucher-meta">@o.Details.PartnerName · @o.Details.Kind@(o.Details.IsSample ? " · sample" : "")</span></td>
+                                    <td>@(o.Details.Area ?? "Anywhere")</td>
+                                    <td>@o.Details.CostCredits</td>
+                                    <td>@o.TimesRedeemed</td>
+                                    <td>@(o.IsActive ? "Shown" : "Hidden")</td>
+                                    <td>
+                                        <MudStack Row="true" Spacing="1">
+                                            <MudButton Size="Size.Small" Variant="Variant.Text" Disabled="busy" OnClick="() => Edit(o)">Edit<span class="visually-hidden"> @o.Details.Title</span></MudButton>
+                                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Disabled="busy" OnClick="() => SetActiveAsync(o.Id, !o.IsActive)">@(o.IsActive ? "Hide" : "Show")<span class="visually-hidden"> @o.Details.Title</span></MudButton>
+                                        </MudStack>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </div>
+            }
+        </section>
+
+        <section aria-labelledby="edit-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="edit-heading">@(editingId is null ? "Add an offer" : "Edit offer")</MudText>
+            <MudStack Spacing="2">
+                <MudTextField T="string" @bind-Value="title" Label="Title" MaxLength="RewardOffer.MaxTitleLength" Variant="Variant.Outlined" HelperText="For example: Dinner for two" />
+                <MudTextField T="string" @bind-Value="partner" Label="Business or provider" MaxLength="RewardOffer.MaxPartnerLength" Variant="Variant.Outlined" />
+                <MudTextField T="string" @bind-Value="description" Label="Description" Lines="2" MaxLength="RewardOffer.MaxDescriptionLength" Variant="Variant.Outlined" />
+                <MudTextField T="string" @bind-Value="area" Label="Town or area (leave empty for anywhere)" MaxLength="RewardOffer.MaxAreaLength" Variant="Variant.Outlined" />
+                <MudSelect T="RewardKind" @bind-Value="kind" Label="Kind" Variant="Variant.Outlined">
+                    <MudSelectItem T="RewardKind" Value="RewardKind.Restaurant">Restaurant</MudSelectItem>
+                    <MudSelectItem T="RewardKind" Value="RewardKind.Experience">Experience</MudSelectItem>
+                    <MudSelectItem T="RewardKind" Value="RewardKind.GiftCard">Gift card</MudSelectItem>
+                </MudSelect>
+                <MudNumericField T="int" @bind-Value="cost" Label="Cost in credits" Min="RewardOffer.MinCost" Max="RewardOffer.MaxCost" Variant="Variant.Outlined"
+                                 HelperText="A very good week earns about 10 credits." />
+                <MudCheckBox T="bool" @bind-Value="isSample" Label="Sample offer (not a real business)" Color="Color.Primary" />
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="busy" OnClick="SaveAsync">@(editingId is null ? "Add offer" : "Save changes")</MudButton>
+                    @if (editingId is not null)
+                    {
+                        <MudButton Variant="Variant.Text" Disabled="busy" OnClick="Reset">Cancel</MudButton>
+                    }
+                </MudStack>
+            </MudStack>
+        </section>
+
+        @if (message is not null)
+        {
+            <MudAlert Severity="@(failed ? Severity.Error : Severity.Success)" Variant="Variant.Outlined" role="status">@message</MudAlert>
+        }
+
+        <MudText Typo="Typo.body2">
+            Connecting a gift-card service or a local-partner platform instead of this catalog is described in ADR-0017
+            (<code>IRewardCatalogProvider</code>).
+        </MudText>
+    }
+</MudStack>
+
+@code {
+    private IRewardCatalogAdminService Admin => Service<IRewardCatalogAdminService>();
+
+    private Guid userId;
+    private RewardCatalogAdminView? view;
+    private bool busy;
+    private bool failed;
+    private string? message;
+    private Guid? editingId;
+    private string? title;
+    private string? partner;
+    private string? description;
+    private string? area;
+    private RewardKind kind = RewardKind.Restaurant;
+    private int cost = 40;
+    private bool isSample;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Admin.GetAsync(userId);
+        view = result.Succeeded ? result.Value : new RewardCatalogAdminView(false, "-", []);
+    }
+
+    private void Edit(AdminRewardOffer offer)
+    {
+        editingId = offer.Id;
+        (title, partner, description, area, kind, cost, isSample) =
+            (offer.Details.Title, offer.Details.PartnerName, offer.Details.Description, offer.Details.Area, offer.Details.Kind, offer.Details.CostCredits, offer.Details.IsSample);
+        message = null;
+    }
+
+    private void Reset()
+    {
+        editingId = null;
+        (title, partner, description, area, kind, cost, isSample) = (null, null, null, null, RewardKind.Restaurant, 40, false);
+    }
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        try
+        {
+            var details = new RewardOfferDetails(title, partner, description, area, kind, cost, isSample);
+            var ok = editingId is { } id
+                ? (await Admin.UpdateAsync(userId, id, details)).Succeeded
+                : (await Admin.CreateAsync(userId, details)).Succeeded;
+            failed = !ok;
+            message = ok ? "Saved." : $"Check the fields: a title and business are needed, and the cost must be {RewardOffer.MinCost} to {RewardOffer.MaxCost} credits.";
+            if (ok)
+            {
+                Reset();
+                await LoadAsync();
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task SetActiveAsync(Guid id, bool active)
+    {
+        busy = true;
+        try
+        {
+            var result = await Admin.SetActiveAsync(userId, id, active);
+            failed = !result.Succeeded;
+            message = result.Succeeded ? (active ? "Offer shown to couples." : "Offer hidden from couples.") : "Couldn't change that offer.";
+            await LoadAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

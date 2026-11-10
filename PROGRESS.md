@@ -495,3 +495,15 @@ Font License, in `wwwroot/fonts`). Buttons are no longer all capitals and the he
 a solid colour bar. The signed-in home page now offers "Go to your workspace" in place of "Create an
 account". Accessibility was re-checked (see `docs/accessibility/audit-2026-11.md`).
 
+## After milestone 12: Progress score and date rewards (2026-11-10)
+
+The owner asked for couples to see improving communication scored on their dashboard and to earn
+credits they can cash in for free dates. Added a shared "connection rhythm" score (`/progress` and
+a workspace card) from shared messages only, weekly credits, date rewards with a provider
+interface and an admin catalog (`/admin/rewards`), behind the `DateRewards` flag (on in
+Development with sample offers, off in Production). Rewards switch off silently when either
+partner's safety settings hold joint features. Design and safeguards: ADR-0017. Migration
+`DateRewards`.
+
+**Not yet (owner)**: real reward partners or a gift-card provider, the value of a credit and a budget.
+

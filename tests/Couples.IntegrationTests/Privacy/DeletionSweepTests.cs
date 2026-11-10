@@ -138,6 +138,17 @@ public sealed class DeletionSweepTests(PostgresFixture db)
             Assert.True((await chat.SendAsync(b, second.Value.SessionId!.Value, "Hello from B")).Succeeded);
             Assert.True((await chat.PauseAsync(a, second.Value.SessionId!.Value, 5)).Succeeded);
         }
+
+        // Date rewards: A cashed in the couple's credits for a voucher.
+        await using (var provider = db.BuildServices())
+        {
+            await using var scope = provider.CreateAsyncScope();
+            var context = scope.ServiceProvider.GetRequiredService<CouplesDbContext>();
+            var offer = Couples.Domain.Rewards.RewardOffer.Create(new Couples.Domain.Rewards.RewardOfferDetails("Dinner", "Bistro", null, null, Couples.Domain.Rewards.RewardKind.Restaurant, 10, true), db.Clock.UtcNow).Value;
+            context.RewardOffers.Add(offer);
+            context.RewardRedemptions.Add(Couples.Domain.Rewards.RewardRedemption.Reserve(workspace.Value.Id, offer, a, "Local", db.Clock.UtcNow));
+            await context.SaveChangesAsync();
+        }
     }
 
     private static List<(string Key, string Table, string Column)> UserColumns()
