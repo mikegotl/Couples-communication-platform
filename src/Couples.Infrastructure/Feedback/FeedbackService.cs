@@ -23,7 +23,9 @@ internal sealed class FeedbackService(CouplesDbContext db, IClock clock, IMemory
         var key = "feedback:" + userId.ToString("N") + ":" + now.UtcDateTime.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         var count = cache.GetOrCreate(key, e =>
         {
-            e.AbsoluteExpiration = now.UtcDateTime.Date.AddDays(1);
+            // Relative to IClock, not the cache's own wall clock, so the entry lives until the end of
+            // the clock's UTC day even when IClock and the system clock disagree (as in tests).
+            e.AbsoluteExpirationRelativeToNow = now.UtcDateTime.Date.AddDays(1) - now.UtcDateTime;
             return new Counter();
         })!;
         if (count.Value >= IFeedbackService.DailyLimit)
