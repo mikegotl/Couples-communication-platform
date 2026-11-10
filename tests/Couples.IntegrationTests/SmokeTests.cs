@@ -23,6 +23,19 @@ public sealed class SmokeTests(CouplesWebFactory factory) : IClassFixture<Couple
     }
 
     [Fact]
+    public async Task HomePageShowsCitedExpertQuotesWithSourceLinks()
+    {
+        using var client = factory.CreateClient();
+
+        var html = await client.GetStringAsync(new Uri("/", UriKind.Relative));
+
+        Assert.Contains("What relationship researchers and therapists say", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"https://www.gottman.com/blog/the-four-horsemen-the-antidotes/\"", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"https://www.apa.org/topics/marriage-relationships/healthy-relationships\"", html, StringComparison.Ordinal);
+        Assert.Contains("not affiliated with BridgeTogether", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task LivenessEndpointIsHealthyWithoutDatabase()
     {
         using var client = factory.CreateClient();
