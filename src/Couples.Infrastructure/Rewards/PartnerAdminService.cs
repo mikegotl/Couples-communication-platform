@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Couples.Infrastructure.Rewards;
 
 /// <summary>Admin review of partner applications and the date ideas list. Checks the Admin role itself.</summary>
-internal sealed class PartnerAdminService(CouplesDbContext db, IClock clock) : IPartnerAdminService, IDateIdeaAdminService, IDateIdeaProvider
+internal sealed class PartnerAdminService(CouplesDbContext db, IClock clock, ILocalPlaceSearch places) : IPartnerAdminService, IDateIdeaAdminService, IDateIdeaProvider
 {
     private const string AdminRole = "ADMIN";
 
@@ -148,15 +148,44 @@ internal sealed class PartnerAdminService(CouplesDbContext db, IClock clock) : I
         return Result.Ok();
     }
 
+    /// <summary>Curated local ideas first, then real places for the town, then ideas that work anywhere.</summary>
     async Task<IReadOnlyList<DateIdeaView>> IDateIdeaProvider.ListAsync(string? area, int max, CancellationToken cancellationToken)
     {
         var active = await db.DateIdeas.AsNoTracking().Where(i => i.IsActive).OrderBy(i => i.Title).ToListAsync(cancellationToken);
-        return [.. active
-            .Where(i => i.AvailableIn(area))
-            .OrderBy(i => i.Area is null) // local ideas first
-            .Take(max)
-            .Select(i => new DateIdeaView(i.Id, i.Title, i.Description, i.Area, i.Kind, i.Url))];
+        var curated = active.Where(i => i.AvailableIn(area)).Select(i => new DateIdeaView(i.Id, i.Title, i.Description, i.Area, i.Kind, i.Url)).ToList();
+        var local = curated.Where(i => i.Area is not null).Take(max).ToList();
+        var anywhere = curated.Where(i => i.Area is null).ToList();
+
+        var found = new List<DateIdeaView>();
+        if (!string.IsNullOrWhiteSpace(area) && places.Enabled)
+        {
+            // Leave room for a few general ideas when there are enough of them.
+            var room = Math.Max(0, max - local.Count - Math.Min(anywhere.Count, max / 3));
+            found = [.. (await places.SearchAsync(area, room, cancellationToken)).Select(p => new DateIdeaView(
+                Guid.CreateVersion7(),
+                p.Name,
+                string.IsNullOrEmpty(p.Category) ? p.Address : $"{p.Category} · {p.Address}",
+                area.Trim(),
+                KindOf(p.PrimaryType),
+                p.MapsUrl,
+                FromGoogleMaps: true))];
+        }
+
+        return [.. local.Concat(found).Concat(anywhere).Take(max)];
     }
+
+    private static DateIdeaKind KindOf(string? primaryType) => primaryType switch
+    {
+        null => DateIdeaKind.Activity,
+        _ when primaryType.Contains("restaurant", StringComparison.Ordinal) || primaryType.Contains("cafe", StringComparison.Ordinal)
+            || primaryType.Contains("bar", StringComparison.Ordinal) || primaryType.Contains("bakery", StringComparison.Ordinal)
+            || primaryType.Contains("food", StringComparison.Ordinal) || primaryType.Contains("ice_cream", StringComparison.Ordinal) => DateIdeaKind.FoodAndDrink,
+        _ when primaryType.Contains("park", StringComparison.Ordinal) || primaryType.Contains("garden", StringComparison.Ordinal)
+            || primaryType.Contains("beach", StringComparison.Ordinal) || primaryType.Contains("hiking", StringComparison.Ordinal) => DateIdeaKind.Outdoors,
+        _ when primaryType.Contains("museum", StringComparison.Ordinal) || primaryType.Contains("gallery", StringComparison.Ordinal)
+            || primaryType.Contains("theater", StringComparison.Ordinal) || primaryType.Contains("historical", StringComparison.Ordinal) => DateIdeaKind.Culture,
+        _ => DateIdeaKind.Activity,
+    };
 
     private async Task<RewardPartner?> FindPartnerAsync(Guid adminUserId, Guid partnerId, CancellationToken cancellationToken) =>
         await IsAdminAsync(adminUserId, cancellationToken)

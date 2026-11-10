@@ -147,6 +147,9 @@ Local businesses apply at `/partners`; an admin approves them at `/admin/partner
 their offer and a private check link (`/partner/check/...`) where the business confirms a couple's
 code and marks it used. "Date ideas near you" (managed at `/admin/rewards`) are suggestions with no
 voucher (ADR-0018). Recruiting partners: [playbook](docs/operations/reward-partners.md).
+With a Google key configured, the same section also shows real places in the couple's town from
+Google Places, each linking to Google Maps (ADR-0019, off by default;
+[setup](docs/operations/google-places.md)).
 
 ### Observability
 

@@ -25,7 +25,7 @@ internal sealed class ConnectionProgressService(
 {
     private const int RecentWeekCount = 8;
     private const int MaxCatchUpWeeks = 26;
-    private const int IdeasShown = 6;
+    private const int IdeasShown = 9;
 
     public async Task<ConnectionProgress?> GetAsync(Guid userId, CancellationToken cancellationToken = default)
     {

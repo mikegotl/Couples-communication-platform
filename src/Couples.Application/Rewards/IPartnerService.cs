@@ -50,9 +50,8 @@ public interface IPartnerAdminService
 public sealed record AdminPartner(Guid Id, PartnerApplication Application, PartnerStatus Status, DateTimeOffset AppliedAt, int Offers, int VouchersIssued, int VouchersUsed);
 
 /// <summary>
-/// Where "date ideas near you" come from. The built-in provider reads the admin-managed list. A
-/// places service (for example Google Places) can implement this later; it must be given only the
-/// town or area, never anything else about the couple.
+/// Where "date ideas near you" come from: the admin-managed list, plus real places for the
+/// couple's town from <see cref="ILocalPlaceSearch"/> when that is configured.
 /// </summary>
 public interface IDateIdeaProvider
 {
@@ -60,7 +59,8 @@ public interface IDateIdeaProvider
     Task<IReadOnlyList<DateIdeaView>> ListAsync(string? area, int max, CancellationToken cancellationToken = default);
 }
 
-public sealed record DateIdeaView(Guid Id, string Title, string Description, string? Area, DateIdeaKind Kind, string? Url);
+/// <param name="FromGoogleMaps">A real place found through Google Places; its link goes to Google Maps and it must be credited to Google.</param>
+public sealed record DateIdeaView(Guid Id, string Title, string Description, string? Area, DateIdeaKind Kind, string? Url, bool FromGoogleMaps = false);
 
 public interface IDateIdeaAdminService
 {

@@ -513,6 +513,10 @@ Public "Partner with us" application (`/partners`), admin approval that creates 
 offer (`/admin/partners`), a private check link where the business confirms and uses up voucher
 codes, and "Date ideas near you" on the rewards page (suggestions only, managed at
 `/admin/rewards`). ADR-0018; recruiting playbook in `docs/operations/reward-partners.md`.
+
+Local date spots from Google Places (ADR-0019): with `Rewards:GooglePlaces:ApiKey` set, the ideas
+section also lists real places in the couple's town linking to Google Maps. Off by default; only
+the town is sent; daily cap and short in-memory reuse. Setup: `docs/operations/google-places.md`.
 Migration `RewardPartnersAndDateIdeas`.
 
 **Not yet (owner)**: sign up the first partners, a lawyer's review of the partner agreement,

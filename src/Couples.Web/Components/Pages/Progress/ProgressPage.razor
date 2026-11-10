@@ -204,13 +204,21 @@ else
                                         </div>
                                         <h4 class="idea-title">@idea.Title</h4>
                                         <p class="idea-description">@idea.Description</p>
-                                        @if (idea.Url is { } url)
+                                        @if (idea.FromGoogleMaps)
+                                        {
+                                            <p class="idea-link"><a href="@idea.Url" target="_blank" rel="noopener noreferrer">View on Google Maps<span class="visually-hidden">: @idea.Title (opens in a new tab)</span></a></p>
+                                        }
+                                        else if (idea.Url is { } url)
                                         {
                                             <p class="idea-link"><a href="@url" target="_blank" rel="noopener noreferrer">Visit their website<span class="visually-hidden"> for @idea.Title (opens in a new tab)</span></a></p>
                                         }
                                     </li>
                                 }
                             </ul>
+                            @if (rewards.Ideas.Any(i => i.FromGoogleMaps))
+                            {
+                                <MudText Typo="Typo.caption" Class="mt-2" HtmlTag="p">Local places are listed by Google Maps. Check opening times before you go.</MudText>
+                            }
                         </MudPaper>
                     }
 
