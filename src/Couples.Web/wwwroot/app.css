@@ -207,3 +207,10 @@ main h1, main h2, main h3 { overflow-wrap: anywhere; }
 .expert-quote cite { font-style: normal; }
 .mud-main-content .expert-quote-link { margin: auto 0 0; padding-top: .6rem; border-top: 1px solid var(--mud-palette-lines-default); font-size: .9rem; line-height: 1.5; color: #33473B; }
 .mud-main-content .expert-perspectives-note { font-size: .8rem; color: var(--mud-palette-text-secondary); max-width: 48rem; }
+
+/* Landing page hero illustration (see docs/design/illustrations.md) */
+.home-hero { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem 2.5rem; }
+.home-hero-text { flex: 1 1 20rem; }
+.home-hero-art { flex: 1 1 18rem; max-width: 30rem; margin: 0 auto; }
+.home-hero-art img { display: block; width: 100%; height: auto; }
+@media (max-width: 599.98px) { .home-hero-art { max-width: 20rem; } }
