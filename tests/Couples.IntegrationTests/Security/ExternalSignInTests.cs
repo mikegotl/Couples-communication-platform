@@ -312,15 +312,11 @@ public sealed class ExternalSignInAccountTests(PostgresFixture db) : IAsyncLifet
 
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
         {
-            // Not app.Map: that would move the path base and so scope the cookie to this path.
-            app.Use(async (context, nextMiddleware) =>
+            app.Map(Path, branch => branch.Run(async context =>
             {
-                if (context.Request.Path != Path)
-                {
-                    await nextMiddleware(context);
-                    return;
-                }
-
+                // Map moves the matched path into the path base, which would scope the cookie to
+                // this test path; put it back so the cookie covers the site, as the real one does.
+                context.Request.PathBase = PathString.Empty;
                 var q = context.Request.Query;
                 var claims = new List<Claim>
                 {
@@ -335,7 +331,7 @@ public sealed class ExternalSignInAccountTests(PostgresFixture db) : IAsyncLifet
                 var properties = new AuthenticationProperties();
                 properties.Items["LoginProvider"] = q["provider"].ToString();
                 await context.SignInAsync(IdentityConstants.ExternalScheme, new ClaimsPrincipal(new ClaimsIdentity(claims, q["provider"].ToString())), properties);
-            });
+            }));
             next(app);
         };
     }
