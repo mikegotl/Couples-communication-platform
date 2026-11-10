@@ -14,8 +14,13 @@
   (terracotta `#A94A33`, sage `#4F6B5A`, cream background `#FAF5EE`) plus a few
   supporting tones.
 
-What it shows (also the image's alt text): six couples holding hands, chosen
-so that many kinds of people can see themselves in the product:
+Layout: a square-ish picture of six couples grouped under a warm arch, shown
+beside the headline on wide screens and below it on phones. Owner picked this
+from three drawn options (a row of couples, portrait circles, and this one) on
+2026-11-10.
+
+What it shows (also the image's alt text): six couples, chosen so that many
+kinds of people can see themselves in the product:
 
 1. An older Black couple (grey hair, glasses).
 2. Two women, one plus-size.

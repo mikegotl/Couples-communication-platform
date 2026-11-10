@@ -124,38 +124,33 @@ def wheelchair(x,skin,top,bottom,hair,haircol,hold,facing=1,extra=None):
 
 S=["#F7D9C2","#EDBE98","#D29A6E","#A86E47","#7A4B2F","#583524"]
 TC="#A94A33"; TCL="#C76B53"; SAGE="#4F6B5A"; SAGEL="#8AA593"; MUST="#D9A441"; NAVY="#3B4A5A"; CREAM="#EADBC8"; PLUM="#7A4A5E"; DARK="#2F2925"; DENIM="#5E7186"
-W,H=1440,420
-e(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">')
-e('<title id="t">Many kinds of couples</title><desc id="d">An illustration of six couples holding hands: an older Black couple, two women, a woman in a hijab with her partner, a man using a wheelchair with his partner, two men, and a plus-size couple.</desc>')
-# background
-e(f'<path d="M40,{BASE} C40,250 180,150 390,170 C560,186 620,90 820,100 C1020,110 1080,200 1220,190 C1340,182 1400,280 1395,{BASE} Z" fill="#F3E2D3"/>')
-e(f'<ellipse cx="720" cy="{BASE+2}" rx="700" ry="12" fill="#EAD3C1"/>')
-# leaves
-def leaf(x,y,rot,s=1,col=SAGEL):
-    e(f'<g transform="translate({x},{y}) rotate({rot}) scale({s})"><path d="M0,0 C14,-30 14,-62 0,-90 C-14,-62 -14,-30 0,0 Z" fill="{col}" opacity=".55"/><line x1="0" y1="0" x2="0" y2="-80" stroke="#FAF5EE" stroke-width="2" opacity=".7"/></g>')
-leaf(52,BASE,-28,1.1); leaf(78,BASE,-6,1.4); leaf(104,BASE,20,1.0)
-leaf(1360,BASE,-18,1.2); leaf(1388,BASE,14,1.45); leaf(1410,BASE,34,0.9)
-def heart(x,y,s,c=TCL,o=.8):
-    e(f'<path transform="translate({x},{y}) scale({s})" d="M0,6 C-10,-4 -12,-14 -5,-16 C-1,-17 0,-13 0,-11 C0,-13 1,-17 5,-16 C12,-14 10,-4 0,6 Z" fill="{c}" opacity="{o}"/>')
-heart(400,70,1.4); heart(720,48,1.1,TC,.6); heart(1060,80,1.3); heart(200,140,.9,MUST,.7); heart(1240,130,1.0,MUST,.7)
 
-# 1 older Black couple
-couple(140,dict(h=250,w=60,skin=S[5],top=SAGE,bottom=NAVY,hair="bald",haircol="#C9C3BB",extra="glasses"),
-       0,dict(h=232,w=58,skin=S[4],top=MUST,bottom=TC,hair="afro",haircol="#D8D2CA",dress=True),BASE-128)
-# 2 two women
-couple(360,dict(h=246,w=60,skin=S[3],top=TC,bottom=DENIM,hair="longwave",haircol="#2A1E18"),
-       0,dict(h=240,w=76,skin=S[0],top=CREAM,bottom=SAGE,hair="bun",haircol="#B5652F",plus=True),BASE-126)
-# 3 hijab + partner
-couple(590,dict(h=238,w=58,skin=S[2],top=PLUM,bottom=PLUM,hair="hijab",haircol=SAGE,dress=True),
-       0,dict(h=262,w=62,skin=S[2],top=NAVY,bottom="#C2A887",hair="short",haircol="#1E1714",extra="beard"),BASE-128)
-# 4 wheelchair + partner
-wheelchair(810,S[1],MUST,SAGE,"short","#5A3A22",hold=(888,BASE-132),facing=1,extra="beard")
-person(928,h=244,w=60,skin=S[4],top=TCL,bottom=DARK,hair="long",haircol="#1B1412",inner_dir=-1,hold=(892,BASE-132))
-# 5 two men
-couple(1050,dict(h=256,w=62,skin=S[1],top=SAGEL,bottom=NAVY,hair="short",haircol="#141010"),
-       0,dict(h=250,w=62,skin=S[2],top=TC,bottom="#C2A887",hair="gray",haircol="#9C958E",extra="glasses"),BASE-128)
-# 6 plus-size couple
-couple(1240,dict(h=258,w=82,skin=S[0],top=NAVY,bottom=DENIM,hair="short",haircol="#C9A35E",plus=True,extra="beard"),
-       0,dict(h=236,w=72,skin=S[3],top=MUST,bottom=TC,hair="long",haircol="#2A1E18",plus=True,dress=True),BASE-124)
+# The six couples, each drawn from local x.
+def C1(x): couple(x,dict(h=250,w=60,skin=S[5],top=SAGE,bottom=NAVY,hair="bald",haircol="#C9C3BB",extra="glasses"),0,dict(h=232,w=58,skin=S[4],top=MUST,bottom=TC,hair="afro",haircol="#D8D2CA",dress=True),BASE-128)
+def C2(x): couple(x,dict(h=246,w=60,skin=S[3],top=TC,bottom=DENIM,hair="longwave",haircol="#2A1E18"),0,dict(h=240,w=76,skin=S[0],top=CREAM,bottom=SAGE,hair="bun",haircol="#B5652F",plus=True),BASE-126)
+def C3(x): couple(x,dict(h=238,w=58,skin=S[2],top=PLUM,bottom=PLUM,hair="hijab",haircol=SAGE,dress=True),0,dict(h=262,w=62,skin=S[2],top=NAVY,bottom="#C2A887",hair="short",haircol="#1E1714",extra="beard"),BASE-128)
+def C4(x):
+    wheelchair(x,S[1],MUST,SAGE,"short","#5A3A22",hold=(x+78,BASE-132),facing=1,extra="beard")
+    person(x+118,h=244,w=60,skin=S[4],top=TCL,bottom=DARK,hair="long",haircol="#1B1412",inner_dir=-1,hold=(x+82,BASE-132))
+def C5(x): couple(x,dict(h=256,w=62,skin=S[1],top=SAGEL,bottom=NAVY,hair="short",haircol="#141010"),0,dict(h=250,w=62,skin=S[2],top=TC,bottom="#C2A887",hair="gray",haircol="#9C958E",extra="glasses"),BASE-128)
+def C6(x): couple(x,dict(h=258,w=82,skin=S[0],top=NAVY,bottom=DENIM,hair="short",haircol="#C9A35E",plus=True,extra="beard"),0,dict(h=236,w=72,skin=S[3],top=MUST,bottom=TC,hair="long",haircol="#2A1E18",plus=True,dress=True),BASE-124)
+
+# Composition: back row of three couples, front row of three, under an arch.
+W,H=640,600
+e(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">')
+e('<title id="t">Many kinds of couples</title><desc id="d">Six couples standing together under a warm arch: an older Black couple, two women, a woman in a hijab with her partner, a man using a wheelchair with his partner, two men, and a plus-size couple.</desc>')
+e(f'<path d="M60,560 L60,300 A260,260 0 0 1 580,300 L580,560 Z" fill="#F3E2D3"/>')
+e(f'<circle cx="470" cy="150" r="48" fill="#F6E7C9"/>')
+e(f'<ellipse cx="320" cy="562" rx="300" ry="12" fill="#EAD3C1"/>')
+def place(f,x,y,s):
+    e(f'<g transform="translate({x},{y}) scale({s})">'); f(0); e('</g>')
+# back row (base at y=455 in svg)
+for f,x in ((C3,95),(C2,265),(C5,430)):
+    s=.82; place(f,x,455-s*BASE,s)
+for f,x in ((C1,62),(C4,228),(C6,428)):
+    s=1.0; place(f,x,560-s*BASE,s)
+def leaf(x,y,rot,sc=1,col=SAGEL):
+    e(f'<g transform="translate({x},{y}) rotate({rot}) scale({sc})"><path d="M0,0 C14,-30 14,-62 0,-90 C-14,-62 -14,-30 0,0 Z" fill="{col}" opacity=".6"/></g>')
+leaf(30,560,-25,1.1); leaf(52,560,0,1.4); leaf(600,560,10,1.3); leaf(620,560,32,1)
 e('</svg>')
 open(sys.argv[1],'w').write('\n'.join(out))
