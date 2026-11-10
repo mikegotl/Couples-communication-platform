@@ -1,0 +1,84 @@
+@* Short, cited excerpts from published relationship research and couples therapists, shown on
+   the home page. Every quote here was checked word for word against the linked source on
+   2026-11-10. Rules for editing this list:
+   - Quote only what the linked page actually says, and keep each excerpt short (fair use).
+   - Attribute to the person or organisation the source names; say "quoted in" for secondhand.
+   - Never imply the source endorses or is affiliated with BridgeTogether. *@
+
+<section class="expert-perspectives" aria-labelledby="expert-perspectives-heading">
+    <h2 id="expert-perspectives-heading">What relationship researchers and therapists say</h2>
+    <p class="expert-perspectives-intro">
+        BridgeTogether's features are shaped by ideas that are widely shared in published couples research.
+        Here are a few, in the experts' own words.
+    </p>
+
+    <ul class="expert-perspectives-list">
+        @foreach (var item in Items)
+        {
+            <li>
+                <figure class="expert-quote">
+                    <blockquote cite="@item.Url">
+                        <p>&ldquo;@item.Quote&rdquo;</p>
+                    </blockquote>
+                    <figcaption>
+                        <span class="expert-quote-who">@item.Who</span>
+                        <cite>
+                            <a href="@item.Url" target="_blank" rel="noopener noreferrer">@item.Source<span class="visually-hidden"> (opens in a new tab)</span></a>
+                        </cite>
+                    </figcaption>
+                    <p class="expert-quote-link">@item.HowWeUseIt</p>
+                </figure>
+            </li>
+        }
+    </ul>
+
+    <p class="expert-perspectives-note">
+        Short excerpts are quoted for commentary; follow each link to read the full piece.
+        The people and organisations quoted are not affiliated with BridgeTogether and have not
+        reviewed or endorsed it.
+    </p>
+</section>
+
+@code {
+    private sealed record Perspective(string Quote, string Who, string Source, string Url, string HowWeUseIt);
+
+    private static readonly Perspective[] Items =
+    [
+        new(
+            "The antidote for criticism is to complain without blame by using a soft or gentle start-up.",
+            "The Gottman Institute",
+            "“The Four Horsemen: The Antidotes,” gottman.com",
+            "https://www.gottman.com/blog/the-four-horsemen-the-antidotes/",
+            "That's why the coach helps you name what you feel and what you need, instead of what your partner did wrong."),
+        new(
+            "Underneath all the distress, partners are asking each other: Can I count on you? Are you there for me?",
+            "Dr. Sue Johnson, developer of Emotionally Focused Therapy",
+            "quoted in “Sue Johnson, psychologist who took a scientific view of love, dies at 76,” The New York Times, via The Boston Globe (2024)",
+            "https://www.bostonglobe.com/2024/05/29/nation/sue-johnson-psychologist-who-took-scientific-view-love-dies-76",
+            "Reflections start with the feeling underneath, so the message you send can say what matters most."),
+        new(
+            "Keeping concerns or problems to yourself can breed resentment. … When discussing tough topics, though, it pays to be kind.",
+            "American Psychological Association",
+            "“Happy couples: How to keep your relationship healthy,” apa.org",
+            "https://www.apa.org/topics/marriage-relationships/healthy-relationships",
+            "Write it out privately first, then share a version you're proud of, only when you choose to."),
+        new(
+            "All couples argue. Successful couples repair.",
+            "Kyle Benson, The Gottman Institute",
+            "“Repair is the Secret Weapon of Emotionally Connected Couples,” gottman.com",
+            "https://www.gottman.com/blog/repair-attempts-the-secret-weapon-of-emotionally-connected-couples/",
+            "Guided exercises give you words for reaching back toward each other after a hard moment."),
+        new(
+            "A bid is any attempt from one partner to another for attention, affirmation, affection, or any other positive connection.",
+            "Zach Brittle, LMHC, The Gottman Institute",
+            "“Turn Towards Instead of Away,” gottman.com",
+            "https://www.gottman.com/blog/turn-toward-instead-of-away/",
+            "Small, kind messages count. Sending one is a way of turning toward each other."),
+        new(
+            "The antidote to stonewalling is to practice physiological self-soothing.",
+            "The Gottman Institute",
+            "“The Four Horsemen: The Antidotes,” gottman.com",
+            "https://www.gottman.com/blog/the-four-horsemen-the-antidotes/",
+            "Pace settings let either of you pause and come back when you're both calmer."),
+    ];
+}

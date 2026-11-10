@@ -193,3 +193,17 @@ main { overflow-wrap: break-word; }
 main h1, main h2, main h3 { overflow-wrap: anywhere; }
 
 .privacy-tips { margin: 0 0 .75rem; padding-left: 1.25rem; font-size: .875rem; line-height: 1.6; }
+
+/* Home page: cited excerpts from relationship researchers and therapists (ExpertPerspectives.razor). */
+.expert-perspectives { margin-top: 1.5rem; }
+.mud-main-content .expert-perspectives h2 { font-family: Fraunces, Georgia, serif; font-size: clamp(1.4rem, 1.2rem + .8vw, 1.75rem); margin: 0 0 .5rem; }
+.expert-perspectives-intro { max-width: 44rem; color: var(--mud-palette-text-secondary); }
+.expert-perspectives-list { list-style: none; padding: 0; margin: 1rem 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); gap: 1rem; }
+.expert-quote { margin: 0; height: 100%; display: flex; flex-direction: column; gap: .6rem; background: #fff; border-radius: 12px; border-top: 3px solid var(--mud-palette-primary); padding: 1.1rem 1.25rem; box-shadow: 0 1px 2px rgba(80, 50, 30, .06), 0 6px 20px rgba(80, 50, 30, .06); }
+.expert-quote blockquote { margin: 0; }
+.mud-main-content .expert-quote blockquote p { margin: 0; font-family: Fraunces, Georgia, serif; font-size: 1.1rem; line-height: 1.45; color: var(--mud-palette-text-primary); }
+.expert-quote figcaption { font-size: .875rem; line-height: 1.45; color: var(--mud-palette-text-secondary); }
+.expert-quote-who { display: block; font-weight: 700; color: var(--mud-palette-text-primary); }
+.expert-quote cite { font-style: normal; }
+.mud-main-content .expert-quote-link { margin: auto 0 0; padding-top: .6rem; border-top: 1px solid var(--mud-palette-lines-default); font-size: .9rem; line-height: 1.5; color: #33473B; }
+.mud-main-content .expert-perspectives-note { font-size: .8rem; color: var(--mud-palette-text-secondary); max-width: 48rem; }
