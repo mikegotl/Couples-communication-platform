@@ -90,9 +90,6 @@ else if (externalLoginInfo is not null)
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    [SupplyParameterFromQuery]
-    private string? Action { get; set; }
-
     private string? ProviderDisplayName => externalLoginInfo?.ProviderDisplayName;
 
     protected override async Task OnInitializedAsync()
@@ -118,16 +115,11 @@ else if (externalLoginInfo is not null)
         externalLoginInfo = info;
         verifiedEmail = ExternalSignIn.VerifiedEmail(info.LoginProvider, info.Principal);
 
+        // A GET is the provider callback. What authorizes it is the external sign-in cookie the
+        // provider's handler just wrote (read above), not anything in the query string.
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
-            if (Action == LoginCallbackAction)
-            {
-                await OnLoginCallbackAsync(info);
-                return;
-            }
-
-            // Only reachable through the provider callback.
-            RedirectManager.RedirectTo("Account/Login");
+            await OnLoginCallbackAsync(info);
         }
     }
 

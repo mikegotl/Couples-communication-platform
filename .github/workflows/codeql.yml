@@ -35,8 +35,3 @@ jobs:
       - uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
-          output: sarif-results
-
-      - name: TEMP print csharp results
-        if: matrix.language == 'csharp'
-        run: jq -r '.runs[].results[] | "RESULT \(.ruleId) \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine) \(.message.text)"' sarif-results/*.sarif
