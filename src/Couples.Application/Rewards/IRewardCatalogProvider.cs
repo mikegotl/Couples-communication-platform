@@ -42,6 +42,9 @@ public sealed class RewardsOptions
 
     /// <summary>How long a locally issued voucher is valid.</summary>
     public int VoucherValidDays { get; set; } = 90;
+
+    /// <summary>Partner applications accepted per day across the site, to keep spam out of the review queue.</summary>
+    public int PartnerApplicationsPerDay { get; set; } = 50;
 }
 
 /// <summary>Admin management of the local catalog. Checks the Admin role itself.</summary>

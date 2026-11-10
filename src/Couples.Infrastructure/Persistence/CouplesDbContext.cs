@@ -81,6 +81,10 @@ public sealed class CouplesDbContext(DbContextOptions<CouplesDbContext> options)
 
     public DbSet<Couples.Domain.Rewards.RewardRedemption> RewardRedemptions => Set<Couples.Domain.Rewards.RewardRedemption>();
 
+    public DbSet<Couples.Domain.Rewards.RewardPartner> RewardPartners => Set<Couples.Domain.Rewards.RewardPartner>();
+
+    public DbSet<Couples.Domain.Rewards.DateIdea> DateIdeas => Set<Couples.Domain.Rewards.DateIdea>();
+
     /// <summary>
     /// ASP.NET Core Data Protection key ring (cookies, antiforgery and account tokens). Shared by
     /// every web instance and kept across restarts; encrypted with a certificate outside

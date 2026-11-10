@@ -49,6 +49,8 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 | `CreditEntry` | `credit_entries` | Personal | Both partners | Weekly couple-level score and credits earned, or credits spent. Deleted with the workspace. |
 | `RewardOffer` | `reward_offers` | Internal | Everyone signed in (active offers); admins (`/admin/rewards`) | Reward catalog managed by admins. Hidden rather than deleted while redemptions refer to it. |
 | `RewardRedemption` | `reward_redemptions` | Personal | Both partners | Which reward the couple chose, its voucher code and who chose it. Admins see counts only. Deleted with the workspace; the redeeming partner's id is unlinked if they delete their account. |
+| `RewardPartner` | `reward_partners` | Personal | Admins (`/admin/partners`) | A business that applied to offer date rewards: business name, contact name, email, optional phone and website, town, proposed offer, the decision, and the SHA-256 hash of its private check link. Kept while the partnership is active; declined or ended ones are purged after 180 days. |
+| `DateIdea` | `date_ideas` | Internal | Everyone signed in with rewards available; admins (`/admin/rewards`) | Date suggestions managed by admins. No personal data. |
 | `DataDeletionRequest` | `data_deletion_requests` | Internal | Operators (no UI yet) | 400 days after completion. |
 | `DataProtectionKey` | `data_protection_keys` | Internal (secret) | The app only | ASP.NET Core Data Protection key ring for cookies, antiforgery and account tokens. Encrypted with a certificate outside Development (ADR-0013); a new key is created every 90 days. |
 

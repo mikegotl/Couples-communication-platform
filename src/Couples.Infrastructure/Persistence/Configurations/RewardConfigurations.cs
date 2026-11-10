@@ -47,6 +47,8 @@ internal sealed class RewardOfferConfiguration : IEntityTypeConfiguration<Reward
         builder.Property(o => o.Area).HasMaxLength(RewardOffer.MaxAreaLength);
         builder.Property(o => o.Kind).HasConversion<string>().HasMaxLength(20);
         builder.HasIndex(o => new { o.IsActive, o.CostCredits });
+        builder.HasIndex(o => o.PartnerId);
+        builder.HasOne<RewardPartner>().WithMany().HasForeignKey(o => o.PartnerId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -65,10 +67,47 @@ internal sealed class RewardRedemptionConfiguration : IEntityTypeConfiguration<R
         builder.HasIndex(r => new { r.WorkspaceId, r.CreatedAt });
         builder.HasIndex(r => r.RedeemedByUserId);
         builder.HasIndex(r => r.OfferId);
+        builder.HasIndex(r => r.VoucherCode);
         builder.HasOne<RelationshipWorkspace>().WithMany().HasForeignKey(r => r.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<RewardOffer>().WithMany().HasForeignKey(r => r.OfferId).OnDelete(DeleteBehavior.Restrict);
 
         // No foreign key on RedeemedByUserId: the voucher stays with the couple if the redeeming
         // partner deletes their account; deletion replaces the id with Guid.Empty.
+    }
+}
+
+internal sealed class RewardPartnerConfiguration : IEntityTypeConfiguration<RewardPartner>
+{
+    public void Configure(EntityTypeBuilder<RewardPartner> builder)
+    {
+        builder.ToTable("reward_partners");
+        builder.HasKey(p => p.Id);
+        builder.Property(p => p.BusinessName).HasMaxLength(RewardPartner.MaxNameLength).IsRequired();
+        builder.Property(p => p.ContactName).HasMaxLength(RewardPartner.MaxNameLength).IsRequired();
+        builder.Property(p => p.ContactEmail).HasMaxLength(RewardPartner.MaxEmailLength).IsRequired();
+        builder.Property(p => p.Phone).HasMaxLength(RewardPartner.MaxPhoneLength);
+        builder.Property(p => p.Website).HasMaxLength(RewardPartner.MaxWebsiteLength);
+        builder.Property(p => p.Area).HasMaxLength(CoupleRewardAccount.MaxAreaLength).IsRequired();
+        builder.Property(p => p.ProposedOffer).HasMaxLength(RewardPartner.MaxOfferLength).IsRequired();
+        builder.Property(p => p.Kind).HasConversion<string>().HasMaxLength(20);
+        builder.Property(p => p.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(p => p.CheckKeyHash).HasMaxLength(64);
+        builder.HasIndex(p => p.CheckKeyHash).IsUnique();
+        builder.HasIndex(p => new { p.Status, p.CreatedAt });
+        builder.Property<uint>("xmin").IsRowVersion();
+    }
+}
+
+internal sealed class DateIdeaConfiguration : IEntityTypeConfiguration<DateIdea>
+{
+    public void Configure(EntityTypeBuilder<DateIdea> builder)
+    {
+        builder.ToTable("date_ideas");
+        builder.HasKey(i => i.Id);
+        builder.Property(i => i.Title).HasMaxLength(DateIdea.MaxTitleLength).IsRequired();
+        builder.Property(i => i.Description).HasMaxLength(DateIdea.MaxDescriptionLength).IsRequired();
+        builder.Property(i => i.Area).HasMaxLength(CoupleRewardAccount.MaxAreaLength);
+        builder.Property(i => i.Kind).HasConversion<string>().HasMaxLength(20);
+        builder.Property(i => i.Url).HasMaxLength(RewardPartner.MaxWebsiteLength);
     }
 }

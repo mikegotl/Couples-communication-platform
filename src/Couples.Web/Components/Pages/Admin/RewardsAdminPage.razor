@@ -89,6 +89,48 @@
             </MudStack>
         </section>
 
+        <section aria-labelledby="ideas-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="ideas-heading">Date ideas</MudText>
+            <MudText Typo="Typo.body2" Class="mb-2">
+                Suggestions shown under the rewards: things to do together, or local spots worth a visit. No voucher, no
+                credits, and the place hasn't agreed to anything, so describe it neutrally and only link to its own website.
+                Businesses that want to offer a reward apply on <MudLink Href="admin/partners">Reward partners</MudLink>.
+            </MudText>
+            @if (ideas.Count > 0)
+            {
+                <div class="table-scroll" tabindex="0" role="region" aria-labelledby="ideas-heading">
+                    <MudSimpleTable Dense="true" Outlined="true">
+                        <thead><tr><th scope="col">Idea</th><th scope="col">Area</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                        <tbody>
+                            @foreach (var i in ideas)
+                            {
+                                <tr>
+                                    <td><strong>@i.Details.Title</strong><br /><span class="voucher-meta">@i.Details.Description</span></td>
+                                    <td>@(i.Details.Area ?? "Anywhere")</td>
+                                    <td>@(i.IsActive ? "Shown" : "Hidden")</td>
+                                    <td><MudButton Size="Size.Small" Variant="Variant.Outlined" Disabled="busy" OnClick="() => SetIdeaActiveAsync(i.Id, !i.IsActive)">@(i.IsActive ? "Hide" : "Show")<span class="visually-hidden"> @i.Details.Title</span></MudButton></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </div>
+            }
+            <MudStack Spacing="2" Class="mt-3">
+                <MudTextField T="string" @bind-Value="ideaTitle" Label="Idea title" MaxLength="DateIdea.MaxTitleLength" Variant="Variant.Outlined" />
+                <MudTextField T="string" @bind-Value="ideaDescription" Label="Description" Lines="2" MaxLength="DateIdea.MaxDescriptionLength" Variant="Variant.Outlined" />
+                <MudTextField T="string" @bind-Value="ideaArea" Label="Town or area (leave empty for anywhere)" MaxLength="RewardOffer.MaxAreaLength" Variant="Variant.Outlined" />
+                <MudSelect T="DateIdeaKind" @bind-Value="ideaKind" Label="Kind" Variant="Variant.Outlined">
+                    <MudSelectItem T="DateIdeaKind" Value="DateIdeaKind.Outdoors">Outdoors</MudSelectItem>
+                    <MudSelectItem T="DateIdeaKind" Value="DateIdeaKind.FoodAndDrink">Food and drink</MudSelectItem>
+                    <MudSelectItem T="DateIdeaKind" Value="DateIdeaKind.AtHome">At home</MudSelectItem>
+                    <MudSelectItem T="DateIdeaKind" Value="DateIdeaKind.Activity">Activity</MudSelectItem>
+                    <MudSelectItem T="DateIdeaKind" Value="DateIdeaKind.Culture">Culture</MudSelectItem>
+                </MudSelect>
+                <MudTextField T="string" @bind-Value="ideaUrl" Label="Link to the place's own website (optional, https)" MaxLength="200" Variant="Variant.Outlined" />
+                <div><MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="busy" OnClick="AddIdeaAsync">Add idea</MudButton></div>
+            </MudStack>
+        </section>
+
         @if (message is not null)
         {
             <MudAlert Severity="@(failed ? Severity.Error : Severity.Success)" Variant="Variant.Outlined" role="status">@message</MudAlert>
@@ -103,6 +145,15 @@
 
 @code {
     private IRewardCatalogAdminService Admin => Service<IRewardCatalogAdminService>();
+
+    private IDateIdeaAdminService Ideas => Service<IDateIdeaAdminService>();
+
+    private IReadOnlyList<AdminDateIdea> ideas = [];
+    private string? ideaTitle;
+    private string? ideaDescription;
+    private string? ideaArea;
+    private string? ideaUrl;
+    private DateIdeaKind ideaKind = DateIdeaKind.FoodAndDrink;
 
     private Guid userId;
     private RewardCatalogAdminView? view;
@@ -128,6 +179,44 @@
     {
         var result = await Admin.GetAsync(userId);
         view = result.Succeeded ? result.Value : new RewardCatalogAdminView(false, "-", []);
+        var listed = await Ideas.ListAsync(userId);
+        ideas = listed.Succeeded ? listed.Value : [];
+    }
+
+    private async Task AddIdeaAsync()
+    {
+        busy = true;
+        try
+        {
+            var result = await Ideas.CreateAsync(userId, new DateIdeaDetails(ideaTitle, ideaDescription, ideaArea, ideaKind, ideaUrl));
+            failed = !result.Succeeded;
+            message = result.Succeeded ? "Idea added." : "Check the idea: it needs a title and a description, and any link must start with https://.";
+            if (result.Succeeded)
+            {
+                (ideaTitle, ideaDescription, ideaArea, ideaUrl) = (null, null, null, null);
+                await LoadAsync();
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task SetIdeaActiveAsync(Guid id, bool active)
+    {
+        busy = true;
+        try
+        {
+            var result = await Ideas.SetActiveAsync(userId, id, active);
+            failed = !result.Succeeded;
+            message = result.Succeeded ? (active ? "Idea shown to couples." : "Idea hidden from couples.") : "Couldn't change that idea.";
+            await LoadAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
     }
 
     private void Edit(AdminRewardOffer offer)

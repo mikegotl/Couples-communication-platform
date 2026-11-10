@@ -272,3 +272,16 @@ main h1, main h2, main h3 { overflow-wrap: anywhere; }
 .progress-summary .score-ring { width: 5.5rem; height: 5.5rem; }
 .progress-summary .score-ring-value { font-size: 1.8rem; }
 .progress-summary-text { flex: 1 1 16rem; }
+
+/* Partner pages (PartnerApplyPage.razor, PartnerCheckPage.razor) and date ideas */
+.partner-points { margin: 0; padding-left: 1.25rem; line-height: 1.7; max-width: 46rem; }
+.partner-form { max-width: 34rem; }
+.mud-main-content .partner-small { font-size: .85rem; color: var(--mud-palette-text-secondary); }
+.voucher-input { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: .05em; text-transform: uppercase; }
+.idea-grid { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); }
+.idea-card { display: flex; flex-direction: column; gap: .3rem; background: #F4F7F3; border-radius: 14px; padding: .9rem 1rem; }
+.idea-card-top { display: flex; align-items: center; gap: .5rem; color: #33473B; font-size: .8rem; font-weight: 700; }
+.mud-main-content h4.idea-title { font-family: Fraunces, Georgia, serif; font-size: 1.05rem; font-weight: 500; margin: 0; }
+.mud-main-content .idea-description { font-size: .9rem; margin: 0; }
+.mud-main-content .idea-link { font-size: .85rem; margin: 0; }
+.btn-secondary { background: #fff; color: var(--mud-palette-primary); border: 1px solid var(--mud-palette-primary); }

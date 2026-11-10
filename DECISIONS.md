@@ -22,6 +22,8 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0015](docs/adr/0015-phase-2-joint-chat-behind-flag-and-sign-off.md) | Phase 2 joint chat behind a flag, two sign-offs and per-workspace eligibility | Accepted (not activated) |
 | [0016](docs/adr/0016-google-and-apple-sign-in.md) | Google and Apple sign-in, linked by verified email only | Accepted |
 | [0017](docs/adr/0017-connection-score-and-date-rewards.md) | Shared connection score, credits and date rewards behind `DateRewards` | Accepted |
+| [0018](docs/adr/0018-reward-partners-and-date-ideas.md) | Registered reward partners with a voucher check link; date ideas as suggestions only | Accepted |
+| [0019](docs/adr/0019-local-date-spots-from-google-places.md) | Local date spots from Google Places: off without a key, only the town is sent, daily cap | Accepted |
 
 ## Open decisions (owner)
 

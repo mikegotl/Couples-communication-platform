@@ -507,3 +507,17 @@ partner's safety settings hold joint features. Design and safeguards: ADR-0017. 
 
 **Not yet (owner)**: real reward partners or a gift-card provider, the value of a credit and a budget.
 
+## After milestone 12: Reward partners and date ideas (2026-11-10)
+
+Public "Partner with us" application (`/partners`), admin approval that creates the partner's
+offer (`/admin/partners`), a private check link where the business confirms and uses up voucher
+codes, and "Date ideas near you" on the rewards page (suggestions only, managed at
+`/admin/rewards`). ADR-0018; recruiting playbook in `docs/operations/reward-partners.md`.
+
+Local date spots from Google Places (ADR-0019): with `Rewards:GooglePlaces:ApiKey` set, the ideas
+section also lists real places in the couple's town linking to Google Maps. Off by default; only
+the town is sent; daily cap and short in-memory reuse. Setup: `docs/operations/google-places.md`.
+Migration `RewardPartnersAndDateIdeas`.
+
+**Not yet (owner)**: sign up the first partners, a lawyer's review of the partner agreement,
+and an email provider so applicants can be answered from the app.

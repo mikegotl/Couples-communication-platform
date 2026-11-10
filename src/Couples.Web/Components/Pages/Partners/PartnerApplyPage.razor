@@ -1,0 +1,156 @@
+@page "/partners"
+@using System.ComponentModel.DataAnnotations
+@using Couples.Application.Rewards
+@using Couples.Domain.Common
+@using Couples.Domain.Rewards
+@inject IPartnerService Partners
+
+<PageTitle>Partner with us · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Be a date night partner</MudText>
+    <MudText>
+        BridgeTogether helps couples communicate better. When they do, they earn credits towards a date, and we point
+        them to local places like yours. If you run a restaurant, café, cinema, studio or anything else two people can
+        enjoy together, we'd love to hear from you.
+    </MudText>
+
+    <ul class="partner-points">
+        <li><strong>Free to join.</strong> You choose a small offer, such as a dessert to share, two-for-one on a quiet night or a discount for two.</li>
+        <li><strong>New tables, not discounts for regulars.</strong> Couples see your offer when they've earned a night out and are choosing where to go.</li>
+        <li><strong>Simple to honour.</strong> Each couple brings a one-time code. You check it on a private page we give you, and mark it used.</li>
+        <li><strong>You stay in control.</strong> Set a monthly limit, change your offer or stop at any time.</li>
+    </ul>
+
+    @if (sent)
+    {
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" role="status">
+            Thank you. We've got your details and will be in touch by email. Nothing is shown to couples until we've agreed your offer with you.
+        </MudAlert>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-lg-6 partner-form">
+                <EditForm Model="Input" method="post" OnValidSubmit="SubmitAsync" FormName="partner-apply">
+                    <DataAnnotationsValidator />
+                    <h2>Tell us about your place</h2>
+                    @if (error is not null)
+                    {
+                        <div class="alert alert-danger" role="alert">@error</div>
+                    }
+                    <ValidationSummary class="text-danger" role="alert" />
+                    <div class="form-floating mb-3">
+                        <InputText @bind-Value="Input.BusinessName" id="Input.BusinessName" class="form-control" maxlength="80" aria-required="true" autocomplete="organization" />
+                        <label for="Input.BusinessName">Business name</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputSelect @bind-Value="Input.Kind" id="Input.Kind" class="form-control">
+                            <option value="@RewardKind.Restaurant">Restaurant, café or bar</option>
+                            <option value="@RewardKind.Experience">Activity or experience</option>
+                            <option value="@RewardKind.GiftCard">Shop or gift cards</option>
+                        </InputSelect>
+                        <label for="Input.Kind">What kind of place is it?</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputText @bind-Value="Input.Area" id="Input.Area" class="form-control" maxlength="80" aria-required="true" autocomplete="address-level2" />
+                        <label for="Input.Area">Town or city</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputText @bind-Value="Input.ContactName" id="Input.ContactName" class="form-control" maxlength="80" aria-required="true" autocomplete="name" />
+                        <label for="Input.ContactName">Your name</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputText type="email" @bind-Value="Input.ContactEmail" id="Input.ContactEmail" class="form-control" maxlength="254" aria-required="true" autocomplete="email" />
+                        <label for="Input.ContactEmail">Email</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputText type="tel" @bind-Value="Input.Phone" id="Input.Phone" class="form-control" maxlength="30" autocomplete="tel" />
+                        <label for="Input.Phone">Phone (optional)</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputText type="url" @bind-Value="Input.Website" id="Input.Website" class="form-control" maxlength="200" placeholder="https://" autocomplete="url" />
+                        <label for="Input.Website">Website (optional)</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputTextArea @bind-Value="Input.ProposedOffer" id="Input.ProposedOffer" class="form-control" rows="3" maxlength="400" aria-required="true" />
+                        <label for="Input.ProposedOffer">What could you offer a couple? For example "a free dessert to share with two mains, Monday to Wednesday".</label>
+                    </div>
+                    @* Left empty by people; filled in by form-filling bots. *@
+                    <div class="visually-hidden" aria-hidden="true">
+                        <label for="Input.Fax">Leave this field empty</label>
+                        <InputText @bind-Value="Input.Fax" id="Input.Fax" tabindex="-1" autocomplete="off" />
+                    </div>
+                    <p class="partner-small">
+                        We use these details only to contact you about partnering. See our <a href="privacy-notice">privacy notice</a>.
+                    </p>
+                    <button type="submit" class="btn btn-lg btn-primary">Send</button>
+                </EditForm>
+            </div>
+        </div>
+    }
+</MudStack>
+
+@code {
+    private bool sent;
+    private string? error;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = default!;
+
+    protected override void OnInitialized() => Input ??= new();
+
+    private async Task SubmitAsync()
+    {
+        if (!string.IsNullOrEmpty(Input.Fax))
+        {
+            // A bot: answer as if it worked and store nothing.
+            sent = true;
+            return;
+        }
+
+        var result = await Partners.ApplyAsync(new PartnerApplication(
+            Input.BusinessName, Input.ContactName, Input.ContactEmail, Input.Phone, Input.Website, Input.Area, Input.Kind, Input.ProposedOffer));
+        sent = result.Succeeded;
+        error = result.Error switch
+        {
+            null => null,
+            DomainError.RateLimited => "We've had a lot of interest today. Please try again tomorrow.",
+            _ => "Please check your details: a valid email, and a website starting with https:// if you add one.",
+        };
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "Enter your business name.")]
+        [StringLength(80)]
+        public string BusinessName { get; set; } = "";
+
+        public RewardKind Kind { get; set; } = RewardKind.Restaurant;
+
+        [Required(ErrorMessage = "Enter your town or city.")]
+        [StringLength(80)]
+        public string Area { get; set; } = "";
+
+        [Required(ErrorMessage = "Enter your name.")]
+        [StringLength(80)]
+        public string ContactName { get; set; } = "";
+
+        [Required(ErrorMessage = "Enter an email address.")]
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+        [StringLength(254)]
+        public string ContactEmail { get; set; } = "";
+
+        [StringLength(30)]
+        public string? Phone { get; set; }
+
+        [StringLength(200)]
+        public string? Website { get; set; }
+
+        [Required(ErrorMessage = "Tell us what you could offer.")]
+        [StringLength(400)]
+        public string ProposedOffer { get; set; } = "";
+
+        public string? Fax { get; set; }
+    }
+}

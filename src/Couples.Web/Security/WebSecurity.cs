@@ -15,7 +15,7 @@ public sealed class RateLimitOptions
     /// <summary>All requests from one client address, per minute.</summary>
     public int RequestsPerMinute { get; set; } = 600;
 
-    /// <summary>Form posts to account pages (sign in, register, reset password) from one client address, per minute.</summary>
+    /// <summary>Form posts to account pages (sign in, register, reset password) and the public partner forms from one client address, per minute.</summary>
     public int AccountPostsPerMinute { get; set; } = 10;
 }
 
@@ -114,7 +114,9 @@ public static class WebSecurity
                 }
 
                 var client = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                if (HttpMethods.IsPost(request.Method) && request.Path.StartsWithSegments("/Account"))
+                // Sign-in forms, the public partner application and the partner voucher check (code guessing).
+                if (HttpMethods.IsPost(request.Method)
+                    && (request.Path.StartsWithSegments("/Account") || request.Path.StartsWithSegments("/partners") || request.Path.StartsWithSegments("/partner")))
                 {
                     return RateLimitPartition.GetSlidingWindowLimiter("account:" + client, _ => new SlidingWindowRateLimiterOptions
                     {

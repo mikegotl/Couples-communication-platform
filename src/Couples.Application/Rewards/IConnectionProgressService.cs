@@ -39,13 +39,14 @@ public sealed record RewardsView(
     RewardOfferView? Suggestion,
     RewardOfferView? NextGoal,
     IReadOnlyList<CreditHistoryLine> History,
-    IReadOnlyList<RedemptionView> Redemptions);
+    IReadOnlyList<RedemptionView> Redemptions,
+    IReadOnlyList<DateIdeaView> Ideas);
 
 public sealed record RewardOfferView(Guid Id, string Title, string PartnerName, string Description, string? Area, RewardKind Kind, int CostCredits, bool IsSample);
 
 public sealed record CreditHistoryLine(DateTimeOffset At, int Amount, DateOnly? WeekStart, int? WeekScore, string? RewardTitle);
 
-public sealed record RedemptionView(Guid Id, string OfferTitle, string PartnerName, int CostCredits, string VoucherCode, string Instructions, bool IsSample, bool RedeemedByMe, DateTimeOffset RedeemedAt, DateTimeOffset? ExpiresAt);
+public sealed record RedemptionView(Guid Id, string OfferTitle, string PartnerName, int CostCredits, string VoucherCode, string Instructions, bool IsSample, bool RedeemedByMe, DateTimeOffset RedeemedAt, DateTimeOffset? ExpiresAt, DateTimeOffset? UsedAt = null);
 
 public enum ProgressTip
 {

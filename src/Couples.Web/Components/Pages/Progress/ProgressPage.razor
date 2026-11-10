@@ -187,6 +187,41 @@ else
                         </ul>
                     }
 
+                    @if (rewards.Ideas.Count > 0)
+                    {
+                        <MudPaper Class="pa-4" Outlined="true">
+                            <MudText Typo="Typo.h6" HtmlTag="h3">Date ideas near you</MudText>
+                            <MudText Typo="Typo.body2" Class="mb-3">
+                                No credits needed. These are just ideas for time together; the places aren't partners and there's no voucher.
+                            </MudText>
+                            <ul class="idea-grid">
+                                @foreach (var idea in rewards.Ideas)
+                                {
+                                    <li class="idea-card">
+                                        <div class="idea-card-top">
+                                            <MudIcon Icon="@IdeaIcon(idea.Kind)" Size="Size.Small" aria-hidden="true" />
+                                            <span>@(idea.Area ?? "Anywhere")</span>
+                                        </div>
+                                        <h4 class="idea-title">@idea.Title</h4>
+                                        <p class="idea-description">@idea.Description</p>
+                                        @if (idea.FromGoogleMaps)
+                                        {
+                                            <p class="idea-link"><a href="@idea.Url" target="_blank" rel="noopener noreferrer">View on Google Maps<span class="visually-hidden">: @idea.Title (opens in a new tab)</span></a></p>
+                                        }
+                                        else if (idea.Url is { } url)
+                                        {
+                                            <p class="idea-link"><a href="@url" target="_blank" rel="noopener noreferrer">Visit their website<span class="visually-hidden"> for @idea.Title (opens in a new tab)</span></a></p>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                            @if (rewards.Ideas.Any(i => i.FromGoogleMaps))
+                            {
+                                <MudText Typo="Typo.caption" Class="mt-2" HtmlTag="p">Local places are listed by Google Maps. Check opening times before you go.</MudText>
+                            }
+                        </MudPaper>
+                    }
+
                     @if (rewards.Redemptions.Count > 0)
                     {
                         <MudPaper Class="pa-4" Outlined="true">
@@ -200,7 +235,7 @@ else
                                             <div class="voucher-meta">@(r.RedeemedByMe ? "You" : "Your partner") cashed in @r.CostCredits credits on @Format(r.RedeemedAt)@(r.ExpiresAt is { } e ? $". Use by {Format(e)}" : "").</div>
                                         </div>
                                         <code class="voucher-code breakable">@r.VoucherCode</code>
-                                        <div class="voucher-meta">@r.Instructions</div>
+                                        <div class="voucher-meta">@(r.UsedAt is { } used ? $"Used on {Format(used)}. We hope you had a lovely time." : r.Instructions)</div>
                                     </li>
                                 }
                             </ul>
@@ -367,6 +402,15 @@ else
     private static string HistoryLabel(CreditHistoryLine line) => line.WeekStart is { } week
         ? $"Week of {WeekLabel(week)}: rhythm {line.WeekScore}"
         : $"Cashed in for {line.RewardTitle ?? "a reward"}";
+
+    private static string IdeaIcon(DateIdeaKind kind) => kind switch
+    {
+        DateIdeaKind.Outdoors => Icons.Material.Outlined.Park,
+        DateIdeaKind.FoodAndDrink => Icons.Material.Outlined.LocalCafe,
+        DateIdeaKind.AtHome => Icons.Material.Outlined.Home,
+        DateIdeaKind.Culture => Icons.Material.Outlined.Museum,
+        _ => Icons.Material.Outlined.Casino,
+    };
 
     private static string KindIcon(RewardKind kind) => kind switch
     {

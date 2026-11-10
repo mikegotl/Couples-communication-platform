@@ -79,6 +79,17 @@ public static class DependencyInjection
         services.AddScoped<Couples.Application.Rewards.IConnectionProgressService, Couples.Infrastructure.Rewards.ConnectionProgressService>();
         services.AddScoped<Couples.Application.Rewards.IRewardCatalogAdminService, Couples.Infrastructure.Rewards.RewardCatalogAdminService>();
 
+        // Reward partners and date ideas (ADR-0018).
+        services.AddScoped<Couples.Application.Rewards.IPartnerService, Couples.Infrastructure.Rewards.PartnerService>();
+        services.AddScoped<Couples.Infrastructure.Rewards.PartnerAdminService>();
+        services.AddScoped<Couples.Application.Rewards.IPartnerAdminService>(sp => sp.GetRequiredService<Couples.Infrastructure.Rewards.PartnerAdminService>());
+        services.AddScoped<Couples.Application.Rewards.IDateIdeaAdminService>(sp => sp.GetRequiredService<Couples.Infrastructure.Rewards.PartnerAdminService>());
+        // Real local places from Google Places; off until Rewards:GooglePlaces:ApiKey is set (ADR-0019).
+        services.AddOptions<Couples.Application.Rewards.GooglePlacesOptions>().BindConfiguration(Couples.Application.Rewards.GooglePlacesOptions.SectionName);
+        services.AddSingleton<Couples.Infrastructure.Rewards.GooglePlacesBudget>();
+        services.AddHttpClient<Couples.Application.Rewards.ILocalPlaceSearch, Couples.Infrastructure.Rewards.GooglePlacesSearch>(client => client.Timeout = TimeSpan.FromSeconds(4));
+        services.AddScoped<Couples.Application.Rewards.IDateIdeaProvider>(sp => sp.GetRequiredService<Couples.Infrastructure.Rewards.PartnerAdminService>());
+
         services.AddHealthChecks()
             .AddDbContextCheck<CouplesDbContext>("database", tags: [ReadyTag]);
 

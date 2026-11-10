@@ -1,0 +1,229 @@
+@page "/admin/partners"
+@inherits ScopedPage
+@attribute [Authorize(Roles = Couples.Web.Administration.AdminBootstrap.AdminRole)]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.Globalization
+@using Couples.Application.Rewards
+@using Couples.Domain.Common
+@using Couples.Domain.Rewards
+@inject CurrentUser CurrentUser
+@inject NavigationManager Navigation
+
+<InteractiveProviders />
+<PageTitle>Reward partners · Admin · BridgeTogether</PageTitle>
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">Reward partners</MudText>
+    <MudText Typo="Typo.body2">
+        Businesses that applied on <MudLink Href="partners">Partner with us</MudLink>. Approve one only after you've agreed its
+        offer with the owner in writing. Approving creates the offer couples see and gives you a private check link to send
+        to the business. Offers and date ideas are on <MudLink Href="admin/rewards">Date rewards</MudLink>.
+    </MudText>
+
+    @if (checkLink is not null)
+    {
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" role="status">
+            <strong>Send this check link to @checkLinkFor.</strong> It is shown only once; you can make a new one at any time.
+            <div><code class="breakable">@checkLink</code></div>
+        </MudAlert>
+    }
+    @if (message is not null)
+    {
+        <MudAlert Severity="@(failed ? Severity.Error : Severity.Success)" Variant="Variant.Outlined" role="status">@message</MudAlert>
+    }
+
+    @if (partners is null)
+    {
+        <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+    }
+    else
+    {
+        <section aria-labelledby="pending-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="pending-heading">Waiting for a decision (@Pending.Count)</MudText>
+            @if (Pending.Count == 0)
+            {
+                <MudText Typo="Typo.body2">No applications are waiting.</MudText>
+            }
+            <MudStack Spacing="2">
+                @foreach (var p in Pending)
+                {
+                    <MudPaper Class="pa-4" Outlined="true">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.subtitle1" HtmlTag="h3"><strong>@p.Application.BusinessName</strong> · @p.Application.Area · @KindLabel(p.Application.Kind)</MudText>
+                            <MudText Typo="Typo.body2">
+                                @p.Application.ContactName, <span class="breakable">@p.Application.ContactEmail</span>@(p.Application.Phone is null ? "" : $", {p.Application.Phone}")
+                                @if (p.Application.Website is { } site)
+                                {
+                                    <span> · <span class="breakable">@site</span></span>
+                                }
+                                · applied @Format(p.AppliedAt)
+                            </MudText>
+                            <MudText Typo="Typo.body2"><em>Their offer:</em> @p.Application.ProposedOffer</MudText>
+                            @if (approvingId == p.Id)
+                            {
+                                <MudTextField T="string" @bind-Value="offerTitle" Label="Offer title couples will see" MaxLength="RewardOffer.MaxTitleLength" Variant="Variant.Outlined" />
+                                <MudTextField T="string" @bind-Value="offerDescription" Label="Description" Lines="2" MaxLength="RewardOffer.MaxDescriptionLength" Variant="Variant.Outlined" />
+                                <MudNumericField T="int" @bind-Value="offerCost" Label="Cost in credits" Min="RewardOffer.MinCost" Max="RewardOffer.MaxCost" Variant="Variant.Outlined" HelperText="A very good week earns about 10 credits." />
+                                <MudStack Row="true" Spacing="2">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="busy" OnClick="() => ApproveAsync(p)">Approve and create offer</MudButton>
+                                    <MudButton Variant="Variant.Text" Disabled="busy" OnClick="() => approvingId = null">Cancel</MudButton>
+                                </MudStack>
+                            }
+                            else
+                            {
+                                <MudStack Row="true" Spacing="2">
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="busy" OnClick="() => StartApprove(p)">Approve<span class="visually-hidden"> @p.Application.BusinessName</span></MudButton>
+                                    <MudButton Variant="Variant.Text" Disabled="busy" OnClick="() => DeclineAsync(p)">Decline<span class="visually-hidden"> @p.Application.BusinessName</span></MudButton>
+                                </MudStack>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                }
+            </MudStack>
+        </section>
+
+        <section aria-labelledby="approved-heading">
+            <MudText Typo="Typo.h6" HtmlTag="h2" id="approved-heading">Partners (@Approved.Count)</MudText>
+            @if (Approved.Count == 0)
+            {
+                <MudText Typo="Typo.body2">None yet.</MudText>
+            }
+            else
+            {
+                <div class="table-scroll" tabindex="0" role="region" aria-labelledby="approved-heading">
+                    <MudSimpleTable Dense="true" Outlined="true">
+                        <thead><tr><th scope="col">Business</th><th scope="col">Contact</th><th scope="col">Offers</th><th scope="col">Vouchers issued</th><th scope="col">Used</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                        <tbody>
+                            @foreach (var p in Approved)
+                            {
+                                <tr>
+                                    <td><strong>@p.Application.BusinessName</strong><br /><span class="voucher-meta">@p.Application.Area · @KindLabel(p.Application.Kind)</span></td>
+                                    <td>@p.Application.ContactName<br /><span class="voucher-meta breakable">@p.Application.ContactEmail</span></td>
+                                    <td>@p.Offers</td>
+                                    <td>@p.VouchersIssued</td>
+                                    <td>@p.VouchersUsed</td>
+                                    <td>
+                                        <MudStack Row="true" Spacing="1">
+                                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Disabled="busy" OnClick="() => NewLinkAsync(p)">New check link<span class="visually-hidden"> for @p.Application.BusinessName</span></MudButton>
+                                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" Disabled="busy" OnClick="() => DeclineAsync(p)">End<span class="visually-hidden"> partnership with @p.Application.BusinessName</span></MudButton>
+                                        </MudStack>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </div>
+            }
+        </section>
+
+        @if (Declined.Count > 0)
+        {
+            <MudText Typo="Typo.body2">@Declined.Count declined or ended. Their details are deleted 180 days after the decision.</MudText>
+        }
+    }
+</MudStack>
+
+@code {
+    private IPartnerAdminService Admin => Service<IPartnerAdminService>();
+
+    private Guid userId;
+    private IReadOnlyList<AdminPartner>? partners;
+    private bool busy;
+    private bool failed;
+    private string? message;
+    private string? checkLink;
+    private string? checkLinkFor;
+    private Guid? approvingId;
+    private string? offerTitle;
+    private string? offerDescription;
+    private int offerCost = 40;
+
+    private List<AdminPartner> Pending => [.. partners!.Where(p => p.Status == PartnerStatus.Pending)];
+
+    private List<AdminPartner> Approved => [.. partners!.Where(p => p.Status == PartnerStatus.Approved)];
+
+    private List<AdminPartner> Declined => [.. partners!.Where(p => p.Status == PartnerStatus.Declined)];
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Admin.ListAsync(userId);
+        partners = result.Succeeded ? result.Value : [];
+    }
+
+    private void StartApprove(AdminPartner partner)
+    {
+        approvingId = partner.Id;
+        offerTitle = null;
+        offerDescription = partner.Application.ProposedOffer;
+        offerCost = 40;
+    }
+
+    private Task ApproveAsync(AdminPartner partner) => RunAsync(async () =>
+    {
+        var result = await Admin.ApproveAsync(userId, partner.Id, offerTitle, offerDescription, offerCost);
+        if (result.Succeeded)
+        {
+            approvingId = null;
+            ShowLink(partner, result.Value);
+            return "Approved. The offer is now shown to couples in that area.";
+        }
+
+        return result.Error == DomainError.Validation
+            ? $"!Give the offer a title, and a cost of {RewardOffer.MinCost} to {RewardOffer.MaxCost} credits."
+            : "!That application has already been decided.";
+    });
+
+    private Task DeclineAsync(AdminPartner partner) => RunAsync(async () =>
+        (await Admin.DeclineAsync(userId, partner.Id)).Succeeded ? "Done. Their offers are no longer shown and their check link has stopped working." : "!Couldn't change that partner.");
+
+    private Task NewLinkAsync(AdminPartner partner) => RunAsync(async () =>
+    {
+        var result = await Admin.NewCheckKeyAsync(userId, partner.Id);
+        if (!result.Succeeded)
+        {
+            return "!Couldn't make a new link.";
+        }
+
+        ShowLink(partner, result.Value);
+        return "New check link made. The old one no longer works.";
+    });
+
+    private void ShowLink(AdminPartner partner, string key)
+    {
+        checkLink = Navigation.ToAbsoluteUri($"partner/check/{key}").AbsoluteUri;
+        checkLinkFor = partner.Application.BusinessName;
+    }
+
+    /// <summary>Runs an action that returns a status line; a leading "!" marks a failure.</summary>
+    private async Task RunAsync(Func<Task<string>> action)
+    {
+        busy = true;
+        checkLink = null;
+        try
+        {
+            var outcome = await action();
+            failed = outcome.StartsWith('!');
+            message = outcome.TrimStart('!');
+            await LoadAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string KindLabel(RewardKind kind) => kind switch
+    {
+        RewardKind.Restaurant => "Food and drink",
+        RewardKind.Experience => "Activity",
+        _ => "Shop or gift cards",
+    };
+
+    private static string Format(DateTimeOffset at) => at.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+}

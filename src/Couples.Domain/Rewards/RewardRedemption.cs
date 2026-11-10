@@ -44,6 +44,21 @@ public sealed class RewardRedemption : Entity
     /// </summary>
     public RedemptionStatus Status { get; private set; }
 
+    /// <summary>When the business marked the voucher as used through its check link.</summary>
+    public DateTimeOffset? UsedAt { get; private set; }
+
+    public bool MarkUsed(DateTimeOffset now)
+    {
+        if (Status != RedemptionStatus.Issued || UsedAt is not null || (ExpiresAt is { } expires && expires < now))
+        {
+            return false;
+        }
+
+        UsedAt = now;
+        Touch(now);
+        return true;
+    }
+
     public static RewardRedemption Reserve(Guid workspaceId, RewardOffer offer, Guid redeemedByUserId, string provider, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(offer);
