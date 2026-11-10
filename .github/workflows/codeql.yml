@@ -37,9 +37,6 @@ jobs:
           category: "/language:${{ matrix.language }}"
           output: sarif-results
 
-      - uses: actions/upload-artifact@v4
+      - name: TEMP print csharp results
         if: matrix.language == 'csharp'
-        with:
-          name: sarif-csharp
-          path: sarif-results
-          retention-days: 1
+        run: jq -r '.runs[].results[] | "RESULT \(.ruleId) \(.locations[0].physicalLocation.artifactLocation.uri):\(.locations[0].physicalLocation.region.startLine) \(.message.text)"' sarif-results/*.sarif
