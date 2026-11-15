@@ -1,7 +1,6 @@
-# ADR-0020: iPhone app with .NET MAUI Blazor Hybrid
+# ADR-0020: iPhone and Android app with .NET MAUI Blazor Hybrid
 
-Status: proposed (2026-11-15). Phase 0 (scaffolding) is in place; later phases wait for the
-owner's sign-off on the plan.
+Status: accepted (2026-11-15). The owner approved the plan for iPhone and Android.
 
 ## Context
 
@@ -35,9 +34,10 @@ and those services reach PostgreSQL through Infrastructure.
 - **No message text stored on the phone** at first. Push notifications, when added, are
   content-free like today's in-app notices (ADR-0011).
 - **Admin, partner check links and the partner application stay web-only.**
-- **iOS builds need macOS.** The app project (`src/Couples.Mobile`, `net10.0-ios`) is not in
-  `Couples.slnx`; `.github/workflows/mobile.yml` builds it for the simulator on a macOS runner,
-  only when the app or code it shares changes.
+- **iPhone and Android from one project** (`src/Couples.Mobile`, `net10.0-ios26.0;net10.0-android`).
+  iOS builds need macOS, so the project is not in `Couples.slnx`; `.github/workflows/mobile.yml`
+  builds iOS for the simulator on a macOS runner and Android on Linux, only when the app or code
+  it shares changes. Android disables cloud backups so drafts and tokens never leave the phone.
 
 ## Phase 0 (this change)
 
@@ -45,7 +45,7 @@ and those services reach PostgreSQL through Infrastructure.
 - `GET /api/v1/app-status` (anonymous, holds no user data): service name, API version and the
   oldest supported app version (`MobileApp:MinimumVersion`, default 0.1.0).
 - `Couples.Client` with a typed client for it (https only outside local development).
-- `Couples.Mobile`: the iPhone app shell, which shows whether it can reach the service.
+- `Couples.Mobile`: the phone app shell (iPhone and Android), which shows whether it can reach the service.
 
 ## Consequences
 
@@ -56,4 +56,5 @@ and those services reach PostgreSQL through Infrastructure.
   most of the work, and it is where privacy mistakes could happen, so endpoints get integration
   tests that a user can't read or act on another user's data.
 - An Apple Developer Program membership is needed to run the app on a real iPhone, for TestFlight
-  and for the App Store (it is also already needed for Sign in with Apple, ADR-0016).
+  and for the App Store (it is also already needed for Sign in with Apple, ADR-0016). Google Play
+  needs a developer account ($25 once).

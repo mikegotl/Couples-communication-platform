@@ -41,7 +41,7 @@ env:
 jobs:
   build-ios:
     name: Build iPhone app (simulator)
-    # The iOS workload tracks the newest Xcode; macos-26 carries it (macos-15 stops at Xcode 26.x).
+    # Needs Xcode 26.x for the pinned iOS 26.0 bindings (see the project file).
     runs-on: macos-26
     timeout-minutes: 45
     steps:
@@ -60,16 +60,14 @@ jobs:
       - name: Install the MAUI iOS workload
         run: dotnet workload install maui-ios
 
-      # Simulator build without the linker: it compiles and packages the app, and doesn't fail when
-      # the runner's Xcode is a minor version behind the workload. Store builds link with a matching Xcode.
+      # TargetFrameworks narrows restore to one platform (--framework still restores both).
       - name: Build
         run: >
           dotnet build src/Couples.Mobile/Couples.Mobile.csproj
-          --framework net10.0-ios
+          -p:TargetFrameworks=net10.0-ios26.0
           --configuration Debug
           -p:RuntimeIdentifier=iossimulator-arm64
           -p:ValidateXcodeVersion=false
-          -p:MtouchLink=None
 
   build-android:
     name: Build Android app
@@ -94,7 +92,7 @@ jobs:
       - name: Install Android SDK components
         run: >
           dotnet build src/Couples.Mobile/Couples.Mobile.csproj
-          --framework net10.0-android
+          -p:TargetFrameworks=net10.0-android
           -t:InstallAndroidDependencies
           -p:AndroidSdkDirectory="$ANDROID_HOME"
           -p:AcceptAndroidSdkLicenses=true
@@ -102,6 +100,6 @@ jobs:
       - name: Build
         run: >
           dotnet build src/Couples.Mobile/Couples.Mobile.csproj
-          --framework net10.0-android
+          -p:TargetFrameworks=net10.0-android
           --configuration Debug
           -p:AndroidSdkDirectory="$ANDROID_HOME"
