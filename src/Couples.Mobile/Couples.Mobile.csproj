@@ -1,14 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <!--
-    The BridgeTogether iPhone app: a .NET MAUI Blazor Hybrid shell that hosts the shared Razor UI
+    The BridgeTogether phone app (iPhone and Android): a .NET MAUI Blazor Hybrid shell that hosts the shared Razor UI
     (Couples.UI) in a native BlazorWebView and talks to the web app's /api (docs/adr/0020).
-    Building needs macOS with Xcode and the maui-ios workload, so this project is not in
-    Couples.slnx; .github/workflows/mobile.yml builds it on a macOS runner.
+    iOS builds need macOS with Xcode and the maui-ios workload; Android builds need the
+    maui-android workload (Linux works). So this project is not in Couples.slnx;
+    .github/workflows/mobile.yml builds iOS on a macOS runner and Android on Linux.
   -->
 
   <PropertyGroup>
-    <TargetFramework>net10.0-ios</TargetFramework>
+    <!-- Directory.Build.props sets TargetFramework=net10.0; clear it so TargetFrameworks applies. -->
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>net10.0-ios;net10.0-android</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <RootNamespace>Couples.Mobile</RootNamespace>
     <UseMaui>true</UseMaui>
@@ -20,7 +23,8 @@
     <ApplicationId>com.bridgetogether.app</ApplicationId>
     <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
-    <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
 
     <!-- Platform SDK warnings vary with Xcode versions on the runner; analyzers still run and report. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -28,9 +32,11 @@
 
   <PropertyGroup>
     <!-- Server the app talks to. Override with -p:ApiBaseAddress=https://... for a real build. The
-         iOS simulator shares the Mac's localhost, so Debug points at `dotnet run` of Couples.Web.
+         iOS simulator shares the Mac's localhost, so Debug points at `dotnet run` of Couples.Web;
+         the Android emulator reaches the host computer at 10.0.2.2.
          The Release default is a reserved .invalid name: it never resolves, so an unconfigured
          build says it can't reach the service rather than talking to someone else's server. -->
+    <ApiBaseAddress Condition="'$(ApiBaseAddress)' == '' and '$(Configuration)' == 'Debug' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">http://10.0.2.2:5217/</ApiBaseAddress>
     <ApiBaseAddress Condition="'$(ApiBaseAddress)' == '' and '$(Configuration)' == 'Debug'">http://localhost:5217/</ApiBaseAddress>
     <ApiBaseAddress Condition="'$(ApiBaseAddress)' == ''">https://app.bridgetogether.invalid/</ApiBaseAddress>
   </PropertyGroup>
