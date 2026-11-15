@@ -1,9 +1,9 @@
 using MudBlazor;
 
-namespace Couples.Web.Components.Layout;
+namespace Couples.UI.Theme;
 
 /// <summary>
-/// The "Warm" look (2026-11-09): cream background, terracotta actions, sage information, Fraunces
+/// The "Warm" look (2026-11-09), shared by the web app and the iPhone app: cream background, terracotta actions, sage information, Fraunces
 /// headings and Nunito text (both self-hosted, SIL OFL). Every text colour meets WCAG 1.4.3 (4.5:1)
 /// on both the cream background and white cards, and white text meets it on each filled colour.
 /// </summary>

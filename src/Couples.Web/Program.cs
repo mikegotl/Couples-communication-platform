@@ -4,6 +4,7 @@ using Couples.Infrastructure;
 using Couples.Infrastructure.Identity;
 using Couples.Infrastructure.Persistence;
 using Couples.Web;
+using Couples.Web.Api;
 using Couples.Web.Components;
 using Couples.Web.Components.Account;
 using Couples.Web.Email;
@@ -38,6 +39,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddScoped<CurrentUser>();
+builder.Services.AddMobileApi(builder.Configuration);
 builder.Services.AddOptions<Couples.Web.Safety.SafetyOptions>()
     .BindConfiguration(Couples.Web.Safety.SafetyOptions.SectionName)
     .Validate(o => o.ExitUrl.Scheme == Uri.UriSchemeHttps, "Safety:ExitUrl must be https.")
@@ -144,6 +146,7 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapAdditionalIdentityEndpoints();
+app.MapMobileApi();
 
 await app.RunAsync();
 

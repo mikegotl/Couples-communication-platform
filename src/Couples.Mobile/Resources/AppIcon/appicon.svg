@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="456" height="456" viewBox="0 0 456 456">
+  <rect width="456" height="456" fill="#A94A33"/>
+  <!-- A simple arch (a bridge) over two figures, echoing the landing page hero. -->
+  <path d="M98 330 V250 a130 130 0 0 1 260 0 V330" fill="none" stroke="#FAF5EE" stroke-width="28" stroke-linecap="round"/>
+  <circle cx="190" cy="236" r="26" fill="#FAF5EE"/>
+  <circle cx="266" cy="236" r="26" fill="#FAF5EE"/>
+  <path d="M150 330 a40 52 0 0 1 80 0 Z M226 330 a40 52 0 0 1 80 0 Z" fill="#FAF5EE"/>
+</svg>

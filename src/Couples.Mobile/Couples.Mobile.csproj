@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!--
+    The BridgeTogether iPhone app: a .NET MAUI Blazor Hybrid shell that hosts the shared Razor UI
+    (Couples.UI) in a native BlazorWebView and talks to the web app's /api (docs/adr/0020).
+    Building needs macOS with Xcode and the maui-ios workload, so this project is not in
+    Couples.slnx; .github/workflows/mobile.yml builds it on a macOS runner.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-ios</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Couples.Mobile</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <EnableDefaultCssItems>false</EnableDefaultCssItems>
+
+    <ApplicationTitle>BridgeTogether</ApplicationTitle>
+    <!-- Placeholder until the Apple Developer account and bundle id are set up (see the plan). -->
+    <ApplicationId>com.bridgetogether.app</ApplicationId>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
+
+    <!-- Platform SDK warnings vary with Xcode versions on the runner; analyzers still run and report. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Server the app talks to. Override with -p:ApiBaseAddress=https://... for a real build. The
+         iOS simulator shares the Mac's localhost, so Debug points at `dotnet run` of Couples.Web.
+         The Release default is a reserved .invalid name: it never resolves, so an unconfigured
+         build says it can't reach the service rather than talking to someone else's server. -->
+    <ApiBaseAddress Condition="'$(ApiBaseAddress)' == '' and '$(Configuration)' == 'Debug'">http://localhost:5217/</ApiBaseAddress>
+    <ApiBaseAddress Condition="'$(ApiBaseAddress)' == ''">https://app.bridgetogether.invalid/</ApiBaseAddress>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ApiBaseAddress</_Parameter1>
+      <_Parameter2>$(ApiBaseAddress)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" Color="#A94A33" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#FAF5EE" BaseSize="128,128" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.14" />
+    <PackageReference Include="MudBlazor" Version="9.12.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Couples.UI\Couples.UI.csproj" />
+    <ProjectReference Include="..\Couples.Client\Couples.Client.csproj" />
+  </ItemGroup>
+
+</Project>

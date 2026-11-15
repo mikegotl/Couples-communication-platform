@@ -1,0 +1,4 @@
+/* Self-hosted brand fonts (SIL OFL, licences beside the files). Shared by the web and iPhone apps:
+   the web app serves this at _content/Couples.UI/brand.css, the phone app from its app bundle. */
+@font-face { font-family: "Fraunces"; src: url("fonts/fraunces-latin.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("fonts/nunito-latin.woff2") format("woff2"); font-weight: 200 1000; font-display: swap; }

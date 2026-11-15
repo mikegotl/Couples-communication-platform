@@ -1,0 +1,67 @@
+name: iPhone app
+
+# Builds the .NET MAUI iPhone app (src/Couples.Mobile) for the iOS simulator: no signing, no Apple
+# account, nothing published. macOS runner minutes cost more than Linux ones, so this runs only
+# when the app or the code it shares changes, or by hand.
+on:
+  pull_request:
+    paths:
+      - src/Couples.Mobile/**
+      - src/Couples.UI/**
+      - src/Couples.Client/**
+      - src/Couples.Application/**
+      - src/Couples.Domain/**
+      - .github/workflows/mobile.yml
+      - global.json
+      - Directory.Build.props
+  push:
+    branches: [main]
+    paths:
+      - src/Couples.Mobile/**
+      - src/Couples.UI/**
+      - src/Couples.Client/**
+      - src/Couples.Application/**
+      - src/Couples.Domain/**
+      - .github/workflows/mobile.yml
+      - global.json
+      - Directory.Build.props
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-ios:
+    name: Build iPhone app (simulator)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use the newest installed Xcode
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app | sort -V | tail -n 1)
+          sudo xcode-select --switch "$xcode"
+          xcodebuild -version
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install the MAUI iOS workload
+        run: dotnet workload install maui-ios
+
+      - name: Build
+        run: >
+          dotnet build src/Couples.Mobile/Couples.Mobile.csproj
+          --configuration Debug
+          -p:RuntimeIdentifier=iossimulator-arm64
+          -p:ValidateXcodeVersion=false
