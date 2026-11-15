@@ -41,7 +41,8 @@ env:
 jobs:
   build-ios:
     name: Build iPhone app (simulator)
-    runs-on: macos-15
+    # The iOS workload tracks the newest Xcode; macos-26 carries it (macos-15 stops at Xcode 26.x).
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -59,9 +60,12 @@ jobs:
       - name: Install the MAUI iOS workload
         run: dotnet workload install maui-ios
 
+      # Simulator build without the linker: it compiles and packages the app, and doesn't fail when
+      # the runner's Xcode is a minor version behind the workload. Store builds link with a matching Xcode.
       - name: Build
         run: >
           dotnet build src/Couples.Mobile/Couples.Mobile.csproj
           --configuration Debug
           -p:RuntimeIdentifier=iossimulator-arm64
           -p:ValidateXcodeVersion=false
+          -p:MtouchLink=None
