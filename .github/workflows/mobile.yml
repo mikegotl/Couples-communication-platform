@@ -60,11 +60,11 @@ jobs:
       - name: Install the MAUI iOS workload
         run: dotnet workload install maui-ios
 
-      # TargetFrameworks narrows restore to one platform (--framework still restores both).
+      # MobilePlatforms narrows restore to one platform (--framework still restores both).
       - name: Build
         run: >
           dotnet build src/Couples.Mobile/Couples.Mobile.csproj
-          -p:TargetFrameworks=net10.0-ios26.0
+          -p:MobilePlatforms=ios
           --configuration Debug
           -p:RuntimeIdentifier=iossimulator-arm64
           -p:ValidateXcodeVersion=false
@@ -92,7 +92,7 @@ jobs:
       - name: Install Android SDK components
         run: >
           dotnet build src/Couples.Mobile/Couples.Mobile.csproj
-          -p:TargetFrameworks=net10.0-android
+          -p:MobilePlatforms=android
           --framework net10.0-android
           -t:InstallAndroidDependencies
           -p:AndroidSdkDirectory="$ANDROID_HOME"
@@ -101,6 +101,6 @@ jobs:
       - name: Build
         run: >
           dotnet build src/Couples.Mobile/Couples.Mobile.csproj
-          -p:TargetFrameworks=net10.0-android
+          -p:MobilePlatforms=android
           --configuration Debug
           -p:AndroidSdkDirectory="$ANDROID_HOME"

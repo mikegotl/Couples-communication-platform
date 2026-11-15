@@ -13,7 +13,12 @@
     <TargetFramework></TargetFramework>
     <!-- iOS bindings pinned to 26.0 so any Xcode 26.x builds it (the unversioned TFM follows the
          newest iOS SDK, which needs an Xcode the CI runners don't have yet). Raise deliberately. -->
-    <TargetFrameworks>net10.0-ios26.0;net10.0-android</TargetFrameworks>
+    <!-- MobilePlatforms (ios;android by default) lets a build restore just one platform, e.g. on a
+         Linux CI runner that has no iOS workload: -p:MobilePlatforms=android. -->
+    <MobilePlatforms Condition="'$(MobilePlatforms)' == ''">ios;android</MobilePlatforms>
+    <TargetFrameworks Condition="$(MobilePlatforms.Contains('ios'))">net10.0-ios26.0</TargetFrameworks>
+    <TargetFrameworks Condition="$(MobilePlatforms.Contains('android'))">$(TargetFrameworks);net10.0-android</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks.Trim(';'))</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <RootNamespace>Couples.Mobile</RootNamespace>
     <UseMaui>true</UseMaui>
