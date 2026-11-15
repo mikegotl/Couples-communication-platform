@@ -58,7 +58,7 @@ telemetry, notifications, search indexes or analytics. Logs carry ids only.
 
 ## Text messages (SMS)
 
-Off unless `SmsMessaging` is on and a provider is configured (ADR-0020). When a user opts in, the
+Off unless `SmsMessaging` is on and a provider is configured (ADR-0021). When a user opts in, the
 SMS provider and their carrier carry the texts: by default a fixed notice with no content, or the
 partner's message if the user chose that, and any reply the user texts. Texts stay on the phone
 and can't be withdrawn; both the settings page and the sender's preview say so. Safety answers,

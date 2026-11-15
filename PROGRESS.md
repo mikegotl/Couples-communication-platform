@@ -530,7 +530,7 @@ explicit agreement (consent record). A texted reply becomes a private draft, is 
 shared only after `SEND`, through the same preview/consent path as the app. STOP/START/HELP work;
 mute, quiet hours, pause, withdrawal and the safety hold apply to texts; safety content is never
 texted. Twilio provider behind `SmsMessaging` (off in Production); Fake provider and `/dev/texts`
-simulator in Development. ADR-0020; setup in `docs/operations/sms.md`. Migration `SmsMessaging`.
+simulator in Development. ADR-0021; setup in `docs/operations/sms.md`. Migration `SmsMessaging`.
 
 **Not yet (owner)**: a Twilio account and sender number registered for the launch market, a
 spending limit, and privacy notice wording naming the SMS provider.

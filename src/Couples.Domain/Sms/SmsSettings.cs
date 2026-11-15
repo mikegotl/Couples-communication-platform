@@ -4,7 +4,7 @@ using Couples.Domain.Privacy;
 namespace Couples.Domain.Sms;
 
 /// <summary>
-/// One user's choice to get their partner's messages by text, and to answer by text (ADR-0020).
+/// One user's choice to get their partner's messages by text, and to answer by text (ADR-0021).
 /// Off until the user proves they hold the phone with a one-time code and agrees to texts. A STOP
 /// reply turns texts off at once. Holds the phone number and, while a reply is waiting for the
 /// user's SEND, the id and fingerprint of that draft; never any message text.

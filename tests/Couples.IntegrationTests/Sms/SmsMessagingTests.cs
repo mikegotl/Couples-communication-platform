@@ -20,7 +20,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Couples.IntegrationTests.Sms;
 
 /// <summary>
-/// Partner messages by text (ADR-0020): opt-in with a code, texts follow the same pace and safety
+/// Partner messages by text (ADR-0021): opt-in with a code, texts follow the same pace and safety
 /// rules as notices, replies by text go through preview and SEND, STOP stops everything, and no
 /// number, code or message text reaches the logs.
 /// </summary>

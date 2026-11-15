@@ -90,7 +90,7 @@ public static class DependencyInjection
         services.AddHttpClient<Couples.Application.Rewards.ILocalPlaceSearch, Couples.Infrastructure.Rewards.GooglePlacesSearch>(client => client.Timeout = TimeSpan.FromSeconds(4));
         services.AddScoped<Couples.Application.Rewards.IDateIdeaProvider>(sp => sp.GetRequiredService<Couples.Infrastructure.Rewards.PartnerAdminService>());
 
-        // Partner messages by text (ADR-0020). Closed unless SmsMessaging is on and Sms:Provider is configured.
+        // Partner messages by text (ADR-0021). Closed unless SmsMessaging is on and Sms:Provider is configured.
         services.AddOptions<Couples.Application.Sms.SmsOptions>().BindConfiguration(Couples.Application.Sms.SmsOptions.SectionName);
         services.AddScoped<Couples.Infrastructure.Sms.SmsAvailability>();
         services.AddSingleton<Couples.Infrastructure.Sms.FakeSmsOutbox>();

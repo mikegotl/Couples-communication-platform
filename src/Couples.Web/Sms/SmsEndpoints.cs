@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 namespace Couples.Web.Sms;
 
 /// <summary>
-/// Twilio's webhook for incoming texts (ADR-0020). Anonymous by necessity, so every request must
+/// Twilio's webhook for incoming texts (ADR-0021). Anonymous by necessity, so every request must
 /// carry a valid Twilio signature for the configured public URL; anything else gets 403. Answers
 /// 404 while texts are off, so the endpoint doesn't show it exists.
 /// </summary>

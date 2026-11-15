@@ -1,7 +1,7 @@
 # Text messages (SMS): setup
 
 Texts are built and off. They need the `SmsMessaging` flag and a configured provider. Design:
-[ADR-0020](../adr/0020-partner-messages-by-text.md).
+[ADR-0021](../adr/0021-partner-messages-by-text.md).
 
 ## Try it locally
 

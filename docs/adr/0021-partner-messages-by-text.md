@@ -1,4 +1,4 @@
-# ADR-0020: Partner messages by text (SMS), opt-in per partner
+# ADR-0021: Partner messages by text (SMS), opt-in per partner
 
 Status: accepted (2026-11-15). Built and off in Production behind `SmsMessaging` until an SMS
 provider account, sender number and privacy notice wording are in place.

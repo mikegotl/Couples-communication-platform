@@ -3,7 +3,7 @@ using Couples.Domain.Common;
 namespace Couples.Application.Sms;
 
 /// <summary>
-/// A user's own text-message settings (ADR-0020). Every method acts only on the calling user's row
+/// A user's own text-message settings (ADR-0021). Every method acts only on the calling user's row
 /// and does nothing unless texts are available (<see cref="FeatureFlags.SmsMessaging"/> on and a
 /// provider configured).
 /// </summary>

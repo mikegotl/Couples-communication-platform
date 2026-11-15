@@ -94,7 +94,7 @@ else
     builder.Services.AddSingleton<IEmailSender<ApplicationUser>, UnconfiguredEmailSender>();
 }
 
-// Partner messages by text (ADR-0020); idle unless SmsMessaging is on and a provider is configured.
+// Partner messages by text (ADR-0021); idle unless SmsMessaging is on and a provider is configured.
 builder.Services.AddHostedService<Couples.Web.Sms.SmsDispatchService>();
 
 var app = builder.Build();

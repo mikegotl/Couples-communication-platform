@@ -29,7 +29,7 @@ public static class FeatureFlags
     public const string DateRewards = "DateRewards";
 
     /// <summary>
-    /// Partners can choose to get messages by text and answer by text (ADR-0020). On in Development
+    /// Partners can choose to get messages by text and answer by text (ADR-0021). On in Development
     /// with the in-memory Fake provider; off in Production until an SMS provider account, sender
     /// number and the privacy notice wording are in place.
     /// </summary>

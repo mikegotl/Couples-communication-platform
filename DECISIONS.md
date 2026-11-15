@@ -24,7 +24,7 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0017](docs/adr/0017-connection-score-and-date-rewards.md) | Shared connection score, credits and date rewards behind `DateRewards` | Accepted |
 | [0018](docs/adr/0018-reward-partners-and-date-ideas.md) | Registered reward partners with a voucher check link; date ideas as suggestions only | Accepted |
 | [0019](docs/adr/0019-local-date-spots-from-google-places.md) | Local date spots from Google Places: off without a key, only the town is sent, daily cap | Accepted |
-| [0020](docs/adr/0020-partner-messages-by-text.md) | Partner messages by text: opt-in with a code, replies need SEND, follows pace and safety rules | Accepted (off until a provider is set up) |
+| [0021](docs/adr/0021-partner-messages-by-text.md) | Partner messages by text: opt-in with a code, replies need SEND, follows pace and safety rules | Accepted (off until a provider is set up) |
 
 ## Open decisions (owner)
 
@@ -45,7 +45,7 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
   `DateRewards` is turned on outside Development (ADR-0017).
 - An SMS provider account (Twilio), a sender number registered for the launch market, a spending
   limit, and privacy notice wording, before `SmsMessaging` is turned on outside Development
-  (`docs/operations/sms.md`, ADR-0020).
+  (`docs/operations/sms.md`, ADR-0021).
 - The pilot invitation code, and the named incident roles (`docs/operations/incident-response.md`).
 - Independent clinical and security sign-off of joint chat before any workspace is made eligible
   (`docs/safety/joint-chat-review.md`); until then `Phase2JointChat` stays off everywhere.
