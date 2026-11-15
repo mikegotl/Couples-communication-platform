@@ -1,0 +1,180 @@
+@page "/settings/texts"
+@inherits ScopedPage
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Sms
+@using Couples.Domain.Common
+@inject CurrentUser CurrentUser
+@inject ISnackbar Snackbar
+
+<InteractiveProviders />
+<PageTitle>Text messages · BridgeTogether</PageTitle>
+
+@if (view is null)
+{
+    <MudProgressCircular Indeterminate="true" aria-label="Loading" />
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Text messages</MudText>
+
+        @if (!view.Available)
+        {
+            <MudText>Getting messages by text isn't available yet. Your messages are always on your <MudLink Href="messages">messages page</MudLink>.</MudText>
+        }
+        else
+        {
+            <MudText>
+                If you like, messages your partner shares can also reach you as a text, and you can answer by texting back.
+                It's your choice, and your partner isn't told whether you use it.
+            </MudText>
+
+            @if (view.HeldForSafety)
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                    While your safety settings are on, no texts are sent to you and texts you send aren't passed on.
+                    Your partner isn't told. You can change this on your <MudLink Href="safety">private safety check</MudLink> page.
+                </MudAlert>
+            }
+
+            @switch (view.State)
+            {
+                case SmsSetupState.On:
+                    <MudPaper Class="pa-4" Outlined="true">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.h6" HtmlTag="h2">Texts are on</MudText>
+                            <MudText>Sending to <strong>@view.MaskedPhone</strong>.</MudText>
+                            <MudRadioGroup T="bool" Value="view.IncludeMessageText" ValueChanged="SetIncludeAsync" Disabled="busy">
+                                <MudRadio T="bool" Value="false" Color="Color.Primary">Just tell me something arrived</MudRadio>
+                                <MudRadio T="bool" Value="true" Color="Color.Primary">Send me the message itself</MudRadio>
+                            </MudRadioGroup>
+                            <MudText Typo="Typo.body2">
+                                To answer, text back. We'll text you exactly what your partner will see, and nothing is shared until you reply
+                                <strong>SEND</strong>. Anything else and it stays a private draft here, where you can edit it or ask the coach.
+                                Reply <strong>STOP</strong> at any time to stop texts.
+                            </MudText>
+                            <div><MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="TurnOffAsync" Disabled="busy">Turn off texts and forget my number</MudButton></div>
+                        </MudStack>
+                    </MudPaper>
+                    break;
+
+                case SmsSetupState.Stopped:
+                    <MudPaper Class="pa-4" Outlined="true">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.h6" HtmlTag="h2">Texts are stopped</MudText>
+                            <MudText>You replied STOP, so nothing is being sent to @view.MaskedPhone. Text <strong>START</strong> to turn them back on, or remove the number.</MudText>
+                            <div><MudButton Variant="Variant.Outlined" OnClick="TurnOffAsync" Disabled="busy">Forget my number</MudButton></div>
+                        </MudStack>
+                    </MudPaper>
+                    break;
+
+                case SmsSetupState.AwaitingCode:
+                    <MudPaper Class="pa-4" Outlined="true">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.h6" HtmlTag="h2">Enter the code</MudText>
+                            <MudText>We texted a 6-digit code to @view.MaskedPhone. It works for 10 minutes.</MudText>
+                            <MudTextField T="string" @bind-Value="code" Label="Code" Variant="Variant.Outlined" InputMode="InputMode.numeric" MaxLength="6"
+                                          Style="max-width: 12rem" UserAttributes="@(new Dictionary<string, object?> { ["autocomplete"] = "one-time-code" })" />
+                            <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmAsync" Disabled="busy">Turn on texts</MudButton>
+                                <MudButton Variant="Variant.Text" OnClick="TurnOffAsync" Disabled="busy">Use a different number</MudButton>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+                    break;
+
+                default:
+                    <MudPaper Class="pa-4" Outlined="true">
+                        <MudStack Spacing="2">
+                            <MudText Typo="Typo.h6" HtmlTag="h2">Before you turn texts on</MudText>
+                            <ul class="privacy-tips">
+                                <li>Texts stay on your phone. Anyone who can see your phone or its lock screen may see them.</li>
+                                <li>If your partner withdraws a message, we can't remove a text you already got.</li>
+                                <li>Texts pass through our text provider and your mobile carrier, which is less private than reading here.</li>
+                                <li>Your private notes, drafts and safety check answers are never sent by text.</li>
+                                <li>Quiet hours, mute and pause apply to texts too. Message and data rates may apply.</li>
+                            </ul>
+                            <MudTextField T="string" @bind-Value="phone" Label="Mobile number" Variant="Variant.Outlined" InputType="InputType.Telephone"
+                                          HelperText="Include your country code if you're outside the US, for example +44 7700 900123." Style="max-width: 24rem"
+                                          UserAttributes="@(new Dictionary<string, object?> { ["autocomplete"] = "tel" })" />
+                            <MudText Typo="Typo.subtitle1" HtmlTag="h3">What should texts say?</MudText>
+                            <MudRadioGroup T="bool" @bind-Value="includeText">
+                                <MudRadio T="bool" Value="false" Color="Color.Primary">Just tell me something arrived (more private)</MudRadio>
+                                <MudRadio T="bool" Value="true" Color="Color.Primary">Send me the message itself</MudRadio>
+                            </MudRadioGroup>
+                            <MudCheckBox T="bool" @bind-Value="agreed" Color="Color.Primary"
+                                         Label="I agree to get texts from BridgeTogether about messages from my partner. I can reply STOP at any time." />
+                            <div><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartAsync" Disabled="busy">Text me a code</MudButton></div>
+                        </MudStack>
+                    </MudPaper>
+                    break;
+            }
+        }
+
+        <div><MudButton Variant="Variant.Text" Href="settings/pace">Back to pace and notifications</MudButton></div>
+    </MudStack>
+}
+
+@code {
+    private ISmsSettingsService Texts => Service<ISmsSettingsService>();
+
+    private SmsSettingsView? view;
+    private Guid userId;
+    private bool busy;
+    private string? phone;
+    private string? code;
+    private bool includeText;
+    private bool agreed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userId = await CurrentUser.GetIdAsync() ?? throw new InvalidOperationException("An authenticated user is required.");
+        view = await Texts.GetAsync(userId);
+    }
+
+    private Task StartAsync() => ApplyAsync(Texts.StartAsync(userId, phone, includeText, agreed), "Code sent.");
+
+    private async Task ConfirmAsync()
+    {
+        await ApplyAsync(Texts.ConfirmAsync(userId, code), "Texts are on.");
+        code = null;
+    }
+
+    private Task SetIncludeAsync(bool include) =>
+        ApplyAsync(Texts.SetIncludeMessageTextAsync(userId, include), include ? "Texts will include the message." : "Texts will only say something arrived.");
+
+    private Task TurnOffAsync() => ApplyAsync(Texts.TurnOffAsync(userId), "Texts are off and your number is gone.");
+
+    private async Task ApplyAsync(Task<Result<SmsSettingsView>> change, string success)
+    {
+        busy = true;
+        try
+        {
+            var result = await change;
+            if (result.Succeeded)
+            {
+                view = result.Value;
+                Snackbar.Add(success, Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(Explain(result.Error!.Value), Severity.Warning);
+            }
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string Explain(DomainError error) => error switch
+    {
+        DomainError.WarningNotAcknowledged => "Tick the box to agree to texts first.",
+        DomainError.Validation => "That doesn't look right. Check the number or code and try again.",
+        DomainError.RateLimited => "That's a lot of codes in a short time. Try again in an hour.",
+        DomainError.InvitationInvalid => "That code has expired or had too many tries. Ask for a new one.",
+        DomainError.Conflict => "That number is already used by another account.",
+        _ => "That didn't work. Try again.",
+    };
+}

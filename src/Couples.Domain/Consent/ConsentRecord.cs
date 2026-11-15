@@ -59,4 +59,7 @@ public enum ConsentPurpose
 
     /// <summary>Take part in one specific joint chat (subject: the session), under the policy version fingerprinted.</summary>
     JointChatSession = 2,
+
+    /// <summary>Get partner messages by text at one verified number (subject: the user; fingerprint: of the number).</summary>
+    SmsMessaging = 3,
 }

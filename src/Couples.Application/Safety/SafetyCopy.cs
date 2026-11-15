@@ -44,6 +44,7 @@ public static class SafetyCopy
         "Log out when you finish, and leave \"Remember me\" unticked when you log in.",
         "To remove visits afterwards, delete just this site from your browser history. Clearing all of it can be noticed.",
         "Account emails, such as password resets, go to your email inbox. Use an address only you can open.",
+        "If you turned on text messages, those texts stay on your phone. You can turn texts off in Pace and notifications and delete past texts in your messages app.",
     ];
 
     /// <summary>Every string above, for review tooling and tests.</summary>

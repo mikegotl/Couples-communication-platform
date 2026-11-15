@@ -28,6 +28,13 @@ public static class FeatureFlags
     /// </summary>
     public const string DateRewards = "DateRewards";
 
+    /// <summary>
+    /// Partners can choose to get messages by text and answer by text (ADR-0020). On in Development
+    /// with the in-memory Fake provider; off in Production until an SMS provider account, sender
+    /// number and the privacy notice wording are in place.
+    /// </summary>
+    public const string SmsMessaging = "SmsMessaging";
+
     /// <summary>Every flag, for the admin overview.</summary>
-    public static IReadOnlyList<string> All { get; } = [Phase2JointChat, PilotEnrollmentRequired, FeedbackForm, DateRewards];
+    public static IReadOnlyList<string> All { get; } = [Phase2JointChat, PilotEnrollmentRequired, FeedbackForm, DateRewards, SmsMessaging];
 }

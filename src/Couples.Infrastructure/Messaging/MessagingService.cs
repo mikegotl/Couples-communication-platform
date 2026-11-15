@@ -119,7 +119,8 @@ internal sealed partial class MessagingService(CouplesDbContext db, IClock clock
         }
 
         var name = await db.Workspaces.Where(w => w.Id == draft.WorkspaceId).Select(w => w.Name).FirstAsync(cancellationToken);
-        return Result.Ok(new SharePreview(draft.Id, draft.Body, draft.Fingerprint, name));
+        var readsByText = await db.SmsSettings.AnyAsync(s => s.UserId == recipient.Value && s.VerifiedAt != null && s.OptedOutAt == null && s.IncludeMessageText, cancellationToken);
+        return Result.Ok(new SharePreview(draft.Id, draft.Body, draft.Fingerprint, name, readsByText));
     }
 
     public async Task<Result<SharedMessageView>> ShareAsync(Guid userId, Guid draftId, string approvedFingerprint, CancellationToken cancellationToken = default)

@@ -52,6 +52,10 @@ else if (stage == Stage.Preview && preview is not null)
                      Label="I've read this and I want to share it with my partner." />
         <MudText Typo="Typo.body2">
             After you send it you can withdraw it, which hides it and erases the text, but your partner may already have read it.
+            @if (preview.PartnerReadsByText)
+            {
+                <text> Your partner gets messages as texts, so withdrawing it won't remove it from their phone.</text>
+            }
         </MudText>
 
         @if (error is not null)

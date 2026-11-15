@@ -86,6 +86,10 @@ else
                     arrive on your messages page.
                 </MudText>
                 <MudSwitch T="bool" Value="settings.Muted" ValueChanged="SetMutedAsync" Color="Color.Primary" Label="Mute notifications" Disabled="busy" />
+                @if (textsAvailable)
+                {
+                    <MudText Typo="Typo.body2">You can also get messages by text and answer by texting back. <MudLink Href="settings/texts">Set up text messages</MudLink></MudText>
+                }
             </MudStack>
         </MudPaper>
 
@@ -104,6 +108,7 @@ else
     private int quietStartHour = 22;
     private int quietEndHour = 7;
     private string timeZone = "UTC";
+    private bool textsAvailable;
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,6 +118,7 @@ else
         quietStartHour = settings.QuietStart?.Hour ?? 22;
         quietEndHour = settings.QuietEnd?.Hour ?? 7;
         timeZone = settings.TimeZoneId;
+        textsAvailable = (await Service<Couples.Application.Sms.ISmsSettingsService>().GetAsync(userId)).Available;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

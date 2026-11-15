@@ -54,6 +54,9 @@ internal sealed partial class RetentionService(
         var notificationCutoff = now - o.Notifications;
         var notifications = await db.Notifications.Where(n => n.CreatedAt < notificationCutoff).ExecuteDeleteAsync(cancellationToken);
 
+        // Records of texts sent: ids and states only, kept as long as the notifications they were for.
+        await db.SmsDeliveries.Where(d => d.CreatedAt < notificationCutoff).ExecuteDeleteAsync(cancellationToken);
+
         var feedbackCutoff = now - o.Feedback;
         var feedback = await db.Feedback.Where(f => f.CreatedAt < feedbackCutoff).ExecuteDeleteAsync(cancellationToken);
 

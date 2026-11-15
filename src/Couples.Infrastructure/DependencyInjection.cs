@@ -90,6 +90,19 @@ public static class DependencyInjection
         services.AddHttpClient<Couples.Application.Rewards.ILocalPlaceSearch, Couples.Infrastructure.Rewards.GooglePlacesSearch>(client => client.Timeout = TimeSpan.FromSeconds(4));
         services.AddScoped<Couples.Application.Rewards.IDateIdeaProvider>(sp => sp.GetRequiredService<Couples.Infrastructure.Rewards.PartnerAdminService>());
 
+        // Partner messages by text (ADR-0020). Closed unless SmsMessaging is on and Sms:Provider is configured.
+        services.AddOptions<Couples.Application.Sms.SmsOptions>().BindConfiguration(Couples.Application.Sms.SmsOptions.SectionName);
+        services.AddScoped<Couples.Infrastructure.Sms.SmsAvailability>();
+        services.AddSingleton<Couples.Infrastructure.Sms.FakeSmsOutbox>();
+        services.AddHttpClient<Couples.Infrastructure.Sms.TwilioSmsSender>(client => client.Timeout = TimeSpan.FromSeconds(10));
+        services.AddScoped<Couples.Application.Sms.ISmsSender>(sp =>
+            sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Couples.Application.Sms.SmsOptions>>().Value.Provider == "Fake"
+                ? sp.GetRequiredService<Couples.Infrastructure.Sms.FakeSmsOutbox>()
+                : sp.GetRequiredService<Couples.Infrastructure.Sms.TwilioSmsSender>());
+        services.AddScoped<Couples.Application.Sms.ISmsSettingsService, Couples.Infrastructure.Sms.SmsSettingsService>();
+        services.AddScoped<Couples.Application.Sms.ISmsDispatcher, Couples.Infrastructure.Sms.SmsDispatcher>();
+        services.AddScoped<Couples.Application.Sms.ISmsInbound, Couples.Infrastructure.Sms.SmsInboundHandler>();
+
         services.AddHealthChecks()
             .AddDbContextCheck<CouplesDbContext>("database", tags: [ReadyTag]);
 

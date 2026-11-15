@@ -147,6 +147,13 @@ public sealed class DeletionSweepTests(PostgresFixture db)
             var offer = Couples.Domain.Rewards.RewardOffer.Create(new Couples.Domain.Rewards.RewardOfferDetails("Dinner", "Bistro", null, null, Couples.Domain.Rewards.RewardKind.Restaurant, 10, true), db.Clock.UtcNow).Value;
             context.RewardOffers.Add(offer);
             context.RewardRedemptions.Add(Couples.Domain.Rewards.RewardRedemption.Reserve(workspace.Value.Id, offer, a, "Local", db.Clock.UtcNow));
+
+            // Texts: A turned texts on and was sent one.
+            var sms = Couples.Domain.Sms.SmsSettings.Start(a, db.Clock.UtcNow);
+            sms.IssueCode("+1555" + Random.Shared.Next(1_000_000, 9_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture), "123456", false, db.Clock.UtcNow);
+            sms.Confirm("123456", db.Clock.UtcNow);
+            context.SmsSettings.Add(sms);
+            context.SmsDeliveries.Add(Couples.Domain.Sms.SmsDelivery.Claim(Guid.NewGuid(), a, db.Clock.UtcNow));
             await context.SaveChangesAsync();
         }
     }
