@@ -2,8 +2,10 @@
   <Folder Name="/src/">
     <Project Path="src/Couples.AI/Couples.AI.csproj" />
     <Project Path="src/Couples.Application/Couples.Application.csproj" />
+    <Project Path="src/Couples.Client/Couples.Client.csproj" />
     <Project Path="src/Couples.Domain/Couples.Domain.csproj" />
     <Project Path="src/Couples.Infrastructure/Couples.Infrastructure.csproj" />
+    <Project Path="src/Couples.UI/Couples.UI.csproj" />
     <Project Path="src/Couples.Web/Couples.Web.csproj" />
     <Project Path="src/Couples.Worker/Couples.Worker.csproj" />
   </Folder>

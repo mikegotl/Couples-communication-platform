@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\src\Couples.Domain\Couples.Domain.csproj" />
     <ProjectReference Include="..\..\src\Couples.Application\Couples.Application.csproj" />
     <ProjectReference Include="..\..\src\Couples.AI\Couples.AI.csproj" />
+    <ProjectReference Include="..\..\src\Couples.Client\Couples.Client.csproj" />
   </ItemGroup>
 
 </Project>

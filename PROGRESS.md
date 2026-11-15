@@ -521,3 +521,14 @@ Migration `RewardPartnersAndDateIdeas`.
 
 **Not yet (owner)**: sign up the first partners, a lawyer's review of the partner agreement,
 and an email provider so applicants can be answered from the app.
+
+## After milestone 12: phone app, phase 0 (2026-11-15)
+
+Plan: keep the web app and add a .NET MAUI Blazor Hybrid app for iPhone and Android that reuses
+the Razor UI and talks to a versioned JSON API (ADR-0020, approved by the owner). Phase 0 adds the shared `Couples.UI` library
+(Warm theme and fonts, now used by the web app), `GET /api/v1/app-status`, the `Couples.Client`
+API client, and the `Couples.Mobile` app shell, built in CI for the iOS simulator (macOS) and
+Android (Linux).
+
+**Not yet (owner)**: an Apple Developer Program membership, a Google Play developer account, the
+bundle id and production web address for the app.

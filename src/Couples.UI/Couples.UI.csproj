@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!--
+    Shared UI for the web app and the iPhone app (.NET MAUI Blazor Hybrid, docs/adr/0020).
+    Anything here must run both on the server (Blazor Server) and on a phone (BlazorWebView):
+    no HttpContext, no DbContext, no Infrastructure, and no @rendermode on components.
+  -->
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.14" />
+    <PackageReference Include="MudBlazor" Version="9.12.0" />
+  </ItemGroup>
+
+</Project>

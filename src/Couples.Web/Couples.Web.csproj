@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Couples.Application\Couples.Application.csproj" />
     <ProjectReference Include="..\Couples.Infrastructure\Couples.Infrastructure.csproj" />
     <ProjectReference Include="..\Couples.AI\Couples.AI.csproj" />
+    <ProjectReference Include="..\Couples.UI\Couples.UI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

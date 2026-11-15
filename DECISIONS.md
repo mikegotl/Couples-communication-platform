@@ -24,6 +24,7 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 | [0017](docs/adr/0017-connection-score-and-date-rewards.md) | Shared connection score, credits and date rewards behind `DateRewards` | Accepted |
 | [0018](docs/adr/0018-reward-partners-and-date-ideas.md) | Registered reward partners with a voucher check link; date ideas as suggestions only | Accepted |
 | [0019](docs/adr/0019-local-date-spots-from-google-places.md) | Local date spots from Google Places: off without a key, only the town is sent, daily cap | Accepted |
+| [0020](docs/adr/0020-iphone-app-with-maui-blazor-hybrid.md) | iPhone and Android app with .NET MAUI Blazor Hybrid: shared Razor UI, versioned JSON API, server decides the user | Accepted |
 
 ## Open decisions (owner)
 
@@ -45,3 +46,5 @@ that is costly to reverse; never edit an accepted ADR's decision, supersede it i
 - The pilot invitation code, and the named incident roles (`docs/operations/incident-response.md`).
 - Independent clinical and security sign-off of joint chat before any workspace is made eligible
   (`docs/safety/joint-chat-review.md`); until then `Phase2JointChat` stays off everywhere.
+- For the phone app (ADR-0020): an Apple Developer Program membership, a Google Play developer
+  account, the app's bundle id and the production web address the app should use.

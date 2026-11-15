@@ -1,0 +1,50 @@
+@page "/"
+@using Couples.Application.Mobile
+@inject BridgeTogetherApiClient Api
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h4" HtmlTag="h1">BridgeTogether</MudText>
+    <MudText>
+        Write privately, get calm wording help, and share with your partner only when you choose.
+        The iPhone app is in early development; for now, please use BridgeTogether on the web.
+    </MudText>
+
+    @if (status is null)
+    {
+        <MudProgressCircular Indeterminate="true" aria-label="Checking the connection" />
+    }
+    else if (status.Value is { } server)
+    {
+        @if (server.Supports(AppVersion))
+        {
+            <MudAlert Severity="Severity.Success" Variant="Variant.Outlined">Connected to BridgeTogether.</MudAlert>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                This version of the app is no longer supported. Please update it from the App Store.
+            </MudAlert>
+        }
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+            Can't reach BridgeTogether right now. Check your connection and try again.
+        </MudAlert>
+        <div><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CheckAsync">Try again</MudButton></div>
+    }
+</MudStack>
+
+@code {
+    private ApiResult<AppStatus>? status;
+
+    private static Version AppVersion => AppInfo.Current.Version;
+
+    protected override Task OnInitializedAsync() => CheckAsync();
+
+    private async Task CheckAsync()
+    {
+        status = null;
+        status = await Api.GetStatusAsync();
+    }
+}

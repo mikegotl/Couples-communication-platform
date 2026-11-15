@@ -183,6 +183,22 @@ There is no self-service admin. List confirmed accounts under `Administration:Ad
 (for example `Administration__AdminEmails__0=you@example.com` as an environment variable) and
 restart the web app; it grants them the `Admin` role at startup.
 
+### Phone app (early)
+
+`src/Couples.Mobile` is a .NET MAUI Blazor Hybrid app for iPhone and Android that hosts the
+shared Razor UI from `src/Couples.UI` and talks to the web app's `/api/v1` (ADR-0020). iPhone
+builds need a Mac with Xcode and `dotnet workload install maui-ios`; Android needs
+`dotnet workload install maui-android` and the Android SDK. Run the web app with `dotnet run --project
+src/Couples.Web --launch-profile http`, then build and start the app in the iOS simulator:
+
+```bash
+dotnet build src/Couples.Mobile -t:Run -f net10.0-ios26.0 -p:RuntimeIdentifier=iossimulator-arm64
+dotnet build src/Couples.Mobile -t:Run -f net10.0-android   # with an emulator running
+```
+
+Debug builds talk to `http://localhost:5217/` (Android emulator: `http://10.0.2.2:5217/`); set `-p:ApiBaseAddress=https://...` for any other
+server. CI builds iOS on a macOS runner and Android on Linux (`.github/workflows/mobile.yml`).
+
 ## Repository layout
 
 ```
@@ -191,7 +207,10 @@ src/
   Couples.Application     Use cases, interfaces, feature flag names
   Couples.Infrastructure  EF Core/PostgreSQL, system services
   Couples.AI              Provider-neutral AI coaching (milestone 06)
-  Couples.Web             Blazor Web App + MudBlazor UI, HTTP endpoints
+  Couples.Web             Blazor Web App + MudBlazor UI, HTTP endpoints, /api for the phone app
+  Couples.UI              Shared Razor UI and theme for the web and phone apps
+  Couples.Client          Typed client for /api, used by the phone app
+  Couples.Mobile          iPhone and Android app (.NET MAUI Blazor Hybrid; not in Couples.slnx)
   Couples.Worker          Background jobs (retention, expiry, deletion)
 deploy/
   docker                  Production Dockerfiles (web, worker)

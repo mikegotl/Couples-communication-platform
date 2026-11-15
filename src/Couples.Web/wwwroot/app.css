@@ -38,8 +38,6 @@ h1:focus {
 }
 /* Lightweight styles for the ASP.NET Core Identity pages (scaffolded with Bootstrap class
    names). Kept local so no third-party CSS is fetched. */
-@font-face { font-family: "Fraunces"; src: url("fonts/fraunces-latin.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: "Nunito"; src: url("fonts/nunito-latin.woff2") format("woff2"); font-weight: 200 1000; font-display: swap; }
 body { font-family: Nunito, "Helvetica Neue", Arial, sans-serif; background: var(--mud-palette-background); color: var(--mud-palette-text-primary); }
 .mud-main-content h1 { font-family: Fraunces, Georgia, serif; font-size: 2rem; font-weight: 500; margin: 0 0 1rem; }
 .mud-main-content h2, .mud-main-content h3 { font-size: 1.25rem; font-weight: 500; margin: 1rem 0 .5rem; }

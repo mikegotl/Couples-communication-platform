@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!--
+    The BridgeTogether phone app (iPhone and Android): a .NET MAUI Blazor Hybrid shell that hosts the shared Razor UI
+    (Couples.UI) in a native BlazorWebView and talks to the web app's /api (docs/adr/0020).
+    iOS builds need macOS with Xcode and the maui-ios workload; Android builds need the
+    maui-android workload (Linux works). So this project is not in Couples.slnx;
+    .github/workflows/mobile.yml builds iOS on a macOS runner and Android on Linux.
+  -->
+
+  <PropertyGroup>
+    <!-- Directory.Build.props sets TargetFramework=net10.0; clear it so TargetFrameworks applies. -->
+    <TargetFramework></TargetFramework>
+    <!-- iOS bindings pinned to 26.0 so any Xcode 26.x builds it (the unversioned TFM follows the
+         newest iOS SDK, which needs an Xcode the CI runners don't have yet). Raise deliberately. -->
+    <!-- MobilePlatforms (ios;android by default) lets a build restore just one platform, e.g. on a
+         Linux CI runner that has no iOS workload: -p:MobilePlatforms=android. -->
+    <MobilePlatforms Condition="'$(MobilePlatforms)' == ''">ios;android</MobilePlatforms>
+    <TargetFrameworks Condition="$(MobilePlatforms.Contains('ios'))">net10.0-ios26.0</TargetFrameworks>
+    <TargetFrameworks Condition="$(MobilePlatforms.Contains('android'))">$(TargetFrameworks);net10.0-android</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks.Trim(';'))</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Couples.Mobile</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <EnableDefaultCssItems>false</EnableDefaultCssItems>
+
+    <ApplicationTitle>BridgeTogether</ApplicationTitle>
+    <!-- Placeholder until the Apple Developer account and bundle id are set up (see the plan). -->
+    <ApplicationId>com.bridgetogether.app</ApplicationId>
+    <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+
+    <!-- Platform SDK warnings vary with Xcode versions on the runner; analyzers still run and report. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Server the app talks to. Override with -p:ApiBaseAddress=https://... for a real build. The
+         iOS simulator shares the Mac's localhost, so Debug points at `dotnet run` of Couples.Web;
+         the Android emulator reaches the host computer at 10.0.2.2.
+         The Release default is a reserved .invalid name: it never resolves, so an unconfigured
+         build says it can't reach the service rather than talking to someone else's server. -->
+    <ApiBaseAddress Condition="'$(ApiBaseAddress)' == '' and '$(Configuration)' == 'Debug' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">http://10.0.2.2:5217/</ApiBaseAddress>
+    <ApiBaseAddress Condition="'$(ApiBaseAddress)' == '' and '$(Configuration)' == 'Debug'">http://localhost:5217/</ApiBaseAddress>
+    <ApiBaseAddress Condition="'$(ApiBaseAddress)' == ''">https://app.bridgetogether.invalid/</ApiBaseAddress>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ApiBaseAddress</_Parameter1>
+      <_Parameter2>$(ApiBaseAddress)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" Color="#A94A33" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#FAF5EE" BaseSize="128,128" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.14" />
+    <PackageReference Include="MudBlazor" Version="9.12.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Couples.UI\Couples.UI.csproj" />
+    <ProjectReference Include="..\Couples.Client\Couples.Client.csproj" />
+  </ItemGroup>
+
+</Project>

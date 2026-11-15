@@ -1,0 +1,10 @@
+/* Phone-only layout. Brand fonts come from _content/Couples.UI/brand.css and colours from AppTheme. */
+html, body { margin: 0; }
+body {
+    font-family: Nunito, "Helvetica Neue", Arial, sans-serif;
+    background: #FAF5EE;
+    color: #2F2925;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+h1 { font-family: Fraunces, Georgia, serif; }
+#blazor-error-ui { display: none; position: fixed; bottom: 0; left: 0; right: 0; padding: 1rem; background: #fff3cd; }
