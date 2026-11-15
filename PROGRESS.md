@@ -521,3 +521,16 @@ Migration `RewardPartnersAndDateIdeas`.
 
 **Not yet (owner)**: sign up the first partners, a lawyer's review of the partner agreement,
 and an email provider so applicants can be answered from the app.
+
+## After milestone 12: Partner messages by text (2026-11-15)
+
+Each partner can choose, at `/settings/texts`, to get messages by text (a content-free notice by
+default, or the message itself) and to answer by texting back. Setup needs a texted code and an
+explicit agreement (consent record). A texted reply becomes a private draft, is echoed back, and is
+shared only after `SEND`, through the same preview/consent path as the app. STOP/START/HELP work;
+mute, quiet hours, pause, withdrawal and the safety hold apply to texts; safety content is never
+texted. Twilio provider behind `SmsMessaging` (off in Production); Fake provider and `/dev/texts`
+simulator in Development. ADR-0021; setup in `docs/operations/sms.md`. Migration `SmsMessaging`.
+
+**Not yet (owner)**: a Twilio account and sender number registered for the launch market, a
+spending limit, and privacy notice wording naming the SMS provider.

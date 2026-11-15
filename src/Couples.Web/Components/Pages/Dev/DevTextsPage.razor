@@ -1,0 +1,86 @@
+@page "/dev/texts"
+@inherits ScopedPage
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Couples.Application.Sms
+@using Couples.Infrastructure.Sms
+@using Microsoft.Extensions.Options
+@inject IWebHostEnvironment Environment
+@inject IOptions<SmsOptions> Options
+@inject FakeSmsOutbox Outbox
+@inject NavigationManager Navigation
+
+<InteractiveProviders />
+<PageTitle>Text simulator (development) · BridgeTogether</PageTitle>
+
+@if (!enabled)
+{
+    <MudText>Not found.</MudText>
+}
+else
+{
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h4" HtmlTag="h1">Text simulator</MudText>
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+            Development only. Texts the app would send appear here instead of going to a phone, and you can text the app as any number.
+        </MudAlert>
+
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.h6" HtmlTag="h2">Text the app</MudText>
+                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudTextField T="string" @bind-Value="from" Label="From number" Variant="Variant.Outlined" Style="max-width: 14rem" />
+                    <MudTextField T="string" @bind-Value="body" Label="Text" Variant="Variant.Outlined" Lines="2" Style="min-width: 18rem" />
+                </MudStack>
+                <div><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SendAsync">Send text</MudButton></div>
+            </MudStack>
+        </MudPaper>
+
+        <MudText Typo="Typo.h6" HtmlTag="h2">Conversation (newest first)</MudText>
+        @foreach (var text in Outbox.Texts)
+        {
+            var fromApp = text.From == "app";
+            <MudPaper Class="pa-3" Outlined="true" Style="@(fromApp ? "max-width: 34rem" : "max-width: 34rem; margin-left: auto; background: var(--mud-palette-primary-lighten)")">
+                <MudText Typo="Typo.caption">@(fromApp ? $"App → {text.To}" : $"{text.From} → app") · @text.At.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)</MudText>
+                <MudText Style="white-space: pre-wrap">@text.Body</MudText>
+            </MudPaper>
+        }
+
+        <div><MudButton Variant="Variant.Text" OnClick="Refresh">Refresh</MudButton></div>
+    </MudStack>
+}
+
+@code {
+    private bool enabled;
+    private string? from = "+15555550101";
+    private string? body;
+
+    protected override void OnInitialized()
+    {
+        enabled = Environment.IsDevelopment() && Options.Value.Provider == "Fake";
+        if (!enabled)
+        {
+            Navigation.NavigateTo("not-found", replace: true);
+        }
+    }
+
+    private async Task SendAsync()
+    {
+        if (!enabled || string.IsNullOrWhiteSpace(from))
+        {
+            return;
+        }
+
+        var text = body ?? string.Empty;
+        PhoneNumber.TryNormalize(from, Options.Value.DefaultCallingCode, out var e164);
+        Outbox.RecordInbound(e164 ?? from, text);
+        var reply = await Service<ISmsInbound>().HandleAsync(from, text);
+        if (reply is not null)
+        {
+            await Outbox.SendAsync(e164 ?? from, reply);
+        }
+
+        body = null;
+    }
+
+    private void Refresh() => StateHasChanged();
+}

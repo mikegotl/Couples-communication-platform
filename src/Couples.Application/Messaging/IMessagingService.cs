@@ -47,7 +47,8 @@ public interface IMessagingService
 
 public sealed record DraftView(Guid Id, string Body, string Status, string Fingerprint, DateTimeOffset UpdatedAt, Guid? InReplyToMessageId = null);
 
-public sealed record SharePreview(Guid DraftId, string Body, string Fingerprint, string WorkspaceName);
+/// <param name="PartnerReadsByText">The partner asked for messages to arrive as texts, so withdrawing this later can't remove it from their phone. Based on their setting alone, so it says nothing about their safety settings.</param>
+public sealed record SharePreview(Guid DraftId, string Body, string Fingerprint, string WorkspaceName, bool PartnerReadsByText = false);
 
 public sealed record SharedMessageView(Guid Id, bool SentByMe, string Body, DateTimeOffset SharedAt, bool Revoked);
 

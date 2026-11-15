@@ -1297,6 +1297,111 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.ToTable("personal_safety", "couples");
                 });
 
+            modelBuilder.Entity("Couples.Domain.Sms.SmsDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("NotificationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("RecipientUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificationId")
+                        .IsUnique();
+
+                    b.HasIndex("RecipientUserId", "CreatedAt");
+
+                    b.ToTable("sms_deliveries", "couples");
+                });
+
+            modelBuilder.Entity("Couples.Domain.Sms.SmsSettings", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CodeAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("CodeExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CodeHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("CodeWindowStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CodesInWindow")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IncludeMessageText")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("OptedOutAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PendingDraftId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("PendingExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PendingFingerprint")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PhoneE164")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset?>("ReceivingSince")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("PhoneE164")
+                        .IsUnique()
+                        .HasFilter("\"VerifiedAt\" IS NOT NULL");
+
+                    b.ToTable("sms_settings", "couples");
+                });
+
             modelBuilder.Entity("Couples.Domain.Workspaces.Invitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1925,6 +2030,24 @@ namespace Couples.Infrastructure.Persistence.Migrations
                     b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
                         .WithOne()
                         .HasForeignKey("Couples.Domain.Safety.PersonalSafety", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Couples.Domain.Sms.SmsDelivery", b =>
+                {
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Couples.Domain.Sms.SmsSettings", b =>
+                {
+                    b.HasOne("Couples.Infrastructure.Identity.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("Couples.Domain.Sms.SmsSettings", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

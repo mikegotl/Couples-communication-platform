@@ -38,7 +38,11 @@ public sealed record PersonalDataExport(
     ExportedPilot? Pilot = null,
     IReadOnlyList<ExportedFeedback>? Feedback = null,
     IReadOnlyList<ExportedJointChat>? JointChats = null,
-    IReadOnlyList<ExportedRewardRedemption>? RewardsRedeemed = null);
+    IReadOnlyList<ExportedRewardRedemption>? RewardsRedeemed = null,
+    ExportedSms? Texts = null);
+
+/// <summary>The user's text-message settings: their number, what texts contain, and how many were sent.</summary>
+public sealed record ExportedSms(string PhoneNumber, DateTimeOffset? VerifiedAt, bool IncludeMessageText, DateTimeOffset? StoppedAt, int TextsSentLast90Days);
 
 /// <summary>A date reward the user cashed their couple's credits in for.</summary>
 public sealed record ExportedRewardRedemption(Guid WorkspaceId, string OfferTitle, string PartnerName, int CostCredits, string VoucherCode, DateTimeOffset RedeemedAt);

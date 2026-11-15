@@ -22,6 +22,7 @@ public static class RouteTitles
         ("joint-chat", "Joint chat (pilot)"),
         ("feedback", "Send feedback"),
         ("settings/pace", "Pace and notifications"),
+        ("settings/texts", "Text messages"),
         ("workspace", "Your workspace"),
         ("intake", "Your private topics"),
         ("safety", "Your safety"),

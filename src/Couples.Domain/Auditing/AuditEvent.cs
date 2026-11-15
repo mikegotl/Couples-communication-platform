@@ -56,4 +56,7 @@ public static class AuditActions
     public const string JointChatJoined = "jointchat.joined";
     public const string JointChatEnded = "jointchat.ended";
     public const string RewardRedeemed = "reward.redeemed";
+    public const string SmsTurnedOn = "sms.turned_on";
+    public const string SmsTurnedOff = "sms.turned_off";
+    public const string SmsStopped = "sms.stopped";
 }
